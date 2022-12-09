@@ -232,8 +232,8 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
       plot(WL, xlab = "t/a_s", ylab = "C(t)",
             main = sprintf("%s, linear scale", title),
             ylim = c(-WL$cf0[3], WL$cf0[3]))
-      points(x = seq(-1,Nt / 2 + 1,1),
-            y = rep(0, times = length(seq(-1,Nt / 2 + 1,1))),
+      points(x = seq(-1, Nt / 2 + 1, 1),
+            y = rep(0, times = length(seq(-1, Nt / 2 + 1, 1))),
                 col = 2, type = "l")
     }
     return(WL)
@@ -341,7 +341,7 @@ deteffmasssmall <- function (WL, x, y, t1, t2) {
             WL.effmass <- bootstrap.effectivemass(WL, type = "log")
             listresults <- list(FALSE, FALSE, FALSE)
             newline <- data.frame(R = sqrt(x^2 + y^2), m = NA, dm = NA)
-        } else{
+        } else {
             regionplotzoom <- seq(floor(length(WL.effmass$effMass)) * 0.25,
                     length(WL.effmass$effMass) - 1)
             if (length(regionplotzoom > 0)) {
@@ -413,12 +413,12 @@ pointsxyerr <- function (x, y, dx, dy, arlength = 0.02, ...) {
 }
 
 errorpolygon <- function (X, fitresult, col.p, col.band = "gray",
-                        polygon = TRUE, arlength = 0.1, pch = 1,...) {
+                        polygon = TRUE, arlength = 0.1, pch = 1, ...) {
     # like plot of bootstrapfit, but with rep=TRUE
     prediction <- predict(fitresult, X)
     if (missing(pch)) {
         p.pch <- col.p
-    } else{
+    } else {
         p.pch <- pch
     }
     if (fitresult$errormodel == "yerrors") {
@@ -474,11 +474,11 @@ points.effectivemass <- function (x, ..., ref.value, col, col.fitline) {
     abline(h = ref.value, col = c("darkgreen"), lwd = c(3))
   }
   if (!is.null(effMass$effmassfit)) {
-    lines(x = c(effMass$t1,effMass$t2),
-          y = c(effMass$effmassfit$t0[1],effMass$effmassfit$t0[1]),
+    lines(x = c(effMass$t1, effMass$t2),
+          y = c(effMass$effmassfit$t0[1], effMass$effmassfit$t0[1]),
           col = col.fitline,
           lwd = 1.3)
-      pcol <- col2rgb(col.fitline,alpha = TRUE) / 255
+      pcol <- col2rgb(col.fitline, alpha = TRUE) / 255
       pcol[4] <- 0.65
       pcol <- rgb(red = pcol[1], green = pcol[2], blue = pcol[3], alpha = pcol[4])
       rect(xleft = effMass$t1, xright = effMass$t2,
@@ -550,7 +550,7 @@ find_bootsamples <- function (Ns, Nt, beta, xi, plotpath = "",
         for (j in seq(3, 1)) {
             if (!is.na(numbers[i])) {
                 break
-            } else{
+            } else {
                 numbers[i] <- suppressWarnings(as.integer(substring(files[i], len, len + j)))
             }
         }
@@ -590,7 +590,7 @@ fitplotfunctions <- function (fun1, fun2, x1, y1, dy1, x2, y2, dy2,
         my.xlim <- TRUE
         xmin <- min(xlimnew)
         xmax <- max(xlimnew)
-    } else{
+    } else {
         xmin <- min(dots$xlim)
         xmax <- max(dots$xlim)
     }
