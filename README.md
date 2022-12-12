@@ -16,6 +16,11 @@ The scripts in this repository can be used to determine the static potential, th
     - makeinputtable.R
     - converttablelatex.R
 
+### Required packages
+ - hadron and its dependencies -> statistical analysis
+ - optparse and its dependencies -> command line parameters
+
+
 ## Operation
 ### Determination of potential, renormalized anisotropy and $r_0$
 
@@ -27,3 +32,8 @@ The scripts will produce plots, results in a csv-table and an RData-object that 
 ### Determination of continuum limit
 
 This is done with the predictbeta scripts, the results will be a csv-file and some plots
+
+# TODO
+- [ ] Document remaining code
+- [ ] make function to read nsave in
+- [ ] make function to read in bootsamples

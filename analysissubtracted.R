@@ -3,6 +3,7 @@ library(optparse)
 
 
 if (TRUE) {
+    # set option list
 option_list <- list(
     make_option(c("-b", "--beta"), type = "double", default = 1.7,
     help = "beta-Parameter of simulation [default %default]"),
@@ -44,8 +45,6 @@ option_list <- list(
     make_option(c("-x", "--xi"), type = "double", default = 0,
     help = "xi used in lattice [default %default]"),
 
-    make_option(c("--onqbig"), action = "store_true", default = FALSE,
-    help = "file names as on qbig [default %default]"),
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, correlators and effective masses
             are determined [default %default]"),
@@ -83,7 +82,6 @@ option_list <- list(
     help = "steps between saved configs [default %default]"),
     make_option(c("--myfunctions"), type = "character",
             default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/myfunctions.R",
-#~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored [default %default]")
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
@@ -91,9 +89,8 @@ args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
 }
 
-#~ print(opt)
-
 if (TRUE) {
+# set some constants
 source(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip
@@ -108,13 +105,9 @@ if (opt$xidiff) {
 nape <- opt$nape
 alpha <- opt$alpha
 
-potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
-
-# determining the effective masses takes the most times,
-# so do not do this if it has already been done
-# fit also does not have to be done every time
 analyse <- opt$analyse
 dofit <- opt$dofit
+# boundaries for effective masses if no table can be found
 
 t2 <- Ns / 2 - 2
 t1 <- opt$lowerboundmeff
@@ -124,6 +117,8 @@ rmax <- opt$rmax
 
 
 if (analyse) {
+# set names for plot, tables, open, lists for saving results
+
 filenameforplots <- sprintf(
             "%splotseffectivemass2p1dsubtractedchosenNs%dbeta%fxi%f.pdf",
             opt$plotpath, Ns, beta, xi)
@@ -135,6 +130,8 @@ if (opt$smearing) {
 pdf(file = filenameforplots, title = "")
 listfits <- list()
 listtauint <- list()
+potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
+
 namelistbounds <- sprintf(
             "%stableanalysissubtractedNs%dNt%dbeta%fxi%f.csv",
             opt$respath, Ns, Nt, beta, xi)
@@ -146,6 +143,7 @@ if (opt$smearing) {
 if (file.exists(namelistbounds)) {
     listbounds <- read.table(namelistbounds, sep = ",", header = TRUE)
 } else {
+    # if no table with boundaries can be found, create a dummy table
     listbounds <- cbind(data.frame(yt = c(seq(1, Ns / 2), seq(1, Ns / 2))),
             data.frame(spacial = c(rep(TRUE, Ns / 2), rep(FALSE, Ns / 2))),
             data.frame(lower = c(rep(opt$lowerboundmeff, Ns / 2),
@@ -163,6 +161,17 @@ filename <- sprintf(
 alldata <- read.table(filename)
 nsave <- alldata[2, length(alldata[1, ])] - alldata[1, length(alldata[1, ])]
 
+# determine Wilson Loop correlators and effective masses
+# for all possible combinations Meff(y0) (use W(x0+1, t=0, y0)/W(x0, t=0, y0))
+# and Meff(t0) (use W(x0+1, t0, y=0)/W(x0, t0, y=0))
+# measures a_s V(r / a_s) and a_tV(r / a_s)
+# also determine number of correlators smaller than zero per distance
+# for each x: first spatial and then temporal potential
+# for all: determine expectation values of Loops,
+# plot, determine effective masses, set boundaries, determine
+# plateau and plot. Savev results of m_eff to list
+# also save uwerr = autocorrelation time of non-bootstrapped loop
+
 
 for (x in seq(1, Ns / 2, 1)) {
     #save results, list has to have an entry everywhere
@@ -170,12 +179,7 @@ for (x in seq(1, Ns / 2, 1)) {
     uwerrresults <- FALSE
     #calculate W(x, y + 1)/W(x, y)
     if (TRUE) {
-
-#~     message("\nx = ", x)
-
-#~     print(Nt)
-#~     print(Ns)
-
+# spatial, loops
     filename <- sprintf(
             "result2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
             Nt, Ns, beta, xi, nape, alpha)
@@ -188,10 +192,9 @@ for (x in seq(1, Ns / 2, 1)) {
             title = title, path = opt$respath, zerooffset = opt$zerooffset,
             every = opt$every, nsave = opt$nsave, l = opt$bootl)
     uwerrresults <- uwerr.cf(WL)
-#~     print(uwerrresults)
     negatives[x] <- sum(WL$cf0 < 0)
 
-
+# m_eff
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == x]
     WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
@@ -201,7 +204,6 @@ for (x in seq(1, Ns / 2, 1)) {
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], x, TRUE)
     }
-#~     print(listresults[[2]])
     names(listresults) <- c("effmass", "x", "spacial")
 
     try(plot(WL.effmasslist[[1]], xlab = "y/a_s", ylab = "Meff",
@@ -218,8 +220,7 @@ for (x in seq(1, Ns / 2, 1)) {
 
     #calculate W(x, t + 1)/W(x, t)
     if (TRUE) {
-
-#~     message("\nx = ", x)
+# temporal, loops
 
     filename <- sprintf(
         "result2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%ffinedistance",
@@ -232,9 +233,9 @@ for (x in seq(1, Ns / 2, 1)) {
             path = opt$respath, zerooffset = opt$zerooffset, every = opt$every,
             nsave = opt$nsave, l = opt$bootl)
     uwerrresults <- uwerr.cf(WL)
-#~     print(uwerrresults)
     negatives[x] <- negatives[x] + sum(WL$cf0 < 0)
 
+# m_eff
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == x]
     WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
@@ -244,7 +245,6 @@ for (x in seq(1, Ns / 2, 1)) {
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], x, TRUE)
     }
-#~     print(listresults[[2]])
     names(listresults) <- c("effmass", "x", "spacial")
 
     try(plot(WL.effmasslist[[1]], xlab = "t/a_t", ylab = "Meff",
@@ -261,7 +261,6 @@ for (x in seq(1, Ns / 2, 1)) {
 }
 #write out results
 t1 <- -1 #opt$lowerboundmeff
-#~ potential <- na.omit(potential)
 filenamepotential <- sprintf(
             "%spotentialmeff2p1dsubtractedchosenNs%dbeta%fxi%fbsamples%d.csv",
             opt$plotpath, Ns, beta, xi, bootsamples)
@@ -299,6 +298,25 @@ write.table(data.frame(x = seq(1, Ns / 2), neg = negatives),
 }
 
 if (dofit) {
+# use data from the potential to fit the expected form to the fine=temporal
+# and coarse=spatial potential,
+# then determine xi_ren by interpolation and subtraction,
+# like in https://journals.aps.org/prd/pdf/10.1103/PhysRevD.70.014504
+# then determine r_0 / a_s, determine the force, plot everything
+# save results and bootstrapsamples of fits
+
+#define functions for potential, force, force  =  -r^2 * derivation of potential
+fnpot <- function (par, x, boot.r, ...) par[1] + par[2] * x + par[3] * log(x)
+fnpotscal <- function (par, x, boot.r, finemask, ...) {
+        return (par[1] + par[2] * x + par[3] * log(x) + par[4] * x[finemask])
+}
+fnforce <- function (par, x, boot.r, ...) {
+        return ((- 1.0) * par[2] * x^2 - par[3] * x)
+}
+fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
+    return (sqrt(parerr[2]^2 * x^4 + parerr[3]^2 * x^2 + 2 * x^3 * correlation[2, 3] * parerr[2] * parerr[3]))
+}
+
 t1 <- opt$lowerboundmeff
 filenamepotential <- sprintf(
             "%spotentialmeff2p1dsubtractedchosenNs%dbeta%fxi%fbsamples%d.csv",
@@ -320,10 +338,6 @@ potential <- read.table(filenamepotential, header = TRUE)
 
 listmeff <- readRDS(file = filenamelist)
 bootsamples <- length(listmeff[[1]][[1]]$massfit.tsboot[, 1])
-#~ message("bootsamples =  ", bootsamples)
-#~ message("read in files")
-
-
 
 filenameforplots <- sprintf(
             "%spotentialmeff2p1dsubtractedchosenNs%dbeta%fxi%fomit%dlowlim%d.pdf",
@@ -335,67 +349,28 @@ filenameforplots <- sprintf(
 }
 pdf(file = filenameforplots, title = "")
 
-#define functions for potential, force, force  =  -r^2 * derivation of potential
-fnpot <- function (par, x, boot.r, ...) par[1] + par[2] * x + par[3] * log(x)
-fnpotscal <- function (par, x, boot.r, finemask, ...) {
-        return (par[1] + par[2] * x + par[3] * log(x) + par[4] * x[finemask])
-}
-fnforce <- function (par, x, boot.r, ...) {
-        return ((- 1.0) * par[2] * x^2 - par[3] * x)
-}
-fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
-    return (sqrt(parerr[2]^2 * x^4 + parerr[3]^2 * x^2 + 2 * x^3 * correlation[2, 3] * parerr[2] * parerr[3]))
-}
-#~ message("defined functions")
-
-#calculate plaquette as W(x = 1, y = 1, t = 0)
-filename <- sprintf(
-            "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
-            opt$respath, Nt, Ns, beta, xi, nape, alpha)
-
-alldata <- read.table(filename)
-plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
-newline <- data.frame(value = plaquettedata$value, dvalue = plaquettedata$dvalue,
-            ddvalue = plaquettedata$ddvalue, tauint = plaquettedata$tauint,
-            dtauint = plaquettedata$dtauint)
-#~ nom <- floor(length(plaquettecolumn)/opt$nsave)
-nom <- floor(length(plaquettecolumn))
-
-column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
-
-plaquettecf <- readloopfilecfonecolumn(file = filename, skip = skip,
-        column = column)#, every = opt$every, boot.l = opt$bootl)
-#~ summary(plaquettecf)
-plaquettecf <- bootstrap.cf(plaquettecf, boot.R = bootsamples)
-#~ summary(plaquettecf)
-
-nsave <- alldata[2, length(alldata[1, ])] - alldata[1, length(alldata[1, ])]
-print(nsave)
 #coarse potential
 #read in data points, bootstrap samples: have to initialise empty vectors,
 #because not every list element has a valid entry
 xc <- rep(NA, Ns / 2)
 yc <- rep(NA, Ns / 2)
 
-#filter out points without valid entry in bootstrap.nlsfit,
-#mask for combining vectors
+# filter out points without valid entry in bootstrap.nlsfit,
+# mask for combining vectors
 maskc <- rep(FALSE, Ns / 2)
 bsamplesc <- array(c(rep(NA, Ns / 2 * bootsamples)), dim = c(bootsamples, Ns / 2))
 
-#also have vectors for combined potential
+# also have vectors for combined potential
 x <- rep(NA, Ns)
 dx <- rep(NA, Ns)
 y <- rep(NA, Ns)
 mask <- rep(FALSE, Ns)
 finemask <- rep(FALSE, Ns)
 bsamples <- array(c(rep(NA, Ns * bootsamples)), dim = c(bootsamples, Ns))
-#~ message("defined empty arrays")
 
 for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
-#~       message("xc =  ",xc[i])
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
       bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       maskc[i] <- TRUE
@@ -416,7 +391,7 @@ xf <- rep(NA, Ns / 2)
 yf <- rep(NA, Ns / 2)
 
 #filter out points without valid entry in bootstrap.nlsfit,
-#mask for combining vectors
+# finemask: needed later for combining potentials
 maskf <- rep(FALSE, Ns / 2)
 bsamplesf <- array(c(rep(NA, Ns / 2 * bootsamples)), dim = c(bootsamples, Ns / 2))
 
@@ -436,7 +411,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   }
 }
 
-#determine parameters by bootstrap
+#determine parameters of potential by bootstrap, save results
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
                     yc, xc, bsamplesc, mask = maskc)
 filenamecoarse <- sprintf(
@@ -449,8 +424,6 @@ filenamecoarse <- sprintf(
 }
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
-
-#determine parameters by bootstrap
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
                     yf, xf, bsamplesf, mask = maskf)
 filenamefine <- sprintf(
@@ -463,11 +436,7 @@ filenamefine <- sprintf(
 }
 saveRDS(fit.resultfine, file = filenamefine)
 
-#~ print(x)
-#~ print(y)
-
-
-
+# plot potentials
 plot(fit.resultfine, main  =  sprintf(
             "beta = %f, xi = %f, (2 + 1)D, Ns = %d, fine\n
             %d measurements of which skipped %d",
@@ -480,33 +449,39 @@ plot(fit.resultcoarse, main  =  sprintf(
             ylab = "a_s V_{xy}(x)", xlab = "x / a_s")
 
 
+
+
+# calculate plaquette as W(x = 1, y = 1, t = 0)
+# with uwerr and with cf, to get bootstrapsamples
+filename <- sprintf(
+            "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
+            opt$respath, Nt, Ns, beta, xi, nape, alpha)
+
+alldata <- read.table(filename)
+plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
+newline <- data.frame(value = plaquettedata$value, dvalue = plaquettedata$dvalue,
+            ddvalue = plaquettedata$ddvalue, tauint = plaquettedata$tauint,
+            dtauint = plaquettedata$dtauint)
+nom <- floor(length(plaquettecolumn))
+
+column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
+
+plaquettecf <- readloopfilecfonecolumn(file = filename, skip = skip,
+        column = column)#, every = opt$every, boot.l = opt$bootl)
+plaquettecf <- bootstrap.cf(plaquettecf, boot.R = bootsamples)
+
+
 alldata <- data.frame(x = x, V = y, spatial = finemask)
-#~ print(alldata)
-#~ print(names(listmeff[[1]][[1]]))
 
-#~ xilist <- data.frame(xi = NA, rdiff = NA)
-
-#~ for (r1 in seq(opt$rmin, opt$rmax-1)) {
-#~     for (r2 in seq(r1 + 1, Ns / 2)) {
-#~         den <- (alldata$V[alldata$x =  = r1&alldata$spatial =  = FALSE] - alldata$V[alldata$x =  = r2&alldata$spatial =  = FALSE])
-#~         num <- (alldata$V[alldata$x =  = r1&alldata$spatial =  = TRUE] - alldata$V[alldata$x =  = r2&alldata$spatial =  = TRUE])
-#~         xicalc <- ( num  /  den )
-#~         print(xicalc)
-#~         print(r1-r2)
-#~         xilist <- rbind(xilist, data.frame(xi = xicalc, rdiff = abs(r1-r2)))
-#~     }
-#~ }
-#~ xilist <- na.omit(xilist)
-#~ print(xilist)
-#~ print(mean(xilist$xi))
-
-#determine xi from subtraction method
 
 xilist <- data.frame(xi = NA, rdiff = NA, r1 = NA)
 
+# determine xi by averaging over all possible distances of the potentials
+# between r_min and r_max
+# like in https://journals.aps.org/prd/pdf/10.1103/PhysRevD.70.014504
 for (bs in seq(1, bootsamples)) {
     for (r1 in seq(opt$rmin, opt$rmax - 1)) {
-#~         for (r2 in seq(r1 + 1, Ns / 2)) {
         for (r2 in seq(r1 + 1, opt$rmax)) {
             num <- (bsamples[bs, Ns / 2 + r1] - bsamples[bs, Ns / 2 + r2])
             den <- (bsamples[bs, r1]  - bsamples[bs, r2])
@@ -517,38 +492,15 @@ for (bs in seq(1, bootsamples)) {
 }
 }
 xilist <- na.omit(xilist)
-#~ print(xilist)
-#~ strings <- sprintf("xi_calc = %f + / - %f", mean(xilist$xi), sd(xilist$xi))
-#~ print(strings)
 
 xicalcsub <- mean(xilist$xi)
 dxicalcsub <- sd(xilist$xi)
 
 xisquaredsub <- mean(xilist$xi^2)
 dxisquaredsub <- sd(xilist$xi^2)
-#~ strings <- sprintf("subraction method xi_calc = %f + / - %f, xi_calc^2 = %f  + /- %f", xicalc, dxicalc, xisquared, dxisquared)
-#~ print(strings)
 
-#~ xicalc <- xi
-#~ dxixalc <- 0
-
-#~ y[finemask] <- y[finemask] / xicalc
-#~ bsamples[, finemask] <- bsamples[, finemask] / xicalc
-
-
-#~ bsamplessub <- array(c(rep(NA, Ns/2 * bootsamples)), dim = c(bootsamples, Ns/2))
-
-#~ predictsub <- predict(fit.resultcoarse, x[finemask])
-#~ print(predictsub)
-#~ ysub <- predictsub$val[TRUE] - y[finemask]
-#~ ysub <- y[mask&!finemask] - y[finemask]
-#~ print(ysub)
-#~ for (i in seq(1, bootsamples, 1)) {
-#~     bsamplessub[i,] <- predictsub$boot[i, ] - bsamples[i, finemask]
-#~ }
-
+# determine xi by fitting a linear function to V_spatial (V_temporal)
 matchpot <- function(par, x, boot.r, ...) par[1] + x / par[2]
-#~ matchpot <- function(par, x, boot.r, ...) par[1] + x * par[2]
 
 bsamplesmatch <- array(c(rep(NA, Ns * bootsamples)), dim = c(bootsamples, Ns))
 
@@ -558,30 +510,23 @@ for (bs in seq(1, bootsamples, 1)) {
 }
 
 maskc <- maskc & c(rep(FALSE, opt$lowlimitfit), rep(TRUE, Ns / 2 - opt$lowlimitfit))
-#~ print(maskc)
-#~ print(head(bsamplesmatch))
 
 fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
             y = yc, x = yf, bsamples[, 1:Ns], mask = maskc)
-#~ fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi), x = yc, y = yf, bsamplesmatch)
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
             main = "matching potentials to determine xi")
 print(fit.match)
-
-#~ filenamematch <- sprintf("fitresultmatchsubtractedb%fxi%fNs%dbsamples%domit%dl%drmin%drmax%d.RData", beta, xi, Ns, bootsamples, opt$omit, t1, rmin, rmax)
 filenamematch <- sprintf(
             "%sfitresultmatchsubtractedb%fxi%fNs%dbsamples%domit%dl%dlowlim%d.RData",
             opt$plotpath, beta, xi, Ns, bootsamples, opt$omit, t1, opt$lowlim)
 if (opt$smearing) {
-#~ filenamematch <- sprintf("fitresultmatchsubtractedb%fxi%fNs%dnape%dalpha%fbsamples%domit%dl%drmin%drmax%d.RData", beta, xi, Ns, nape, alpha, bootsamples, opt$omit, t1, rmin, rmax)
 filenamematch <- sprintf(
             "%sfitresultmatchsubtractedb%fxi%fNs%dnape%dalpha%fbsamples%domit%dl%dlowlim%d.RData",
             opt$plotpath, beta, xi, Ns, nape, alpha, bootsamples, opt$omit, t1, opt$lowlim)
 }
-#~ print(fit.resultscaled)
 saveRDS(fit.match, file = filenamematch)
-#~ print(names(fit.match))
 
+# rescale temporal potential
 xicalc <- fit.match$t0[2]
 dxicalc <- fit.match$se[2]
 xisquared <- mean(fit.match$t^2)
@@ -591,13 +536,8 @@ y[finemask] <- y[finemask] / fit.match$t0[2] + fit.match$t0[1]
 for (i in seq(1, bootsamples, 1)) {
     bsamples[i, finemask] <- bsamples[i, finemask] / fit.match$t[i, 2] + fit.match$t[i, 1]
 }
-#~ y[!finemask] <- y[!finemask] * fit.match$t0[2] + fit.match$t0[1]
-#~ for (i in seq(1, bootsamples, 1)) {
-#~     bsamples[i, !finemask] <- bsamples[i, !finemask] * fit.match$t[i, 2] + fit.match$t[i, 1]
-#~ }
 
-#~ print(y)
-
+# fit to overall potential
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.1, 0.1),
                     y, x, bsamples, mask = mask)
 filenamescaled <- sprintf(
@@ -608,7 +548,6 @@ filenamescaled <- sprintf(
         "%sfitresultscaledsubtractedb%fxi%fNs%dnape%dalpha%fbsamples%domit%dl%dlowlim%d.RData",
         opt$plotpath, beta, xi, Ns, nape, alpha, bootsamples, opt$omit, t1, opt$lowlim)
 }
-#~ print(fit.resultscaled)
 saveRDS(fit.resultscaled, file = filenamescaled)
 
 #if wanted determine correlation matrix seperately, as determined by the summary.bootstrapfit function
@@ -619,7 +558,6 @@ if (!is.null(fit.resultscaled$cov)) {
     correlation <- cor(fit.resultscaled$t, fit.resultscaled$t, use = "na.or.complete")
 }
 
-#~ print(correlation)
 
 #graphically represent force: for each bootstrap sample of paramters, determine value of force on a sequence,
 #determine error as standard deviation of values on each point of the sequence
@@ -630,7 +568,6 @@ for (i in seq(1, bootsamples, 1)) {
     bootsforce <- rbind(bootsforce, fnforce(fit.resultscaled$t[i, ], xx, 0))
 }
 bootsforce <- na.omit(bootsforce)
-#~ print(head(bootsforce))
 
 forceerrs <- c()
 for (i in seq(1, length(xx), 1)) {
@@ -645,7 +582,6 @@ for (i in seq(1, length(xx), 1)) {
 rzeroofc <- data.frame(r0 = NA, dr0 = NA, c = NA)
 
 for (c in list(-1.65)) {
-#~ for (c in seq(-1.5, 0, 0.15)) {
 rzerolist <- data.frame(r1 = NA, r2 = NA)
 for (bs in seq(1, bootsamples)) {
 #~     a <- fit.resultscaled$t[bs, 1]
@@ -669,7 +605,6 @@ title <- sprintf(
         %d measurements of which skipped %d",
         beta, xicalc, dxicalc, Ns, nom * 100, skip * 100)
 
-#~ plot(fit.resultscaled, main  =  title, ylab = "V(r)", xlab = "r/a_s")
 
 #plot visible combination of temporal and spatial potential
 plot(fit.resultscaled, main  =  title, ylab = "V(r)", xlab = "r/a_s",
@@ -725,16 +660,6 @@ for (i in seq(1, length(rzeroofc$c))) {
             lty = 0, lwd = 0.001, border = pcol)
 }
 
-#plot visible combination of temporal and spatial potential
-plot(fit.resultscaled, main  =  title, ylab = "V(r)", xlab = "r/a_s",
-            pch = 3, cex = 0.1)
-pointsyerr(x = fit.resultscaled$x[finemask], y = fit.resultscaled$y[finemask],
-            dy = fit.resultscaled$dy[finemask], col = 1, pch = 1)
-pointsyerr(x = fit.resultscaled$x[!finemask], y = fit.resultscaled$y[!finemask],
-            dy = fit.resultscaled$dy[!finemask], col = 2, pch = 2)
-legend(legend = c("spatial", "temporal"), col = c(2, 1), pch = c(2, 1),
-            x = "topleft")
-
 #plot thermalisation
 plot(plaquettecolumn, main = "Thermalisation",
         xlab = sprintf("MCMC-steps/%d", nsave), ylab = "P")
@@ -742,6 +667,7 @@ plot(plaquettecolumn, main = "Thermalisation",
 }
 
 if (dofit) {
+    # save bootstrapsamples and summary of results
 resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2], bsst = fit.resultscaled$t[, 2],
         rzeros = rzero, drzeros = drzero, crz = -1.65, bsrzeros = bsrzero,
         p = plaquettedata$value, dp = plaquettedata$dvalue, bsp = plaquettecf$cf.tsboot$t[, 1],
@@ -786,13 +712,6 @@ filename <- sprintf("%sresultsummary2p1dnormalb%.3fNs%d.csv",
 columnnames <- FALSE
 if (!file.exists(filename)) {
     columnnames <- TRUE
-    #newline <- data.frame(xi = "#input xi", beta = "#input beta", xicalc = "#xi calculated from limear interpolation", dxicalc = "standard deviation",
-    #                  xi2 = "#xisquared", dxi2 = "#sd",
-    #                  p = "#plaquette", dp = "#sd", bs = "#bootstrapsamples",
-    #                  Ns = "#spatial extent of lattice", Nt = "#temporal extent", nape = "#number of APE-smears", alpha = "#alpha used for APE-smears",
-    #                  omit = "#last omit points in potential are ignored for fitting", nom = "#number of measurements",
-    #                  t1 = "#lower bound for meff", job = "#job number on qbig")
-    #resultlist <- rbind(newline, resultlist)
 }
 
 write.table(resultlist, filename, append = TRUE,
@@ -804,6 +723,11 @@ saveRDS(resultssummary, file = nameresults)
 }
 
 if (opt$plotonlymeff) {
+    # makes plot of effective masses, effective masses zoomed in
+    # from existing data
+
+# read in
+
 filenamelist <- sprintf(
             "%slistmeff2p1dsubtractedchosenNs%dbeta%fxi%fbsamples%d.RData",
             opt$plotpath, Ns, beta, xi, bootsamples)
@@ -838,6 +762,9 @@ if (opt$smearing) {
 pdf(file = filenameforplots, title = "")
 print(filenameforplots)
 
+# plot effective masses, set limits to zoom in
+# first spatial, then temporal potential
+
 for (i in seq(1, Ns)) {
     if (listmeff[[i]][[2]]) {
         titleall <- sprintf("beta = %.2f ", beta)
@@ -870,7 +797,6 @@ for (i in seq(1, Ns)) {
             title <- sprintf("%s fine, x = %d", titleall, i - Ns / 2)
         }
         message(title)
-#~         message("blubb")
         max <- min(max(na.omit(listmeff[[i]][[1]]$effMass[2:(Nt / 2 - 1)])), 4)
         if ((i + Ns / 2) > 7) {
             max <- min(max(na.omit(listmeff[[i]][[1]]$effMass[2:(Nt / 2 - 1)])), 5)

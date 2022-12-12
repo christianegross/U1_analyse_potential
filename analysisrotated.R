@@ -98,8 +98,6 @@ if (opt$xidiff) {
 nape <- opt$nape
 alpha <- opt$alpha
 
-potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
-
 analyse <- opt$analyse
 dofit <- opt$dofit
 
@@ -121,6 +119,8 @@ if (opt$smearing) {
 pdf(file = filenameforplots, title = "")
 listfits <- list()
 listtauint <- list()
+potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
+
 namelistbounds <- sprintf(
             "%stableanalysisrotatedNs%dNt%dbeta%fxi%f.csv",
             opt$respath, Ns, Nt, beta, xi)
@@ -141,8 +141,8 @@ if (file.exists(namelistbounds)) {
 print(listbounds)
 negatives <- c()
 # determine Wilson Loop correlators and effective masses
-# for all possible combinations Meff(x0, y0) (use W(x0, t, y0))
-# and Meff(x0, t0) (use W(x0, t0, y))
+# for all possible combinations Meff(x0/a_s) (use W(x0, t=0, y0+1)/W(x0, t=0, y0))
+# and Meff(x0/a_t) (use W(x0, t0+1, y=0)/W(x0, t0, y=0))
 # try method as in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.63.074501
 # x here as z there, y here as x there
 # measures a_s V(r / a_s)
@@ -292,7 +292,7 @@ if (dofit) {
 # https://journals.aps.org/prd/abstract/10.1103/PhysRevD.63.074501
 # then determine r_0 / a_s, determine the force, plot everything
 # save results and bootstrapsamples of fits
-
+# also try some other ratios to determine xi
 
 # define functions for potential, force, force = -r^2 * derivation of potential
 fnpot <- function (par, x, boot.r, ...) par[1] + par[2] * x + par[3] * log(x)
@@ -364,7 +364,6 @@ bsamples <- array(c(rep(NA, 2 * (Ns / 2 + Nt / 2) * bootsamples)), dim = c(boots
 for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
-#~       message("xc =  ",xc[i])
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
       bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       maskc[i] <- TRUE
@@ -394,7 +393,6 @@ bsamplesf <- array(c(rep(NA, Nt / 2 * bootsamples)), dim = c(bootsamples, Nt / 2
 for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   if (listmeff[[Ns / 2 + i]][[2]]) {
       xf[i]     <- listmeff[[Ns / 2 + i]][[2]]
-#~       message("xf =  ",xf[i])
       yf[i]     <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
       bsamplesf[, i]        <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       maskf[i]      <- TRUE
@@ -409,7 +407,7 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 }
 
 
-#determine parameters  of potentials by bootstrap, save results
+#determine parameters of potentials by bootstrap, save results
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc,
                                         bsamplesc, mask = maskc)
 filenamecoarse <- sprintf(
