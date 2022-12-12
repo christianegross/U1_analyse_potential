@@ -83,6 +83,7 @@ opt <- args$options
 }
 
 if (TRUE) {
+# set some constants
 source(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip
@@ -99,17 +100,16 @@ alpha <- opt$alpha
 
 potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
 
-#determining the effective masses takes the most times,
-#so do not do this if it has already been done
-#fit also does not have to be done every time
 analyse <- opt$analyse
 dofit <- opt$dofit
 
+# boundaries for effective masses if no table can be found
 t2 <- Ns / 2 - 2
 t1 <- opt$lowerboundmeff
 }
 
 if (analyse) {
+# set names for plot, tables, open, lists for saving results
 filenameforplots <- sprintf(
             "%splotseffectivemass2p1dmeffchosenNs%dbeta%fxi%f.pdf",
             opt$plotpath, Ns, beta, xi)
@@ -132,6 +132,7 @@ if (opt$smearing) {
 if (file.exists(namelistbounds)) {
     listbounds <- read.table(namelistbounds, sep = ",", header = TRUE)
 } else {
+    # if no table with boundaries can be found, create a dummy table
     listbounds <- cbind(data.frame(yt = c(seq(1, Ns / 2), seq(1, Nt / 2))),
                     data.frame(spacial = c(rep(TRUE, Ns / 2), rep(FALSE, Nt / 2))),
                     data.frame(lower = rep(opt$lowerboundmeff, Ns / 2 + Nt / 2)),
@@ -144,13 +145,19 @@ negatives <- c()
 # and Meff(x0, t0) (use W(x0, t0, y))
 # try method as in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.63.074501
 # x here as z there, y here as x there
+# measures a_s V(r / a_s)
+# also determine number of correlators smaller than zero per distance
 for (y in seq(1, Ns / 2, 1)) {
-    #save results, list has to have an entry everywhere
+    # first spatial loops: determine expectation values of Loops,
+    # plot, determine effective masses, set boundaries, determine
+    # plateau and plot. Savev results of m_eff to list
+    # also save uwerr = autocorrelation time of non-bootstrapped loop
+    # list has to have an entry everywhere
     listresults <- list(FALSE, FALSE, FALSE, FALSE)
     uwerrresults <- FALSE
     if (y > 0) {
 
-#~     message("\ny = ", y)
+    # loops
     print(y)
     filename <- sprintf(
         "result2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
@@ -165,10 +172,8 @@ for (y in seq(1, Ns / 2, 1)) {
             every = opt$every, l = opt$bootl)
 
     uwerrresults <- uwerr.cfboot(WL)
-#~     print(uwerrresults)
 
-    # determine effective masses, fit one effective mass,
-    # therefore set bordes. borders may have to be adjusted for anisotropic lattices
+    # m_eff
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == y]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == y]
     WL.effmasslist <- deteffmass(WL = WL, yt = y,
@@ -179,8 +184,8 @@ for (y in seq(1, Ns / 2, 1)) {
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], y, FALSE, uwerrresults)
     }
-    #fine=!spacial
-    names(listresults) <- c("effmass", "yt", "fine", "uwerr")
+    # coarse distance = spatial potential
+    names(listresults) <- c("effmass", "yt", "coarse", "uwerr")
 
     title <- sprintf("%s, %d configs\n",
             title, (length(WL$cf[, 1]) + skip) * opt$nsave)
@@ -196,7 +201,8 @@ for (y in seq(1, Ns / 2, 1)) {
     listtauint[[y]] <- uwerrresults
     negatives[y] <- sum(WL$cf0 < 0)
 }
-#same procedure as for y loop
+# same procedure as for y loop, here for temporal potential
+# measured a_s V(r/a_t)
 for (t in seq(1, Nt / 2, 1)) {
     listresults <- list(FALSE, FALSE, FALSE, FALSE)
     uwerrresults <- FALSE
@@ -208,7 +214,7 @@ for (t in seq(1, Nt / 2, 1)) {
             "result2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%ffinedistance",
             Nt, Ns, beta, xi, nape, alpha)
 
-
+    # loops
     title <- sprintf("beta = %.2f fine t = %d skipped %d",
                 beta, t, skip * opt$nsave)
     WL <- calcplotWloopsideways(file = filename,
@@ -217,13 +223,12 @@ for (t in seq(1, Nt / 2, 1)) {
             nsave = opt$nsave, every = opt$every, l = opt$bootl)
 
     uwerrresults <- uwerr.cfboot(WL)
-#~     print(uwerrresults)
 
+    # m_eff
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == t]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == t]
     WL.effmasslist <- deteffmass(WL = WL, yt = t,
             potential = potential, t1 = t1, t2 = t2, isspatial = 0)
-#~     message(WL.effmasslist[[2]][[1]])
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], t, TRUE, uwerrresults)
     }
@@ -257,7 +262,6 @@ filenameuwerr <- sprintf(
 filenamenegatives <- sprintf(
             "%snegativessidewaysNs%dbeta%fxi%fbsamples%d.csv",
             opt$plotpath, Ns, beta, xi, bootsamples)
-#~ filenamelistwl <- sprintf("listwl2p1drotatedNs%dbeta%fxi%fbsamples%d.RData", Ns, beta, xi, bootsamples)
 
 if (opt$smearing) {
     filenamepotential <- sprintf(
@@ -272,19 +276,32 @@ if (opt$smearing) {
     filenamenegatives <- sprintf(
             "%snegativessisewaysNs%dbeta%fxi%fnape%dalpha%fbsamples%d.csv",
             opt$plotpath, Ns, beta, xi, nape, alpha, bootsamples)
-#~     filenamelistwf <- sprintf("listwl2p1drotatedNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData", Ns, beta, xi, nape, alpha, bootsamples)
 }
+
 write.table(potential, filenamepotential, row.names = FALSE)
-#~ print(listfits)
 saveRDS(listfits, file = filenamelist)
 saveRDS(listtauint, file = filenameuwerr)
 write.table(data.frame(x = c(seq(1, Ns / 2), seq(1, Nt / 2)), neg = negatives),
         file = filenamenegatives, row.names = FALSE)
-#~ saveRDS(listallWL, file = filenamelistwl)
-#~ print(listfits[[1]][[1]])
 }
 
 if (dofit) {
+# use data from the potential to fit the expected form to the fine=temporal
+# and coarse=spatial potential,
+# then determine xi_ren by interpolation, like in
+# https://journals.aps.org/prd/abstract/10.1103/PhysRevD.63.074501
+# then determine r_0 / a_s, determine the force, plot everything
+# save results and bootstrapsamples of fits
+
+
+# define functions for potential, force, force = -r^2 * derivation of potential
+fnpot <- function (par, x, boot.r, ...) par[1] + par[2] * x + par[3] * log(x)
+fnforce <- function (par, x, boot.r, ...) (- 1.0) * par[2] * x^2 - par[3] * x
+fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
+    return (sqrt(parerr[2]^2 * x^4 + parerr[3]^2 * x^2 + 2 * x^3 * correlation[2, 3] * parerr[2] * parerr[3]))
+}
+
+# read in data
 filenamepotential <- sprintf(
             "%spotentialmeff2p1dmeffchosenNs%dbeta%fxi%fbsamples%d.csv",
             opt$plotpath, Ns, beta, xi, bootsamples)
@@ -310,9 +327,6 @@ if (opt$determinemeff) {
 
 
 listmeff <- readRDS(file = filenamelist)
-#~ bootsamples <- length(listmeff[[1]][[1]]$massfit.tsboot[,1])
-message("bootsamples =  ", bootsamples)
-#~ message("read in files")
 
 
 
@@ -326,23 +340,6 @@ filenameforplots <- sprintf(
 }
 pdf(file = filenameforplots, title = "")
 
-#define functions for potential, force, force = -r^2 * derivation of potential
-fnpot <- function (par, x, boot.r, ...) par[1] + par[2] * x + par[3] * log(x)
-fnforce <- function (par, x, boot.r, ...) (- 1.0) * par[2] * x^2 - par[3] * x
-fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
-    return (sqrt(parerr[2]^2 * x^4 + parerr[3]^2 * x^2 + 2 * x^3 * correlation[2, 3] * parerr[2] * parerr[3]))
-}
-
-
-potall <- function(par, x, boot.r, maskpot, ...) {
-    x[mask] <- par[4] * x[mask]
-    ret <- par[1] + par[2] * x + par[3] * log(x)
-    return (invisible(ret))
-}
-
-#~ message("defined functions")
-
-
 # coarse potential
 # read in data points, bootstrap samples:
 # have to initialise empty vectors,
@@ -355,6 +352,7 @@ maskc <- rep(FALSE, Ns / 2)
 bsamplesc <- array(c(rep(NA, Ns / 2 * bootsamples)), dim = c(bootsamples, Ns / 2))
 
 #also have vectors for combined potential
+# finemask: needed later for combining potentials
 x <- rep(NA, Ns / 2 + Nt / 2)
 dx <- rep(NA, Ns / 2 + Nt / 2)
 y <- rep(NA, Ns / 2 + Nt / 2)
@@ -383,19 +381,6 @@ yall <- y
 bsamplesall <- bsamples[, 1:Ns / 2 + Nt / 2]
 
 
-
-#determine parameters by bootstrap
-fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc, bsamplesc, mask = maskc)
-filenamecoarse <- sprintf(
-            "%sfitresultcoarseb%fxi%fNs%dbsamples%domit%dl%d.RData",
-            opt$plotpath, beta, xi, Ns, bootsamples, opt$omit, t1)
-if (opt$smearing) {
-filenamecoarse <- sprintf(
-            "%sfitresultcoarseb%fxi%fNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
-            opt$plotpath, beta, xi, Ns, nape, alpha, bootsamples, opt$omit, t1)
-}
-saveRDS(fit.resultcoarse, file = filenamecoarse)
-
 # fine potential
 # read in data points, bootstrap samples:
 # have to initialise empty vectors,
@@ -405,7 +390,7 @@ yf <- rep(NA, Nt / 2)
 
 #filter out point without valid entry in bootstrap
 maskf <- rep(FALSE, Nt / 2)
-bsamplesf <- array(c(rep(NA, Nt/2*bootsamples)), dim = c(bootsamples, Nt/2))
+bsamplesf <- array(c(rep(NA, Nt / 2 * bootsamples)), dim = c(bootsamples, Nt / 2))
 for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   if (listmeff[[Ns / 2 + i]][[2]]) {
       xf[i]     <- listmeff[[Ns / 2 + i]][[2]]
@@ -423,10 +408,20 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   }
 }
 
-#head(bsamples)
-#~ warnings()
 
-#determine parameters by bootstrap
+#determine parameters  of potentials by bootstrap, save results
+fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc,
+                                        bsamplesc, mask = maskc)
+filenamecoarse <- sprintf(
+            "%sfitresultcoarseb%fxi%fNs%dbsamples%domit%dl%d.RData",
+            opt$plotpath, beta, xi, Ns, bootsamples, opt$omit, t1)
+if (opt$smearing) {
+filenamecoarse <- sprintf(
+            "%sfitresultcoarseb%fxi%fNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
+            opt$plotpath, beta, xi, Ns, nape, alpha, bootsamples, opt$omit, t1)
+}
+saveRDS(fit.resultcoarse, file = filenamecoarse)
+
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yf, xf,
                                     bsamplesf, mask = maskf)
 filenamefine <- sprintf(
@@ -439,51 +434,7 @@ filenamefine <- sprintf(
 }
 saveRDS(fit.resultfine, file = filenamefine)
 
-#~ message("starting to calculate xi")
-singlexis <- data.frame(xi = NA)
-for (bs in seq(1, bootsamples)) {
-    val <- fit.resultfine$t[bs, 2] / fit.resultcoarse$t[bs, 2]
-#~     message(val)
-    singlexis <- rbind(singlexis, data.frame(xi = val))
-}
-singlexis <- na.omit(singlexis)
-xisingle <- mean(singlexis$xi)
-dxisingle <- sd(singlexis$xi)
-strings <- sprintf("xi from single potentials: %f+/-%f", xisingle, dxisingle)
-#~ print(strings)
-#~ message("single xi calculated")
-
-#calculate plaquette as W(x = 1, y = 1, t = 0)
-
-filename <- sprintf(
-        "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
-        opt$respath, Nt, Ns, beta, xi, nape, alpha)
-
-alldata <- read.table(filename)
-plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
-newline <- data.frame(value = plaquettedata$value,
-            dvalue = plaquettedata$dvalue, ddvalue = plaquettedata$ddvalue,
-            tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint)
-nom <- floor(length(plaquettecolumn) / opt$every)
-#print("Value for plaquette")
-#print(newline)
-column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
-
-plaquettecf <- readloopfilecfonecolumn(file = filename,
-                skip = skip, column = column, every = opt$every)
-#~ summary(plaquettecf)
-plaquettecf <- bootstrap.cf(plaquettecf,
-                boot.R = bootsamples, boot.l = opt$bootl)
-#~ summary(plaquettecf)
-
-
-uwerrresults <- uwerr.cf(plaquettecf)
-#~ print(uwerrresults)
-#~ print(uwerrresults$uwcf$tauint[1])
-
-
-
+# plot potentials
 try(plot(fit.resultfine, main = sprintf(
         "beta=%.3f, xi=%.3f, (2 + 1)D, Ns=%d, fine\n
         %d measurements of which skipped %d",
@@ -496,6 +447,43 @@ try(plot(fit.resultcoarse, main = sprintf(
         ylab = "a_s V(y)", xlab = "y/a_s"))
 
 
+# calculate plaquette as W(x = 1, y = 1, t = 0)
+# with uwerr and with cf, to get bootstrapsamples
+
+filename <- sprintf(
+        "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
+        opt$respath, Nt, Ns, beta, xi, nape, alpha)
+
+alldata <- read.table(filename)
+plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
+newline <- data.frame(value = plaquettedata$value,
+            dvalue = plaquettedata$dvalue, ddvalue = plaquettedata$ddvalue,
+            tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint)
+nom <- floor(length(plaquettecolumn) / opt$every)
+column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
+
+plaquettecf <- readloopfilecfonecolumn(file = filename,
+                skip = skip, column = column, every = opt$every)
+plaquettecf <- bootstrap.cf(plaquettecf,
+                boot.R = bootsamples, boot.l = opt$bootl)
+
+
+uwerrresults <- uwerr.cf(plaquettecf)
+
+
+# calculate xi in different ways: determine ratio of linear coefficients of the potentials
+singlexis <- data.frame(xi = NA)
+for (bs in seq(1, bootsamples)) {
+    val <- fit.resultfine$t[bs, 2] / fit.resultcoarse$t[bs, 2]
+    singlexis <- rbind(singlexis, data.frame(xi = val))
+}
+singlexis <- na.omit(singlexis)
+xisingle <- mean(singlexis$xi)
+dxisingle <- sd(singlexis$xi)
+strings <- sprintf("xi from single potentials: %f+/-%f", xisingle, dxisingle)
+
+
 # determine xi by interpolating between different V(t) to get V(x) = V(t xi),
 # like in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.63.074501
 
@@ -504,42 +492,40 @@ xibootsamples <- c()
 # Determine parameters of interpolation for V_t, V_t(t) = a * t + b
 # defined by two points, lower and upper,
 # with distance 1 a_t, V(i) = lower, V(i + 1) = upper
-# calculate the xi for all Vs for all bootstrapsamples, overall xi = mean pm sd
+# for all bootstrapsamples: calculate interpolation, determine xi from interpolation
 for (bs in seq(1, bootsamples, 1)) {
-#~     #message("bs = ", bs)
+
 interpolation <- data.frame(lower = NA, upper = NA,
-            a = NA, b = NA, bootsample = NA, lowerx = NA)
+            a = NA, b = NA, lowerx = NA)
 for (i in seq(1, Nt / 2 - 1 - opt$omit / xi, 1)) {
     if (listmeff[[Ns / 2 + i + 1]][[2]]) {
     lower     <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[bs, 1]
     upper     <- listmeff[[Ns / 2 + i + 1]][[1]]$massfit.tsboot[bs, 1]
     a <- upper - lower
-#~     #message("i = ", i, " a = ", a)
     b <- lower - i * a
     newline <- data.frame(lower = lower, upper = upper,
-                a = a, b = b, bootsample = bs, lowerx = i)
+                a = a, b = b, lowerx = i)
     interpolation <- rbind(interpolation, newline)
 }
 }
 
 interpolation <- interpolation[-1, ]
-#~ #print(interpolation)
 
-#solve equation V_s(x) = V_t(xi t) = a * t + b -> t = (V_s-b) / a -> xir = x / t = xiresult for all possible V_s with x > =  2 (variable name xi is already taken)
-#potential not dominated by linear part for y>2
+# solve equation V_s(x) = V_t(xi t) = a * t + b -> t = (V_s-b) / a
+# -> xir = x / t = xiresult
+# for all possible V_s with x > =  2 (variable name xi is already taken)
+# potential not dominated by linear part for y > 2
 xiboots <- c()
 for (i in seq(2, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
     Vs <- listmeff[[i]][[1]]$massfit.tsboot[bs, 1]
     index <- NA
-#~     #print(Vs)
-#determine in which interval of the V_t V_s is sitting by selecting lowest possible interval for which the upper limit is bigger than V_s
+# determine in which interval of the V_t V_s is sitting by selecting
+# lowest possible interval for which the upper limit is bigger than V_s
     for (j in seq(1, Nt / 2 - 1 - opt$omit / xi)) {
-#~         print(interpolation$lowerx == j & interpolation$bootsample == bs)
-        if (length(interpolation$upper[interpolation$lowerx == j & interpolation$bootsample == bs]) > 0) {
-        if (Vs < interpolation$upper[interpolation$lowerx == j & interpolation$bootsample == bs]) {
-            index <- interpolation$lowerx == j & interpolation$bootsample == bs
-#~             #message(index)
+        if (length(interpolation$upper[interpolation$lowerx == j]) > 0) {
+        if (Vs < interpolation$upper[interpolation$lowerx == j]) {
+            index <- interpolation$lowerx == j
             break
         }
         }
@@ -551,98 +537,58 @@ for (i in seq(2, Ns / 2 - opt$omit, 1)) {
         newline <- data.frame(xi = xir, t = t, y = i,
                     j = interpolation$lowerx[index])
         xis <- rbind(xis, newline)
-#~         xiboots[i - 1] <- xir
         xiboots <- append(xiboots, xir)
     }
   }
 }
-#~ print(xiboots)
 xibootsamples[bs] <- mean(xiboots)
 }
-#~ print(length(xibootsamples))
-#~ write.table(xis, sprintf("weirdxisnape%dalpha%f.csv", nape, alpha), row.names = FALSE)
-#~ write.table(interpolation, sprintf("weirdxisnape%dalpha%f.csv", nape, alpha), row.names = FALSE, append = TRUE)
 
-#do matching directly, without interpolation
-#~ findmatch <- function(x, par, V, boot.r, ...) fnpot(par, x, boot.r, ...) - V
-
-#~ for (bs in seq(1, bootsamples)) {
-#~     for (i in seq(1, Nt / 2-opt$omit / xi)) {
-#~         V <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[bs,1]
-#~         root <- uniroot(findmatch, interval = c(0.01, Nt), par = fit.resultcoarse$t[bs,], V = V, boot.r = 0)
-#~         t <- root$root
-#~         xir <- t / i
-#~         newline <- data.frame(xi = xir, t = t, y = i)
-#~         xis <- rbind(xis, newline)
-#~     }
-#~ }
-
-
-
-#calculate xi as mean
+# calculate xi, xi^2 as mean over all values
+# compare to values of bootstrapsamples
 xis <- xis[-1, ]
 xicalc <- mean(xis$xi)
 dxicalc <-  sd(xis$xi)
 xisquared <- mean(xis$xi^2)
 dxisquared <- sd(xis$xi^2)
-#~ xibootsamples <- na.omit(xibootsamples)
-#~ print(xibootsamples)
 strings <- sprintf("%e +/- %e %f",
         xicalc - mean(xibootsamples), dxicalc - sd(xibootsamples),
         mean(xibootsamples))
-#~ message("deviation different means: ", strings)
-#~ message(xicalc)
+message("deviation different means: ", strings)
+message(xicalc)
 message(warnings())
 
 }
 
 if (dofit) {
-#~ xicalc <- fit.resultfine$t0[2] / fit.resultcoarse$t0[2]
-#~ dxicalc <- sqrt( (fit.resultfine$se[2] / fit.resultcoarse$t0[2])^2  +
-#~ (fit.resultfine$t0[2] * fit.resultcoarse$se[2] / fit.resultcoarse$t0[2]^2)^2)
-
-#rescale t so potential, r0 can be determined, all r are given in units of a_s
+    #rescale t so potential, r0 can be determined, all r are given in units of a_s
 
 
 x[finemask] <- x[finemask] * xicalc
 dx[finemask] <- x[finemask] * dxicalc
-#For the coarse potential, no rescaling is necessary, but an error has to be given to the fit-function. could error be zero?
+# For the coarse potential, no rescaling is necessary,
+# but an error has to be given to the fit-function. could error be zero?
 dx[!finemask] <- 1e-8
 
-
+# generate bootsamples for fit
 bsamplesx <- parametric.bootstrap(bootsamples, c(x[!finemask]), c(dx[!finemask]))
-#~ bsamplesx <- parametric.bootstrap(bootsamples, c(x), c(dx))
-#~ head(bsamplesx)
 
 #join bootstrapsamples for x, y together
-#~ for (i in seq(1, length(x))) {
 for (i in seq(1, Ns / 2 - opt$omit)) {
     bsamples[, i + Ns / 2 + Nt / 2] <- bsamplesx[, i]
 }
 for (i in seq(1, Nt / 2 - opt$omit / xi)) {
     bsamples[, i + Ns + Nt / 2] <- i * array(xibootsamples, dim = c(bootsamples, 1))
 }
-#~ print(x[finemask])
-#~ print(head(bsamples))
 
 
 title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
         %d measurements of which skipped %d",
-        beta, xicalc, dxicalc, Ns, nom * 100, skip * 100)
-#~ cat(title)
+        beta, xicalc, dxicalc, Ns, nom * opt$nsave, skip * opt$nsave)
 
-
+# fit and save overall potential
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.13, 0.05),
                     y, x, bsamples, mask = mask)
-#~ summary(fit.resultscaled)
-#~ print(mask)
-#~ print(names(fit.resultscaled))
-#~ print(mean(fit.resultscaled$t[,1]))
-#~ print(mean(fit.resultscaled$t[,2]))
-#~ print(mean(fit.resultscaled$t[,3]))
-#~ print(fit.resultscaled$t0)
-
-#~ plot(fit.resultscaled)
 filenamescaled <- sprintf(
             "%sfitresultscaledb%fxi%fNs%dbsamples%domit%dl%d.RData",
             opt$plotpath, beta, xi, Ns, bootsamples, opt$omit, t1)
@@ -655,12 +601,6 @@ saveRDS(fit.resultscaled, file = filenamescaled)
 
 strings <- sprintf("\nxi = %f  +/- %f\neta= %f  +- %f\n\n",
             xicalc, dxicalc, xicalc / xi, dxicalc / xi)
-#~ cat(strings)
-
-#~ filenamescaled <- sprintf("fitresultscaledb%fxi%fNs%dbsamples%d.RData", beta, xi, Ns, bootsamples)
-#~ if (opt$smearing) {
-#~ filenamescaled <- sprintf("fitresultscaledb%fxi%fNs%dnape%dalpha%fbsamples%d.RData", beta, xi, Ns, nape, alpha, bootsamples)
-#~ }
 
 #if wanted determine correlation matrix seperately, as determined by the summary.bootstrapfit function
 if (!is.null(fit.resultscaled$cov)) {
@@ -673,7 +613,7 @@ if (!is.null(fit.resultscaled$cov)) {
 
 #~ print(correlation)
 
-#graphically represent force: for each bootstrap sample of paramters, determine value of force on a sequence,
+#graphically represent force: for each bootstrap sample of parameters, determine value of force on a sequence,
 #determine error as standard deviation of values on each point of the sequence
 xx <- seq(-0.2, Ns / 2 + 0.2, 0.05)
 bootsforce <- data.frame(matrix(rep(NA, length(xx)), ncol = length(xx), nrow = 1))
@@ -682,16 +622,11 @@ for (i in seq(1, bootsamples, 1)) {
     bootsforce <- rbind(bootsforce, fnforce(fit.resultscaled$t[i, ], xx, 0))
 }
 bootsforce <- na.omit(bootsforce)
-#~ print(head(bootsforce))
 
 forceerrs <- c()
 for (i in seq(1, length(xx), 1)) {
     forceerrs[i] <- sd(bootsforce[, i])
 }
-
-#~ print(forceerrs)
-
-#~ c <- opt$c
 
 #Determine r0 as solution of equation -r^2 d / dr V(r) = c, solve for each bootstrapsample, r0 = mean pm sd
 # V(r) = a + sigma * r + b * ln(r)
@@ -700,10 +635,8 @@ for (i in seq(1, length(xx), 1)) {
 rzeroofc <- data.frame(r0 = NA, dr0 = NA, c = NA)
 
 for (c in list(-1.65)) {
-#~ for (c in seq(-1.5, 0, 0.15)) {
 rzerolist <- data.frame(r1 = NA, r2 = NA)
 for (bs in seq(1, bootsamples)) {
-#~     a <- fit.resultscaled$t[bs, 1]
     sigma <- fit.resultscaled$t[bs, 2]
     b <- fit.resultscaled$t[bs, 3]
     r1 <- -b / (2.0 * sigma) + sqrt((b / (2.0 * sigma))^2 - c / sigma)
@@ -711,23 +644,14 @@ for (bs in seq(1, bootsamples)) {
     rzerolist <- rbind(rzerolist, data.frame(r1 = r1, r2 = r2))
 }
 rzerolist <- rzerolist[-1, ]
-
-#~ print(head(cbind(rzerolist, data.frame(sigma = fit.resultscaled$t[,2], b = fit.resultscaled$t[,3]))))
 rzero <- mean(rzerolist$r1)
 drzero <- sd(rzerolist$r1)
 rzeroofc <- rbind(rzeroofc, data.frame(r0 = rzero, dr0 = drzero, c = c))
 bsrzero <- rzerolist[, 1]
 }
-
-#~ print(bsrzero)
-#~ print(length(bsrzero))
-
-#~ print(rzeroofc)
 rzeroofc <- rzeroofc[-1, ]
-#~ rzeroofc <- na.omit(rzeroofc)
-#~ print(rzeroofc)
 
-#plot results
+#plot results: overall potential
 title <- sprintf("beta = %.3f, xi = %.3f +/- %.3f, (2+ )D, Ns = %d\n
                 %d measurements of which skipped %d",
                 beta, xicalc, dxicalc, Ns, nom * opt$nsave, skip * opt$nsave)
@@ -745,18 +669,12 @@ polyval <- c(fnforce(fit.resultscaled$t0, xx, 0) + forceerrs,
     pcol[4] <- 0.65
     pcol <- rgb(red = pcol[1], green = pcol[2], blue = pcol[3], alpha = pcol[4])
 try(polygon(x = c(xx, rev(xx)), y = polyval, col = pcol, lty = 0, lwd = 0.001, border = pcol))
-#~ lines(x = xx, y = fnforce(fit.resultscaled$t0, xx, 0) + fnforceerr(fit.resultscaled$se, xx, 0, correlation), col = 2)
-#~ lines(x = xx, y = fnforce(fit.resultscaled$t0, xx, 0)-fnforceerr(fit.resultscaled$se, xx, 0, correlation), col = 2)
 
 #force with error and r0, zoomed in
-
-
 xlim <- c(0.6 * min(rzeroofc$r0), 1.4 * max(rzeroofc$r0))
 ylim <- c(0.6 * min(abs(rzeroofc$c)), 1.4 * max(abs(rzeroofc$c)))
 ylim <- rev(-ylim)
 lowylim <- -2 * max(abs(rzeroofc$c))
-#~ print(xlim)
-#~ print(ylim)
 try(plot(xx, fnforce(fit.resultscaled$t0, xx, 0),
         type = "l", xlab = "r / a_s", ylab = "-r^2 d / dr V(r)",
         main = title, xlim = xlim, ylim = ylim))
@@ -768,11 +686,7 @@ for (i in seq(1, length(rzeroofc$c))) {
     c <- rzeroofc$c[i]
     rzero <- rzeroofc$r0[i]
     drzero <- rzeroofc$dr0[i]
-#~ lines(x = xx, y = fnforce(fit.resultscaled$t0, xx, 0) + fnforceerr(fit.resultscaled$se, xx, 0, correlation), col = 2)
-#~ lines(x = xx, y = fnforce(fit.resultscaled$t0, xx, 0)-fnforceerr(fit.resultscaled$se, xx, 0, correlation), col = 2)
-
 #also make lines for position of r0, polygon for error of r0
-#arrows(xhi, yhi, xlo, ylo)
 try(arrows(rzero, fnforce(fit.resultscaled$t0, rzero, 0),
                 rzero, lowylim, angle = 90, length = 0.1, code = 0))
 try(arrows(rzero, c, 0, c, angle = 90, length = 0.1, code = 0))
@@ -785,8 +699,6 @@ r0polyval2 <- c(rzero - drzero, rzero + drzero)
 r0polyval2 <- c(r0polyval2, rev(r0polyval2))
 try(polygon(x = r0polyval2, y = r0polyval1,
         col = pcol, lty = 0, lwd = 0.001, border = pcol))
-#~ axis(3)
-#~ lines(xx, fnforce(fit.resultscaled$t0, xx, 0))
 }
 
 #plot visible combination of temporal and spatial potential
@@ -806,14 +718,16 @@ plot(plaquettecolumn, main = "Thermalisation",
 resultforce <- data.frame(R = NA, force = NA, forceerr = NA)
 for (i in seq (1, length(xx), 1)) {
     resultforce <- rbind(resultforce,
-        data.frame(R = xx[i], force = fnpot(fit.resultscaled$t0, xx[i], 0),
+                data.frame(R = xx[i], force = fnpot(fit.resultscaled$t0, xx[i], 0),
                 forceerr = forceerrs[i]))
 }
 resultforce <- na.omit(resultforce)
 
+# determine r_0 from single potentials
 rzerocoarse <- determinerzero(fit.resultcoarse, bootsamples = bootsamples)
 rzerofine <- determinerzero(fit.resultfine, bootsamples = bootsamples)
 
+# determine xi as ratio of different r_0s, string tensions
 differentxis <- data.frame(xirzero = NA, xist = NA)
 
 for (bs in seq(1, bootsamples)) {
@@ -821,15 +735,14 @@ xirzero <- rzerocoarse[[3]][bs] / rzerofine[[3]][bs]
 xist <- fit.resultfine$t[bs, 2] / fit.resultcoarse$t[bs, 2]
 differentxis <- rbind(differentxis, data.frame(xirzero = xirzero, xist = xist))
 }
-#~ print(differentxis)
 differentxis <- differentxis[-1, ]
 differentxiresults <- c(mean(differentxis$xirzero), sd(differentxis$xirzero),
         mean(differentxis$xist), sd(differentxis$xist))
-#~ print(differentxiresults)
 
 
 }
 if (dofit) {
+    # save results of force, bootstrapsamples, summary of results in table
 write.table(resultforce, row.names = FALSE, file = sprintf(
             "%sresultsforcebeta%fxi%fNs%dnape%dalpha%fomit%dmeffchosen.csv",
             opt$plotpath, beta, xi, Ns, nape, alpha, opt$omit))
@@ -841,7 +754,6 @@ if (opt$determinemeff) {
     t1 <- -1
     }
 
-#~ print(length(bsrzero))
 resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2], bsst = fit.resultscaled$t[, 2],
         rzeros = rzero, drzeros = drzero, crz = -1.65, bsrzeros = bsrzero,
         p = plaquettedata$value, dp = plaquettedata$dvalue, bsp = plaquettecf$cf.tsboot$t[, 1],
@@ -858,15 +770,8 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         xi2 = NA, dxi2 = NA, xisingle = NA, dxisingle = NA, t1 = NA,
         job = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
         xirzero = NA, dxirzero = NA, xist = NA, dxist = NA)
-#~ print(length(resultlist))
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
-#~ message(xi, " ",  beta, " ",  xicalc, " ",  dxicalc, " ",
-#~                       rzeroofc$r0[i], " ",  rzeroofc$dr0[i], " ",
-#~                       fit.resultscaled$t0[2], " ",  fit.resultscaled$se[2], " ",  plaquettedata$value, " ",  plaquettedata$dvalue, " ",
-#~                       fit.resultscaled$chisqr / fit.resultscaled$dof, " ",  rzeroofc$c[i], " ",  bootsamples, " ",
-#~                       Ns, " ",  Nt, " ",  nape, " ",  alpha, " ",  opt$omit, " ",  nom, " ",  skip, " ",
-#~                       xisquared, " ",  dxisquared, " ",  xisingle, " ",  dxisingle, " ",  t1, " ",  opt$job)
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         r0 = rzeroofc$r0[i], dr0 = rzeroofc$dr0[i],
         st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2],
@@ -893,15 +798,6 @@ filename <- sprintf("%sresultsummary2p1dsidewaysb%.3fNs%d.csv",
 columnnames <- FALSE
 if (!file.exists(filename)) {
     columnnames <- TRUE
-#~     newline <- data.frame(xi = "#input xi", beta = "#input beta", xicalc = "#xi calculated from limear interpolation", dxicalc = "standard deviation",
-#~                       r0 = "#calculated r0", dr0 = "sd",
-#~                       st = "#string tension", dst = "#sd", p = "#plaquette", dp = "#sd",
-#~                       chi = "#chi2red of fit of combined potential", c = "#c used in definition of r0", bs = "#bootstrapsamples",
-#~                       Ns = "#spatial extent of lattice", Nt = "#temporal extent", nape = "#number of APE-smears", alpha = "#alpha used for APE-smears",
-#~                       omit = "#last omit points in potential are ignored for fitting", nom = "#number of measurements",
-#~                       xi2 = "#xisquared", dxi2 = "#sd", xisingle = "#ratio between linear coefficients of single fits", dxisingle = "#sd",
-#~                       t1 = "#lower bound for meff", job = "#job number on qbig")
-#~     resultlist <- rbind(newline, resultlist)
 }
 write.table(resultlist, filename,
         append = TRUE, row.names = FALSE, col.names = columnnames)
@@ -909,14 +805,14 @@ nameresults <- sprintf("%sresultsrotatedNs%dNt%dbeta%fxi%fbs%d.RData",
         opt$plotpath, Ns, Nt, beta, xi, bootsamples)
 saveRDS(resultssummary, file = nameresults)
 
-
-#~ fit.all <- bootstrap.nlsfit(potall, c(0.2, 0.2, 0.2, xi), yall, xall, bsamplesall, maskpot = finemask)
-#~ summary(fit.all)
 }
 message(warnings())
 
 if (opt$plotonlymeff) {
+    # makes plot of effective masses, effective masses zoomed in
+    # from existing data
 
+# read in
 filenamelist <- sprintf(
             "%slistmeff2p1dmeffchosenNs%dbeta%fxi%fbsamples%d.RData",
             opt$plotpath, Ns, beta, xi, bootsamples)
@@ -951,6 +847,8 @@ if (opt$smearing) {
 }
 pdf(file = filenameforplots, title = "")
 
+# plot effective masses, set limits to zoom in
+# first spatial, then temporal potential
 for (i in seq(1, Ns / 2)) {
     if (listmeff[[i]][[2]]) {
         titleall <- sprintf("beta = %.2f y = %d", beta, i)
@@ -976,7 +874,6 @@ for (i in seq(1, Ns / 2)) {
 }
 
 for (i in seq(1, Nt / 2)) {
-#~     print(listmeff[[Ns / 2 + i]][[2]])
     if (listmeff[[Ns / 2 + i]][[2]]) {
         titleall <- sprintf("beta = %.2f t = %d", beta, i)
         if (!is.null(listmeff[[i]][[1]]$effmassfit)) {

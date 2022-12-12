@@ -1,5 +1,8 @@
 library(optparse)
 
+# makes tables in the right format for the boundaries of the effective masses.
+# options are rotated for the sideways potential,
+# subtracted for the normal potential and small for the non-integer potential.
 
 if (TRUE) {
 option_list <- list(
@@ -38,7 +41,6 @@ option_list <- list(
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
-#~ print(args)
 opt <- args$options
 
 Ns <- opt$Ns
@@ -88,21 +90,10 @@ if (opt$subtracted) {
     if (file.exists(filename)) {
         print("file already exists, doing nothing")
     } else {
-#~         spacial <- data.frame(spacial = rep(c(TRUE, FALSE), opt$Ns / 2))
-#~         ytvec <- c()
-#~         for (i in seq(1, opt$Ns / 2)) {
-#~             ytvec[2 * i-1] <- i
-#~             ytvec[2 * i] <- i
-#~         }
-#~         yt <- data.frame(yt = ytvec)
-#~         lower <- data.frame(lower = rep(c(opt$t1, floor(opt$t1 / opt$xi)), opt$Ns / 2))
-#~         upper <- data.frame(upper = rep(c(opt$Ns-2, opt$Nt-2), opt$Ns / 2))
         spacial <- data.frame(spacial = rep(c(TRUE, FALSE), opt$Ns / 2))
         yt <- data.frame(yt = rep(NA, opt$Ns))
         yt$yt[seq(1, opt$Ns - 1, by = 2)] <- seq(1, opt$Ns / 2)
         yt$yt[seq(2, opt$Ns, by = 2)] <- seq(1, opt$Ns / 2)
-#~         lower <- data.frame(lower = c(rep(opt$t1, opt$Ns / 2), rep(floor(opt$t1 / xi), opt$Ns / 2)))
-#~         upper <- data.frame(upper = c(rep(opt$Ns / 2-2, opt$Ns / 2), rep(opt$Nt / 2-2, opt$Ns / 2)))
         lower <- data.frame(lower = rep(c(opt$t1, floor(opt$t1 / xi)), opt$Ns / 2))
         upper <- data.frame(upper = rep(c(opt$Ns / 2 - 2, opt$Nt / 2 - 2), opt$Ns / 2))
         table <- cbind(spacial, yt, lower, upper)
