@@ -42,7 +42,7 @@ readloopfilecfrotated <- function (file, path  = "",
 }
 
 readloopfilecfsub <- function (file, path = "", skip = 0,
-                            Nytmax, x = x, Nsmax = 8,
+                            Nytmax, x, Nsmax,
                             zerooffset = 0, every = 1) {
     # reads in the Wilson loop data for the normal potential,
     # from which the anisotropy could be determined by subtracting the points,
@@ -72,7 +72,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfsmall <- function (file, path = "", skip = 0,
-                                Nsmax = 4, x, y, Ntmax = 8, start = 0) {
+                                Nsmax, x, y, Ntmax, start = 0) {
     # Reads in nonplanar Wilson loops, measured only for small distances.
     # Nsmax: maximum extent measured in the spacial x- and y-direction,
     # typically min(4, lattice size, those directions are kept fixed here.
@@ -97,7 +97,7 @@ readloopfilecfsmall <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfplaquette <- function (file, path = "", skip = 0,
-                                    Nsmax = 4, Ntmax = 8, every = 1) {
+                                    Nsmax, Ntmax, every = 1) {
     # reads W(x = 1, t = 1, y = 0) and W(x = 1, y = 1, t = 0)
     # into one cf-container from the file with nonplanar loops
     # Nsmax: maximum extent measured in the spacial x-direction,
@@ -241,7 +241,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
 
 calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
                                 Nt, x, y, start, bootsamples,
-                                title, nsave = 0, l = 2) {
+                                title, nsave = 100, l = 2) {
     # plots loops for the non-integer potential
     # t is changed, x and y are kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -488,7 +488,7 @@ points.effectivemass <- function (x, ..., ref.value, col, col.fitline) {
   }
 }
 
-determinerzero <- function (fit.result, bootsamples = 2000, c = -1.65, xi = 1) {
+determinerzero <- function (fit.result, bootsamples, c = -1.65, xi = 1) {
     # Determine r0 as solution of equation -r^2 d / dr V(r) = c,
     # solve for each bootstrapsample, r0 = mean pm sd
     # V(r) = a + sigma * r + b * ln(r)
@@ -653,8 +653,7 @@ fitplotfunctions <- function (fun1, fun2, x1, y1, dy1, x2, y2, dy2,
 }
 
 readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
-                            path = "", names = c('bsslope', 'bsst', 'bsratio', 'bsp', 'bsrzeros'),
-                            columns = c(1, 1, 1, 1, 5), filename = "resultspot") {
+                            path = "", names, columns, filename = "resultspot") {
     # reads in bootstrapsamples that were saved in a list to use
     # them for further analysis
     # the filename is constructed from the base filename and the parameters
