@@ -122,7 +122,7 @@ rzeroone <- data$r0[mask]
 xlim <- c(min(data$beta), max(data$beta))
 if (size > 1) { xlim <- c(1.45, 1.75)}
 
-# set inout anisotropies that were considered, container for results
+# set input anisotropies that were considered, container for results
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
 cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
 fitsrzero <- list(NULL)
@@ -163,18 +163,22 @@ fitresults <- data.frame(xiin = NA, r0slope = NA, r0intercept = NA, chir0 = NA, 
                         plaqslope = NA, plaqintercept = NA, chiplaq = NA, pplaq = NA,
                         xislope = NA, xiintercept = NA, chixi = NA, pxi = NA)
 
-# for each xi input != 0:
+# for each xi input != 1:
 # select the points, make linear fits to r_zero, plaquette, xi_ren as a function of beta
 # plot r_zero(beta) including error regions
+# r_zero was determined from the combination of the spatial and rescaled temporal potential
 # determine beta_ren: r_zero(beta_ren, xi_input) = r_zero(xi_input=1)
 # determine P(beta_ren), xi(beta_ren)
 # put everything in one dataframe, nicely formatted for easy printing
-for(i in seq(2, length(xis))){
+for (i in seq(2, length(xis))) {
     mask <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65 & abs(data$r0 - data$r0[maskone]) < 0.6
     maskplot <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65
-    fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask], data$beta[mask], arrayrzero[, mask]))
-    fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask], data$beta[mask], arrayp[, mask]))
-    fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask], data$beta[mask], arrayxi[, mask]))
+    fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
+                            data$beta[mask], arrayrzero[, mask]))
+    fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
+                            data$beta[mask], arrayp[, mask]))
+    fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
+                            data$beta[mask], arrayxi[, mask]))
     xvaluesplot <- seq((data$r0[maskone] - 0.6 - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2],
                         (data$r0[maskone] + 0.6 - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2], by = 0.01)
 
@@ -249,27 +253,27 @@ fitresults <- cbind(fitresults, newframe)
 # first: fit with both xi and beta renormalized to a cubic polynomial
 
 bsamplescontlimit <- array(rep(NA, bootsamples * (2 * length(xis))), dim = c(bootsamples, 2 * length(xis)))
-bsamplescontlimit[, seq(1,length(xis))] <- plaqren
-bsamplescontlimit[, seq(length(xis) + 1,2 * length(xis))] <- xiphys^2
+bsamplescontlimit[, seq(1, length(xis))] <- plaqren
+bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 fitplaq <- try(bootstrap.nlsfit(fncub, c(0.7, 1, 1, 1), x = result$xiphys^2, y = result$p, bsamples = bsamplescontlimit))
 
 # plot results to pdf
-if(sideways) pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", omit), title = "")
-if(!sideways) pdf("tikzplotallfits.pdf", title = "")
+if (sideways) pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", omit), title = "")
+if (!sideways) pdf("tikzplotallfits.pdf", title = "")
 
 # result of all linear fits
 for (i in seq(1, length(xis))){
-    try(plot(fitsrzero[[i]], main = sprintf("rzero, xiin = %f, chi = %f, p = %f", xis[i],fitsrzero[[i]]$chi / fitsrzero[[i]]$dof, fitsrzero[[i]]$Qval)))
-    try(plot(fitsplaquette[[i]], main = sprintf("P, xiin = %f, chi = %f, p = %f", xis[i],fitsplaquette[[i]]$chi / fitsplaquette[[i]]$dof, fitsplaquette[[i]]$Qval)))
-    try(plot(fitsxi[[i]], main = sprintf("xi, xiin = %f, chi = %f, p = %f", xis[i],fitsxi[[i]]$chi / fitsxi[[i]]$dof, fitsxi[[i]]$Qval)))
+    try(plot(fitsrzero[[i]], main = sprintf("rzero, xiin = %f, chi = %f, p = %f", xis[i], fitsrzero[[i]]$chi / fitsrzero[[i]]$dof, fitsrzero[[i]]$Qval)))
+    try(plot(fitsplaquette[[i]], main = sprintf("P, xiin = %f, chi = %f, p = %f", xis[i], fitsplaquette[[i]]$chi / fitsplaquette[[i]]$dof, fitsplaquette[[i]]$Qval)))
+    try(plot(fitsxi[[i]], main = sprintf("xi, xiin = %f, chi = %f, p = %f", xis[i], fitsxi[[i]]$chi / fitsxi[[i]]$dof, fitsxi[[i]]$Qval)))
 }
 # cubic continuum limit
-try(plot(fitplaq, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f", fitplaq$t0[1], fitplaq$se[1] ,fitplaq$chi / fitplaq$dof, fitplaq$Qval), plot.range = c(-0.2, 1.2), ylim = c(0.98 * (fitplaq$t0[1] - fitplaq$se[1]), 1.02 * max(result$p)), xaxs = "i", xlim = c(0,max(xiphys^2))))
+try(plot(fitplaq, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f", fitplaq$t0[1], fitplaq$se[1], fitplaq$chi / fitplaq$dof, fitplaq$Qval), plot.range = c(-0.2, 1.2), ylim = c(0.98 * (fitplaq$t0[1] - fitplaq$se[1]), 1.02 * max(result$p)), xaxs = "i", xlim = c(0, max(xiphys^2))))
 try(plotwitherror(x = c(0), y = c(fitplaq$t0[1]), dy = (fitplaq$se[1]), col = 2, pch = 2, rep = TRUE))
 
 
 
-if(TRUE){
+if (TRUE) {
 # fits also with xi_input with only one measurement, empty containers for result
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 2/7, 0.25)
 bsamplescontlimitnaive <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
@@ -280,7 +284,7 @@ xirennaive <- c()
 # fill up containers: naive indicates no renormalized values (of beta) are used for fit
 # naive: no renormalization at all
 # naivexiren: use renormalized xi, but leave beta fix
-for(i in seq(1, length(xis))){
+for (i in seq(1, length(xis))) {
     row <- data$beta == 1.7 & abs(data$xi - xis[i]) < 0.01
     pnaive[i] <- data$p[row]
     xirennaive[i] <- data$xicalc[row]
@@ -310,9 +314,9 @@ defaultusr <- par("usr")
 par("usr" = c(0, 1, defaultusr[3], defaultusr[4]))
 try(plot(fitplaqnaive, plot.range = c(-0.2, 1.2),
         main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f",
-        fitplaqnaive$t0[1], fitplaqnaive$se[1] ,fitplaqnaive$chi / fitplaqnaive$dof),
+        fitplaqnaive$t0[1], fitplaqnaive$se[1], fitplaqnaive$chi / fitplaqnaive$dof),
         ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)),
-        xlab = "", xaxs = "i", xlim = c(0,1)))
+        xlab = "", xaxs = "i", xlim = c(0, 1)))
 try(plotwitherror(x = c(0), y = c(fitplaqnaive$t0[1]),
         dy = (fitplaqnaive$se[1]), col = 2, pch = 2, rep = TRUE))
 par("usr" = defaultusr)
@@ -321,18 +325,15 @@ defaultusr <- par("usr")
 par("usr" = c(0, 1, defaultusr[3], defaultusr[4]))
 try(plot(fitplaqnaivexiren, plot.range = c(-0.2, 1.2),
         main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f",
-        fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1] ,
+        fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
         fitplaqnaivexiren$chi / fitplaqnaivexiren$dof),
         ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)),
-        xlab = "", xaxs = "i", xlim = c(0,1)))
+        xlab = "", xaxs = "i", xlim = c(0, 1)))
 try(mtext(fitplaqnaivexiren$x, side = 1))
 print(fitplaqnaivexiren$x)
 try(plotwitherror(x = c(0), y = c(fitplaqnaivexiren$t0[1]),
         dy = (fitplaqnaivexiren$se[1]), col = 2, pch = 2, rep = TRUE))
 par("usr" = defaultusr)
-
-print(fncub)
-print("starting different polynomial fits")
 
 # for each polynomial:
 # fitplaqnaive: xi=xi_input, p=p_meas -> neither beta nor xi reenormalized
@@ -369,7 +370,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     plot(fitplaqnaivexiren, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
             fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i),
-            plot.range = c(-0.2, 1.2), xlab = "", xaxs = "i", xlim = c(0,1),
+            plot.range = c(-0.2, 1.2), xlab = "", xaxs = "i", xlim = c(0, ),
             ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)))
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaivexiren$t0[1],
@@ -386,7 +387,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
             plot.range = c(-0.2, 1.2),
             ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(result$p)),
-            xlab = "", xaxs = "i", xlim = c(0,1))
+            xlab = "", xaxs = "i", xlim = c(0, 1))
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
             fitplaq$se[1], digits = 2, with.dollar = FALSE),
@@ -394,11 +395,9 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]))
     i <- i + 1
 }
-print("finished different polynomial fits")
 resultspolynomial <- resultspolynomial[-1, ]
-print(resultspolynomial)
 namepol <- "plotstikz/polynomialnormal.csv"
-if(sideways) namepol <- "plotstikz/polynomialsideways.csv"
+if (sideways) namepol <- "plotstikz/polynomialsideways.csv"
 # write out result
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 
@@ -407,7 +406,7 @@ write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 # write out results
 print(fitresults)
 print(result)
-if(!sideways){
+if (!sideways) {
 write.table(result, "plotstikz/resultsrenormalization.csv",
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, "plotstikz/fitresultsrenormalization.csv",
@@ -416,7 +415,7 @@ saveRDS(resultslist, "plotstikz/listresultsrenormalization.RData")
 saveRDS(fitspolynomial, "plotstikz/listpolynomialrenormalization.RData")
 }
 
-if(sideways){
+if (sideways) {
 write.table(result, sprintf("plotstikz/resultsrenormalizationsidewaysomit%d.csv", omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationsidewaysomit%d.csv", omit),
