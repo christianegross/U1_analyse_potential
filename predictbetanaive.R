@@ -95,8 +95,8 @@ par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
 print(nameplot)
 
 # set up limits, masks for selecting the right points
-ylim <- c(min(data$r0-data$dr0), max(data$r0 + data$dr0))
-if (size>1) { ylim <- c(3, 5.5)}
+ylim <- c(min(data$r0 - data$dr0), max(data$r0 + data$dr0))
+if (size > 1) { ylim <- c(3, 5.5)}
 mask <- data$beta == 1.7 & data$xi == 1 & data$c == -1.65
 maskone <- mask
 rzeroone <- data$r0[mask]
@@ -123,9 +123,9 @@ plot(x = seq(1.4, 1.8, by = 0.01), y = rep(data$r0[mask], 41),
 points(x = seq(1.4, 1.8, by = 0.01),
         y = rep(data$r0[mask] + data$dr0[mask], 41), type = "l", lty = 2)
 points(x = seq(1.4, 1.8, by = 0.01),
-        y = rep(data$r0[mask]-0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
+        y = rep(data$r0[mask] - 0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
 points(x = seq(1.4, 1.8, by = 0.01),
-        y = rep(data$r0[mask]-data$dr0[mask], 41), type = "l", lty = 2)
+        y = rep(data$r0[mask] - data$dr0[mask], 41), type = "l", lty = 2)
 points(x = seq(1.4, 1.8, by = 0.01),
         y = rep(data$r0[mask] + 0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
 pointsyerr(x = data$beta[maskone], y = data$r0[maskone],
@@ -150,15 +150,15 @@ fitresults <- data.frame(xiin = NA, r0slope = NA, r0intercept = NA,
 # put everything in one dataframe, nicely formatted for easy printing
 
 for (i in seq(2, length(xis))) {
-    mask <- abs(data$xi-xis[i])<0.01 & data$c == -1.65 & abs(data$r0 -data$r0[maskone]) < 0.6
-    maskplot <- abs(data$xi-xis[i])<0.01 & data$c == -1.65
+    mask <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65 & abs(data$r0 - data$r0[maskone]) < 0.6
+    maskplot <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
                             data$beta[mask], arrayrzero[, mask]))
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
                             data$beta[mask], arrayp[, mask]))
 
     xvaluesplot <- seq((data$r0[maskone] - 0.6 - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2],
-            (data$r0[maskone] + 0.6-fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2], by = 0.01)
+            (data$r0[maskone] + 0.6 - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2], by = 0.01)
     if (!inherits(fitsrzero[[i]], "try-error")) {
         try(errorpolygon(X = xvalues, fitsrzero[[i]], col.p = cols[i],
                 col.band = cols[i], cex = fontsize, arlength = 0.05 * fontsize))
@@ -230,7 +230,7 @@ for (i in seq(1, length(xis))) {
     try(plot(fitsplaquette[[i]], main = sprintf("P, xiin = %f, chi = %f, p = %f", xis[i], fitsplaquette[[i]]$chi / fitsplaquette[[i]]$dof, fitsplaquette[[i]]$Qval)))
 }
 # cubic continuum limit
-try(plot(fitplaq, main = sprintf("continuum limit plaquette: %f+/-%f, chi = %f, p = %f", fitplaq$t0[1], fitplaq$se[1], fitplaq$chi / fitplaq$dof, fitplaq$Qval), plot.range = c(-0.2, 1.2), ylim = c(0.98 * (fitplaq$t0[1]-fitplaq$se[1]), 1.02 * max(result$p)), xaxs = "i", xlim = c(0, max(xis^2))))
+try(plot(fitplaq, main = sprintf("continuum limit plaquette: %f+/-%f, chi = %f, p = %f", fitplaq$t0[1], fitplaq$se[1], fitplaq$chi / fitplaq$dof, fitplaq$Qval), plot.range = c(-0.2, 1.2), ylim = c(0.98 * (fitplaq$t0[1] - fitplaq$se[1]), 1.02 * max(result$p)), xaxs = "i", xlim = c(0, max(xis^2))))
 try(plotwitherror(x = c(0), y = c(fitplaq$t0[1]), dy = (fitplaq$se[1]), col = 2, pch = 2, rep = TRUE))
 
 
@@ -244,7 +244,7 @@ bsamplescontlimitnaive <- array(rep(NA, bootsamples * (length(xis))), dim = c(bo
 
 pnaive <- c()
 for (i in seq(1, length(xis))) {
-    row <- data$beta == 1.7 & abs(data$xi-xis[i])<0.01
+    row <- data$beta == 1.7 & abs(data$xi - xis[i]) < 0.01
     pnaive[i] <- data$p[row]
     bsamplescontlimitnaive[, i] <- arrayp[, row]
 }
@@ -264,7 +264,7 @@ par("usr" = c(0, 1, defaultusr[3], defaultusr[4]))
 try(plot(fitplaqnaive, plot.range = c(-0.2, 1.2),
         main = sprintf("continuum limit plaquette: %f+/-%f, chi = %f",
         fitplaqnaive$t0[1], fitplaqnaive$se[1], fitplaqnaive$chi / fitplaqnaive$dof),
-        ylim = c((fitplaqnaive$t0[1]-fitplaqnaive$se[1]), max(result$p)),
+        ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)),
         xlab = "", xaxs = "i", xlim = c(0, 1)))
 try(plotwitherror(x = c(0), y = c(fitplaqnaive$t0[1]), dy = (fitplaqnaive$se[1]),
         col = 2, pch = 2, rep = TRUE))
@@ -288,7 +288,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     try(plot(fitplaqnaive, main = sprintf("cont. lim. plaq.: %f+/-%f, chi = %f,\ndegree of polynomial:%d",
             fitplaqnaive$t0[1], fitplaqnaive$se[1],
             fitplaqnaive$chi / fitplaqnaive$dof, i), plot.range = c(-0.2, 1.2),
-            ylim = c((fitplaqnaive$t0[1]-fitplaqnaive$se[1]), max(result$p)),
+            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)),
             xlab = "", xaxs = "i", xlim = c(0, 1)))
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaive$t0[1],
