@@ -82,7 +82,8 @@ option_list <- list(
     help = "steps between saved configs [default %default]"),
     make_option(c("--myfunctions"), type = "character",
             default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/myfunctions.R",
-    help = "path to where additional functions are stored [default %default]")
+    help = "path to where additional functions are stored,
+            relative to folder where script is executed [default %default]")
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
@@ -349,6 +350,28 @@ filenameforplots <- sprintf(
 }
 pdf(file = filenameforplots, title = "")
 
+# calculate plaquette as W(x = 1, y = 1, t = 0)
+# with uwerr and with cf, to get bootstrapsamples
+filename <- sprintf(
+            "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
+            opt$respath, Nt, Ns, beta, xi, nape, alpha)
+
+alldata <- read.table(filename)
+plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
+newline <- data.frame(value = plaquettedata$value, dvalue = plaquettedata$dvalue,
+            ddvalue = plaquettedata$ddvalue, tauint = plaquettedata$tauint,
+            dtauint = plaquettedata$dtauint)
+nom <- floor(length(plaquettecolumn))
+
+column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
+
+plaquettecf <- readloopfilecfonecolumn(file = filename, skip = skip,
+        column = column)#, every = opt$every, boot.l = opt$bootl)
+plaquettecf <- bootstrap.cf(plaquettecf, boot.R = bootsamples)
+
+
+
 #coarse potential
 #read in data points, bootstrap samples: have to initialise empty vectors,
 #because not every list element has a valid entry
@@ -448,28 +471,6 @@ plot(fit.resultcoarse, main  =  sprintf(
             beta, xi, Ns, nom * 100, skip * 100),
             ylab = "a_s V_{xy}(x)", xlab = "x / a_s")
 
-
-
-
-# calculate plaquette as W(x = 1, y = 1, t = 0)
-# with uwerr and with cf, to get bootstrapsamples
-filename <- sprintf(
-            "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fcoarsedistance",
-            opt$respath, Nt, Ns, beta, xi, nape, alpha)
-
-alldata <- read.table(filename)
-plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
-newline <- data.frame(value = plaquettedata$value, dvalue = plaquettedata$dvalue,
-            ddvalue = plaquettedata$ddvalue, tauint = plaquettedata$tauint,
-            dtauint = plaquettedata$dtauint)
-nom <- floor(length(plaquettecolumn))
-
-column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
-
-plaquettecf <- readloopfilecfonecolumn(file = filename, skip = skip,
-        column = column)#, every = opt$every, boot.l = opt$bootl)
-plaquettecf <- bootstrap.cf(plaquettecf, boot.R = bootsamples)
 
 
 alldata <- data.frame(x = x, V = y, spatial = finemask)
@@ -662,7 +663,7 @@ for (i in seq(1, length(rzeroofc$c))) {
 
 #plot thermalisation
 plot(plaquettecolumn, main = "Thermalisation",
-        xlab = sprintf("MCMC-steps/%d", nsave), ylab = "P")
+        xlab = sprintf("MCMC-steps/%d", opt$nsave), ylab = "P")
 
 }
 
