@@ -97,10 +97,8 @@ if (opt$smearing) {
             opt$plotpath, Ns, Nt, beta, xi, nape, alpha)
 }
 
-print(namelistbounds)
 if (file.exists(namelistbounds)) {
     listbounds <- read.table(namelistbounds, sep = ",", header = TRUE)
-    print("read in list")
 } else {
     listbounds <- cbind(
                 data.frame(x = c(rep(0, 4), rep(1, 4), rep(2, 4), rep(3, 4))),
@@ -345,7 +343,6 @@ if (opt$plaquette) {
                 beta, xi, Ns, Nt)
     error3 <- try(plot(fit.result, xlab = "r / a_s",
                     ylab = "a_tV(r)", main = title))
-    print(error3)
     if (inherits(error3, "try-error")) {
         try(plotyerr(x = x, y = pot, dy = dpot,
                 xlab = "r / a_s", ylab = "a_tV(r)", main = title))
@@ -356,11 +353,11 @@ if (opt$plaquette) {
         fnpot <- function (par, x, boot.r, ...) par[1]  + par[2]  *  x  + par[3]  *  log(x)
         fnforce <- function (par, x, boot.r, ...) (- 1.0)  *  par[2]  *  x^2 - par[3]  *  x
 
-        mask <- c(rep(FALSE, 16))
-        x <- c(rep(NA, 16))
-        y <- c(rep(NA, 16))
-        V <- c(rep(NA, 16))
-        bsamples <- array(c(rep(NA, 16 * bootsamples)), dim = c(bootsamples, 16))
+        mask <- c(rep(FALSE, 15))
+        x <- c(rep(NA, 15))
+        y <- c(rep(NA, 15))
+        V <- c(rep(NA, 15))
+        bsamples <- array(c(rep(NA, 15 * bootsamples)), dim = c(bootsamples, 15))
         for (i in seq(0, 3)) {
             for (j in seq(0, 3)) {
                 if (i != 0 || j != 0) {
@@ -371,15 +368,11 @@ if (opt$plaquette) {
                     V[4 * i + j] <- listmeff[[4 * i + j]][[1]]$effmassfit$t0[1]
                     bsamples[, 4 * i + j] <- listmeff[[4 * i + j]][[1]]$massfit.tsboot[, 1]
                 } else {
-                    print(i)
-                    print(j)
+                    print(paste("no result found for x=", i, " y=", j))
                 }
                 }
             }
         }
-#~         print(V)
-        print(x)
-        print(y)
 
         # try to find a fit to the expected form,
         # from that determine string tension, rzero,
