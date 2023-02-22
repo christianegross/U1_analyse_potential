@@ -1,7 +1,34 @@
 library("hadron")
 # source("myfunctions.R")
-args <- commandArgs(trailingOnly = TRUE)
-source(args[1])
+# args <- commandArgs(trailingOnly = TRUE)
+# source(args[1])
+
+
+library(optparse)
+
+
+if (TRUE) {
+option_list <- list(
+    make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
+    help = "how many bootstrapsamples should be drawn [default %default]"),
+    make_option(c("-b", "--betaone"), type = "double", default = 1.7,
+    help = "beta at xi=1 [default %default]"),
+    make_option(c("-L", "--length"), type = "integer", default = 16,
+    help = "spatial extent of lattice at xi=1 [default %default]"),
+
+    make_option(c("-T", "--timeextent"), type = "integer", default = 16,
+    help = "time extent of lattice at xi=1 [default %default]"),
+    make_option(c("--myfunctions"), type = "character",
+        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/myfunctions.R",
+#~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
+    help = "path to where additional functions are stored [default %default]"),
+    make_option(c("--respath"), type = "character", default = "plotstikz/",
+    help = "path to where the resulting plots and data are stored [default %default]")
+)
+parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
+args <- parse_args(parser, positional_arguments = 0)
+opt <- args$options
+}
 
 # This script is used to determine the renormalised beta and
 # the continuum limit after each ensemble has been analysed
@@ -44,8 +71,8 @@ fnqin <- function (par, x, boot.r, ...) {
 
 
 # set filenames, read in results, set up containers for bootstrapsamples
-data <- read.table(sprintf("summarysmallbetaone1.700000.csv"), header = TRUE, sep = " ")
-datanormal <- read.table("resultsummary2p1dnormalb1.700Ns16.csv", header = TRUE, sep = " ")
+data <- read.table(sprintf("summarysmallbetaone%f.csv", opt$b), header = TRUE, sep = " ")
+datanormal <- read.table(sprintf("resultsummary2p1dnormalb%.3fNs%d.csv", opt$b, opt$L), header = TRUE, sep = " ")
 filenameres <- "resultspot"
 side <- 2
 # data <- na.omit(data)
@@ -53,7 +80,7 @@ nom <- length(data$beta)
 print(nom)
 
 # read in bootstrapsamples, scale slope to a_s
-bootsamples <- 500
+bootsamples <- opt$bootsamples
 arrayslope <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 arrayp <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 intercepts <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
@@ -120,7 +147,7 @@ xlim <- c(min(data$beta), max(data$beta))
 
 # set input anisotropies that were considered, container for results
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
-cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
+cols <- c(1, 3, 4, 5, 6, 9, 10, 8) # colors for prettier plots
 fitsslope <- list(NULL)
 fitsplaquette <- list(NULL)
 intercepts <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
@@ -147,10 +174,10 @@ plotwitherror(x = data$beta[maskone], y = data$slopescale[maskone],
         dy = data$dslopescale[maskone], col = 1, pch = 1, cex = fontsize, rep=TRUE)
 
 
-intercepts[, 1] <- rep(1.7, bootsamples)
+intercepts[, 1] <- rep(opt$b, bootsamples)
 plaqren[, 1] <- arrayp[, mask]
 
-interceptsimple <- c(1.7)
+interceptsimple <- c(opt$b)
 
 fitresults <- data.frame(xiin = NA, slopeslope = NA, slopeintercept = NA, chislope = NA, pslope = NA,
                         plaqslope = NA, plaqintercept = NA, chiplaq = NA, pplaq = NA)
@@ -264,7 +291,7 @@ bsamplescontlimitnaive <- array(rep(NA, bootsamples * (length(xis))), dim = c(bo
 
 pnaive <- c()
 for (i in seq(1, length(xis))) {
-    row <- data$beta == 1.7 & abs(data$xiin - xis[i]) < 0.01
+    row <- data$beta == opt$b & abs(data$xiin - xis[i]) < 0.01
     pnaive[i] <- data$p[row]
     bsamplescontlimitnaive[, i] <- arrayp[, row]
 }
@@ -291,10 +318,9 @@ try(plotwitherror(x = c(0), y = c(fitplaqnaive$t0[1]), dy = (fitplaqnaive$se[1])
 par("usr" = defaultusr)
 
 # for each polynomial:
-# fitplaqnaive: xi=xi_input, p=p_meas -> neither beta nor xi reenormalized
-# fitplaq: xi=xi_ren, p=p_interpolated -> only beta renormalized
+# fitplaq: xi=xi_input, p=p_interpolated -> only beta renormalized
 # for each: do fit to continuum limit, plot, add results to list and table
-# list: region 1-5 fitplaqnaive, region 6-10  fitplaq
+# list: region 1-5 fitplaq
 
 fitspolynomial <- list()
 i <- 1
@@ -337,12 +363,12 @@ print(result)
 print(fitresults)
 print(resultspolynomial)
 
-write.table(result, sprintf("plotstikz/resultsrenormalizationslope.csv"),
+write.table(result, sprintf("%fresultsrenormalizationslope.csv", opt$respath),
              col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationslope.csv"),
+write.table(fitresults, sprintf("%ffitresultsrenormalizationslope.csv", opt$respath),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("plotstikz/listresultsrenormalizationslope.RData"))
-saveRDS(fitspolynomial, sprintf("plotstikz/listpolynomialrenormalizationslope.RData"))
+saveRDS(resultslist, sprintf("%flistresultsrenormalizationslope.RData", opt$respath))
+saveRDS(fitspolynomial, sprintf("%flistpolynomialrenormalizationslope.RData", opt$respath))
 
 # move all plots into subfolder
-system("mv -v tikz* plotstikz/")
+system(sprintf("mv -v tikz* %f", opt$respath))

@@ -278,6 +278,7 @@ if (TRUE) {
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 2/7, 0.25)
 bsamplescontlimitnaive <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 bsamplescontlimitnaivexiren <- array(rep(NA, 2 * bootsamples * (length(xis))), dim = c(bootsamples, 2 * length(xis)))
+bsamplescontlimitbeta <- array(rep(NA, 2 * bootsamples * (length(xis))), dim = c(bootsamples, 2 * length(xis)))
 pnaive <- c()
 xirennaive <- c()
 
@@ -291,6 +292,8 @@ for (i in seq(1, length(xis))) {
     bsamplescontlimitnaive[, i] <- arrayp[, row]
     bsamplescontlimitnaivexiren[, i] <- arrayp[, row]
     bsamplescontlimitnaivexiren[, length(xis) + i] <- arrayxi[, row]^2
+    bsamplescontlimitbeta[, i] <- intercepts[, i]
+    bsamplescontlimitbeta[, length(xis) + i] <- arrayxi[, row]^2
 }
 
 # cubic fits with nothing renormalized and only xi renormalized
@@ -393,6 +396,21 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaq$se[1], digits = 2, with.dollar = FALSE),
             chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
             type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]))
+
+    fitbeta <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
+                x = result$xiphys^2, y = result$beta, bsamples = bsamplescontlimitbeta))
+    fitspolynomial[[15 + i]] <- fitbeta
+    plot(fitplaq, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
+            fitbeta$t0[1], fitbeta$se[1],
+            fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
+            plot.range = c(-0.2, 1.2),
+            ylim = c((fitbeta$t0[1] - fitbeta$se[1]), max(result$p)),
+            xlab = "", xaxs = "i", xlim = c(0, 1))
+    resultspolynomial <- rbind(resultspolynomial,
+            data.frame(degree = i, lim = tex.catwitherror(fitbeta$t0[1],
+            fitbeta$se[1], digits = 2, with.dollar = FALSE),
+            chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
+            type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1]))
     i <- i + 1
 }
 resultspolynomial <- resultspolynomial[-1, ]
@@ -404,6 +422,16 @@ write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 }
 
 # write out results
+# contains:
+# result: data frame with xiin, beta, dbeta(renormalized), xiphys, dxiphys, p, dp, betasimple (renormed beta from intercept from mean values)
+# fitresult: data frame with xiin, r0slope, r0intercept,  chir0, pr0,
+#                        plaqslope, plaqintercept, chiplaq, pplaq,
+#                        xislope, xiintercept, chixi, pxi,
+#                       xiopt, betaopt, pop
+# written out with tex.catwitherror
+# resultspolynomial: dataframe with degree of polynomial, result of cont. lim. with catwitherror, chi and p of lim, type of lim, result of lim as two doubles
+# resultlist: intercepts = beta_ren, xiphys, plaqren , fitsrzero, fitsxi, fitsp (results of linear interpolations), fitplaq, fitplaqnaive, fitplaqnaivexiren(cubic polynomial cont limits)
+# fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
 print(fitresults)
 print(result)
 if (!sideways) {

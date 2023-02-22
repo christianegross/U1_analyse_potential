@@ -12,6 +12,7 @@ The scripts in this repository can be used to determine the static potential, th
 - results:
     - predictbeta.R
     - predictbetanaive.R
+    - predictbetaslope.R
 - helpers:
     - makeinputtable.R
     - converttablelatex.R
