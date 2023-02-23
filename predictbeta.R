@@ -73,7 +73,7 @@ if (!file.exists(dataname)) {
 data <- read.table(dataname, header=TRUE, sep=" ")
 data <- na.omit(data)
 if (type=="sideways") {
-data <- data[data$omit == omit, ]
+data <- data[data$omit == opt$omit, ]
 }
 
 nom <- length(data$beta)
@@ -129,7 +129,7 @@ if (type=="normal") {
     nameplot <- sprintf("%srenormr0ratio%.2f", path, size)
 }
 if (type=="sideways") {
-    nameplot <- sprintf("%srenormr0sidewaysratio%.2fomit%d", path, size, omit)
+    nameplot <- sprintf("%srenormr0sidewaysratio%.2fomit%d", path, size, opt$omit)
 }
 if (type=="slope") {
     nameplot <- sprintf("%srenormsloperatio%.2f", path, size)
@@ -314,7 +314,7 @@ bsamplescontlimit[, seq(1, length(xis))] <- plaqren
 bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 
 # plot results to pdf
-if (type=="sideways") pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", omit), title = "")
+if (type=="sideways") pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", opt$omit), title = "")
 if (type=="normal") pdf("tikzplotallfits.pdf", title = "")
 if (type=="slope") pdf("tikzplotallfitsslope.pdf", title = "")
 
@@ -481,12 +481,12 @@ saveRDS(fitspolynomial, "plotstikz/listpolynomialrenormalization.RData")
 }
 
 if (type=="sideways") {
-write.table(result, sprintf("plotstikz/resultsrenormalizationsidewaysomit%d.csv", omit),
+write.table(result, sprintf("plotstikz/resultsrenormalizationsidewaysomit%d.csv", opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationsidewaysomit%d.csv", omit),
+write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationsidewaysomit%d.csv", opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("plotstikz/listresultsrenormalizationsidewaysomit%d.RData", omit))
-saveRDS(fitspolynomial, sprintf("plotstikz/listpolynomialrenormalizationsidewaysomit%d.RData", omit))
+saveRDS(resultslist, sprintf("plotstikz/listresultsrenormalizationsidewaysomit%d.RData", opt$omit))
+saveRDS(fitspolynomial, sprintf("plotstikz/listpolynomialrenormalizationsidewaysomit%d.RData", opt$omit))
 }
 
 if (type=="slope") {
