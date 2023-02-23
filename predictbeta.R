@@ -42,9 +42,6 @@ type <- opt$type
 if(! (type=="normal" || type=="sideways" || type=="slope")){
     stop(paste("type", type, "not allowed"))
 }
-if(type=="slope"){
-    stop(paste("slope is not supported yet"))
-}
 }
 
 # This script is used to determine the renormalised beta and
@@ -56,7 +53,7 @@ if(type=="slope"){
 
 # set filenames, read in results, set up containers for bootstrapsamples
 if (type=="sideways") {
-dataname <- sprintf("resultsummary2p1dsideways%.3fNs%d.csv", opt$beta, opt$length)
+dataname <- sprintf("resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$beta, opt$length)
 filenameres <- "resultsrotated"
 side <- 2
 }
