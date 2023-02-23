@@ -689,3 +689,33 @@ readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
 
 # handy for plotting
 mmtoinches <- function (size) return(size / 25.4)
+
+# determine the intercept between a linear function and a constant
+#c = a*x + b
+#c-b = a*x
+#(c-b)/a = x
+getintercept <- function(fitresult, rzeroone, bootsamples = 500) {
+    intercepts <- c()
+    for (bs in seq(1, bootsamples)){
+        intercepts[bs] <- (rzeroone[bs] - fitresult$t[bs, 1]) / fitresult$t[bs, 2]
+    }
+    return(intercepts)
+}
+
+# polynomials of first to fifth order, of a form that can be used by bootstrap.nlsfit
+fnlin <- function (par, x, boot.r, ...) {
+    return (par[1]  +  par[2] * x)
+}
+fnpar <- function (par, x, boot.r, ...) {
+    return (par[1]  +  par[2] * x  +  par[3] * x^2)
+}
+fncub <- function (par, x, boot.r, ...) {
+    return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3)
+}
+fnqar <- function (par, x, boot.r, ...) {
+    return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3  +  par[5] * x^4)
+}
+fnqin <- function (par, x, boot.r, ...) {
+    return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3  +  par[5] * x^4  +  par[6] * x^5)
+}
+

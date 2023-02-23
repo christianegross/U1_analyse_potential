@@ -1,5 +1,49 @@
 library("hadron")
-source("myfunctions.R")
+library(optparse)
+
+
+if (TRUE) {
+option_list <- list(
+    make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
+    help = "how many bootstrapsamples should be drawn [default %default]"),
+    make_option(c("-b", "--betaone"), type = "double", default = 1.7,
+    help = "beta at xi=1 [default %default]"),
+    make_option(c("-L", "--length"), type = "integer", default = 16,
+    help = "spatial extent of lattice at xi=1 [default %default]"),
+
+    make_option(c("-T", "--timeextent"), type = "integer", default = 16,
+    help = "time extent of lattice at xi=1 [default %default]"),
+    make_option(c("--myfunctions"), type = "character",
+        default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
+#~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
+    help = "path to where additional functions are stored [default %default]"),
+
+    make_option(c("--respath"), type = "character", default = "plotstikz/",
+    help = "path to where the resulting plots and data are stored [default %default]"),
+    make_option(c("--type"), type = "character", default = "normal",
+    help = "type of ensembles that shoule be analysed, one of normal, sideways and slope [default %default]"),
+    make_option(c("-o", "--omit"), type = "integer", default = 0,
+    help = "omission of points from the sideways potential [default %default]")
+)
+parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
+args <- parse_args(parser, positional_arguments = 0)
+opt <- args$options
+source(paste(opt$myfunctions, "myfunctions.R", sep=""))
+
+#get git commit hash of myfunctions.R, should be the same as of this script
+cwd <- setwd(opt$myfunctions)
+githash <- try(system("git rev-parse --short HEAD", intern=TRUE))
+setwd(cwd)
+print(paste("## on git commit", githash))
+
+type <- opt$type
+if(! (type=="normal" || type=="sideways" || type=="slope")){
+    stop(paste("type", type, "not allowed"))
+}
+if(type=="slope"){
+    stop(paste("slope is not supported yet"))
+}
+}
 
 # This script is used to determine the renormalised beta and
 # the continuum limit after each ensemble has been analysed
@@ -7,52 +51,24 @@ source("myfunctions.R")
 # first, the data are read in, then the optimal beta, xi_ren and P are determined,
 # and then the continuum limit is determined with different polynomial fits
 
-# functions needed for the programm
-# determine the intercept between a linear function and a constant
-#c = a*x + b
-#c-b = a*x
-#(c-b)/a = x
-getintercept <- function(fitresult, rzeroone, bootsamples = 500) {
-    intercepts <- c()
-    for (bs in seq(1, bootsamples)){
-        intercepts[bs] <- (rzeroone[bs] - fitresult$t[bs, 1]) / fitresult$t[bs, 2]
-    }
-    return(intercepts)
-}
-
-# polynomials of first to fifth order, of a form that can be used by bootstrap.nlsfit
-fnlin <- function (par, x, boot.r, ...) {
-    return (par[1]  +  par[2] * x)
-}
-fnpar <- function (par, x, boot.r, ...) {
-    return (par[1]  +  par[2] * x  +  par[3] * x^2)
-}
-fncub <- function (par, x, boot.r, ...) {
-    return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3)
-}
-fnqar <- function (par, x, boot.r, ...) {
-    return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3  +  par[5] * x^4)
-}
-fnqin <- function (par, x, boot.r, ...) {
-    return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3  +  par[5] * x^4  +  par[6] * x^5)
-}
-
-# set whether the results of the sideways or the normal potential should be considered
-sideways <- FALSE
-omit <- 0
 
 # set filenames, read in results, set up containers for bootstrapsamples
-if (sideways) {
-data <- read.table("resultsummary2p1dsidewaysb1.700Ns16.csv", header = TRUE, sep = " ")
+if (type=="sideways") {
+dataname <- sprintf("resultsummary2p1dsidewaysb1.700Ns16.csv")
 filenameres <- "resultsrotated"
 side <- 2
-} else {
-data <- read.table("resultsummary2p1dnormalb1.700Ns16.csv", header = TRUE, sep = " ")
+}
+if (type=="normal") {
+dataname <- sprintf("resultsummary2p1dnormalb1.700Ns16.csv")
 filenameres <- "resultssubtracted"
 side <- 2
 }
+if (!file.exists(dataname)) {
+    stop(paste("file for results does not exist, check for", dataname))
+}
+data <- read.table(dataname, header=TRUE, sep=" ")
 data <- na.omit(data)
-if (sideways) {
+if (type=="sideways") {
 data <- data[data$omit == omit, ]
 }
 
@@ -88,11 +104,14 @@ packages <- c("\\usepackage{tikz}",
                 "\\setlength\\PreviewBorder{0pt}",
                 "\\usepackage{amsmath}")
 
-for (size in c(0.65, 0.75, 1.33)) {
+for (size in c(0.65)) {
+# for (size in c(0.65, 0.75, 1.33)) {
 
 
-nameplot <- sprintf("%srenormr0ratio%.2f", path, size)
-if (sideways) {
+if (type=="normal") {
+    nameplot <- sprintf("%srenormr0ratio%.2f", path, size)
+}
+if (type=="sideways") {
     nameplot <- sprintf("%srenormr0sidewaysratio%.2fomit%d", path, size, omit)
 }
 
@@ -105,9 +124,11 @@ if (size > 1) {
                     height = mmtoinches(200 * size), packages = packages)
     }
 defaultmargin <- par(c("mai"))
-par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
+if (type=="normal") {
+    par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
             defaultmargin[2] * max(1, 0.8 * fontsize), 0.1, 0.1))
-if (sideways) {
+}
+if (type=="sideways") {
     par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
                 0.01, 0.1, defaultmargin[2] * max(1, 0.8 * fontsize)))
 }
@@ -217,11 +238,12 @@ legend(legend = legendtext, x = "topleft", title = "$\\xi_\\text{input} = $",
         col = c(cols), pch = c(cols), cex = fontsize)
 mtext("$r_0 / a_s$", side = side, line = distance, cex = fontsize) #ylab
 mtext("$\\beta$", side = 1, line = distance, cex = fontsize) #xlab
-if (sideways) {
+if (type=="sideways") {
     if (size == 1.33) {
         legend(legend = "sideways", x = "bottomright", cex = fontsize, bty = "n")
     }
-} else {
+}
+if (type=="normal") {
     if (size == 1.33) {
         legend(legend = "normal", x = "bottomright", cex = fontsize, bty = "n")
     }
@@ -240,6 +262,7 @@ result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
 result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
 result <- cbind(result, data.frame(betasimple = interceptsimple))
 par(mai = defaultmargin)
+# print(result)
 }
 
 # add more data to results for easy printing
@@ -258,8 +281,8 @@ bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 fitplaq <- try(bootstrap.nlsfit(fncub, c(0.7, 1, 1, 1), x = result$xiphys^2, y = result$p, bsamples = bsamplescontlimit))
 
 # plot results to pdf
-if (sideways) pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", omit), title = "")
-if (!sideways) pdf("tikzplotallfits.pdf", title = "")
+if (type=="sideways") pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", omit), title = "")
+if (type=="normal") pdf("tikzplotallfits.pdf", title = "")
 
 # result of all linear fits
 for (i in seq(1, length(xis))){
@@ -275,7 +298,7 @@ try(plotwitherror(x = c(0), y = c(fitplaq$t0[1]), dy = (fitplaq$se[1]), col = 2,
 
 if (TRUE) {
 # fits also with xi_input with only one measurement, empty containers for result
-xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 2/7, 0.25)
+xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
 bsamplescontlimitnaive <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 bsamplescontlimitnaivexiren <- array(rep(NA, 2 * bootsamples * (length(xis))), dim = c(bootsamples, 2 * length(xis)))
 bsamplescontlimitbeta <- array(rep(NA, 2 * bootsamples * (length(xis))), dim = c(bootsamples, 2 * length(xis)))
@@ -295,6 +318,7 @@ for (i in seq(1, length(xis))) {
     bsamplescontlimitbeta[, i] <- intercepts[, i]
     bsamplescontlimitbeta[, length(xis) + i] <- arrayxi[, row]^2
 }
+bsamplescontlimitbeta[, 1] <- parametric.bootstrap(500, c(1.7), c(1e-5))
 
 # cubic fits with nothing renormalized and only xi renormalized
 fitplaqnaive <- try(bootstrap.nlsfit(fncub, c(0.71, 1, 1, 1),
@@ -333,7 +357,6 @@ try(plot(fitplaqnaivexiren, plot.range = c(-0.2, 1.2),
         ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)),
         xlab = "", xaxs = "i", xlim = c(0, 1)))
 try(mtext(fitplaqnaivexiren$x, side = 1))
-print(fitplaqnaivexiren$x)
 try(plotwitherror(x = c(0), y = c(fitplaqnaivexiren$t0[1]),
         dy = (fitplaqnaivexiren$se[1]), col = 2, pch = 2, rep = TRUE))
 par("usr" = defaultusr)
@@ -353,12 +376,11 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xis^2, y = pnaive, bsamples = bsamplescontlimitnaive))
     fitspolynomial[[i]] <- fitplaqnaive
-    print(summary(fitplaqnaive))
     plot(fitplaqnaive, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitplaqnaive$t0[1], fitplaqnaive$se[1],
             fitplaqnaive$chi / fitplaqnaive$dof, fitplaqnaive$Qval, i),
-            plot.range = c(-0.2, 1.2), xlab = "", xaxs = "i", xlim = c(0, 1),
-            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)))
+            plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1),
+            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)), xlab="xi_in", ylab="P")
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaive$t0[1],
             fitplaqnaive$se[1], digits = 2, with.dollar = FALSE),
@@ -373,8 +395,8 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     plot(fitplaqnaivexiren, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
             fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i),
-            plot.range = c(-0.2, 1.2), xlab = "", xaxs = "i", xlim = c(0, ),
-            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)))
+            plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1),
+            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)), xlab="xi_ren", ylab="P")
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaivexiren$t0[1],
             fitplaqnaivexiren$se[1], digits = 2, with.dollar = FALSE),
@@ -390,34 +412,37 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
             plot.range = c(-0.2, 1.2),
             ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(result$p)),
-            xlab = "", xaxs = "i", xlim = c(0, 1))
+            xaxs = "i", xlim = c(0, 1), xlab="xi_ren", ylab="P")
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
             fitplaq$se[1], digits = 2, with.dollar = FALSE),
             chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
             type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]))
 
-    fitbeta <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
+    fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = result$xiphys^2, y = result$beta, bsamples = bsamplescontlimitbeta))
     fitspolynomial[[15 + i]] <- fitbeta
-    plot(fitplaq, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
+    try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitbeta$t0[1], fitbeta$se[1],
             fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
             plot.range = c(-0.2, 1.2),
-            ylim = c((fitbeta$t0[1] - fitbeta$se[1]), max(result$p)),
-            xlab = "", xaxs = "i", xlim = c(0, 1))
-    resultspolynomial <- rbind(resultspolynomial,
+            ylim = c(1.3, 1.75),
+            xlab = "xi_ren", ylab="beta_ren", xaxs = "i", xlim = c(0, 1)))
+    try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitbeta$t0[1],
             fitbeta$se[1], digits = 2, with.dollar = FALSE),
             chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
-            type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1]))
+            type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
     i <- i + 1
 }
+plotwitherror(x=result$xiphys^2,y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+
 resultspolynomial <- resultspolynomial[-1, ]
-namepol <- "plotstikz/polynomialnormal.csv"
-if (sideways) namepol <- "plotstikz/polynomialsideways.csv"
+if (type=="normal") namepol <- "plotstikz/polynomialnormal.csv"
+if (type=="sideways") namepol <- "plotstikz/polynomialsideways.csv"
 # write out result
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+print(resultspolynomial)
 
 }
 
@@ -432,9 +457,9 @@ write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 # resultspolynomial: dataframe with degree of polynomial, result of cont. lim. with catwitherror, chi and p of lim, type of lim, result of lim as two doubles
 # resultlist: intercepts = beta_ren, xiphys, plaqren , fitsrzero, fitsxi, fitsp (results of linear interpolations), fitplaq, fitplaqnaive, fitplaqnaivexiren(cubic polynomial cont limits)
 # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
-print(fitresults)
-print(result)
-if (!sideways) {
+# print(fitresults)
+# print(result)
+if (type=="normal") {
 write.table(result, "plotstikz/resultsrenormalization.csv",
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, "plotstikz/fitresultsrenormalization.csv",
@@ -443,7 +468,7 @@ saveRDS(resultslist, "plotstikz/listresultsrenormalization.RData")
 saveRDS(fitspolynomial, "plotstikz/listpolynomialrenormalization.RData")
 }
 
-if (sideways) {
+if (type=="sideways") {
 write.table(result, sprintf("plotstikz/resultsrenormalizationsidewaysomit%d.csv", omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationsidewaysomit%d.csv", omit),
