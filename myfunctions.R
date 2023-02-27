@@ -579,12 +579,12 @@ fitplotfunctions <- function (fun1, fun2, x1, y1, dy1, x2, y2, dy2,
     dots <- list(...)
     my.ylim <- FALSE
     my.xlim <- FALSE
-    if (!'ylim' %in% names(dots)) {
+    if (!"ylim" %in% names(dots)) {
         ylimnew <- c(min(na.omit(y1 - dy1), na.omit(y2 - dy2)),
                 max(na.omit(y1 + dy1), na.omit(y2 + dy2)))
         my.ylim <- TRUE
     }
-    if (!'xlim' %in% names(dots)) {
+    if (!"xlim" %in% names(dots)) {
         xlimnew <- c(min(na.omit(x1), na.omit(x2)),
                 max(na.omit(x1), na.omit(x2)))
         my.xlim <- TRUE
@@ -719,3 +719,16 @@ fnqin <- function (par, x, boot.r, ...) {
     return (par[1]  +  par[2] * x  +  par[3] * x^2  +  par[4] * x^3  +  par[5] * x^4  +  par[6] * x^5)
 }
 
+# if a fit was done excluding NA values, but the order of bootstrapsamples is important,
+# fill the result in another error, in which the same indices as in the original array are NA
+fillexceptna <- function (originalarray, resultarray) {
+    if(length(originalarray) - sum(is.na(originalarray)) != length(resultarray)){
+        stop("result and original do not have the same number of entries missing")
+    }
+    result <- resultarray
+    naindices <- which(is.na(originalarray))
+    for (i in seq_len(length(naindices))) {
+        result <- append(result, NA, after=naindices[i]-1)
+    }
+    return (result)
+}

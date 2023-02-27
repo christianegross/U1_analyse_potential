@@ -30,16 +30,16 @@ option_list <- list(
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
-source(paste(opt$myfunctions, "myfunctions.R", sep=""))
+source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 
 #get git commit hash of myfunctions.R, should be the same as of this script
 cwd <- setwd(opt$myfunctions)
-githash <- try(system("git rev-parse --short HEAD", intern=TRUE))
+githash <- try(system("git rev-parse --short HEAD", intern = TRUE))
 setwd(cwd)
 print(paste("## on git commit", githash))
 
 type <- opt$type
-if(! (type=="normal" || type=="sideways" || type=="slope")){
+if (! (type == "normal" || type == "sideways" || type == "slope")) {
     stop(paste("type", type, "not allowed"))
 }
 }
@@ -52,17 +52,17 @@ if(! (type=="normal" || type=="sideways" || type=="slope")){
 
 
 # set filenames, read in results, set up containers for bootstrapsamples
-if (type=="sideways") {
+if (type == "sideways") {
 dataname <- sprintf("resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$beta, opt$length)
 filenameres <- "resultsrotated"
 side <- 2
 }
-if (type=="normal") {
+if (type == "normal") {
 dataname <- sprintf("resultsummary2p1dnormalb%.3fNs%d.csv", opt$beta, opt$length)
 filenameres <- "resultssubtracted"
 side <- 2
 }
-if (type=="slope") {
+if (type == "slope") {
 dataname <- sprintf("summarysmallbetaone%f.csv", opt$beta)
 filenameres <- "resultsmallscaled"
 side <- 2
@@ -70,9 +70,9 @@ side <- 2
 if (!file.exists(dataname)) {
     stop(paste("file for results does not exist, check for", dataname))
 }
-data <- read.table(dataname, header=TRUE, sep=" ")
+data <- read.table(dataname, header = TRUE, sep = " ")
 data <- na.omit(data)
-if (type=="sideways") {
+if (type == "sideways") {
 data <- data[data$omit == opt$omit, ]
 }
 
@@ -90,12 +90,12 @@ for (i in seq(1, nom)) {
     string <- sprintf("i = %d, beta = %f, Ns = %d, Nt = %d, xi = %f",
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
-    if(type=="normal" || type=="sideways"){
+    if (type == "normal" || type == "sideways") {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres)
     }
-    if(type=="slope"){
+    if (type == "slope") {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsslopescaled", "bsp", "bsxicalc"), filename = filenameres)
@@ -105,7 +105,7 @@ for (i in seq(1, nom)) {
     arrayxi[, i] <- result[, 3]
 }
 
-if(type=="slope"){
+if (type == "slope") {
     data$r0 <- applay(arrayrzero, 2, mean)
     data$dr0 <- applay(arrayrzero, 2, sd)
 }
@@ -125,13 +125,13 @@ for (size in c(0.65)) {
 # for (size in c(0.65, 0.75, 1.33)) {
 
 
-if (type=="normal") {
+if (type == "normal") {
     nameplot <- sprintf("%srenormr0ratio%.2f", path, size)
 }
-if (type=="sideways") {
+if (type == "sideways") {
     nameplot <- sprintf("%srenormr0sidewaysratio%.2fomit%d", path, size, opt$omit)
 }
-if (type=="slope") {
+if (type == "slope") {
     nameplot <- sprintf("%srenormsloperatio%.2f", path, size)
 }
 
@@ -144,11 +144,11 @@ if (size > 1) {
                     height = mmtoinches(200 * size), packages = packages)
     }
 defaultmargin <- par(c("mai"))
-if (type=="normal") {
+if (type == "normal") {
     par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
             defaultmargin[2] * max(1, 0.8 * fontsize), 0.1, 0.1))
 }
-if (type=="sideways") {
+if (type == "sideways") {
     par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
                 0.01, 0.1, defaultmargin[2] * max(1, 0.8 * fontsize)))
 }
@@ -230,12 +230,13 @@ for (i in seq(2, length(xis))) {
                 dy = data$dr0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
         interceptsimple[i] <- (rzeroone - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2]
         interceptintermediate <- getintercept(fitsrzero[[i]], arrayrzero[, maskone], bootsamples=length(fitsrzero[[i]]$t[, 1]))
-        intercepts[, i] <- c(interceptintermediate, rep(NA, (500-length(interceptintermediate))))
+        intercepts[, i] <- fillexceptna(arrayrzero[, mask], interceptindermediate)
 
-        prediction <- predict(fitsplaquette[[i]], intercepts[, i])
-        plaqren[, i] <- prediction$val
-        prediction <- predict(fitsxi[[i]], intercepts[, i])
-        xiphys[, i] <- prediction$val
+        #do prediction for each bootstrapsample separately, can consider $val and not $boot
+        prediction <- predict(fitsplaquette[[i]], interceptindermediate)
+        plaqren[, i] <- fillexceptna(arrayrzero[, mask], prediction$val)
+        prediction <- predict(fitsxi[[i]], interceptintermediate)
+        xiphys[, i] <- fillexceptna(arrayrzero[, mask], prediction$val)
         newline <- data.frame(xiin = xis[i],
             r0slope = tex.catwitherror(fitsrzero[[i]]$t0[2], fitsrzero[[i]]$se[2], with.dollar = FALSE, digits = 2),
             r0intercept = tex.catwitherror(fitsrzero[[i]]$t0[1], fitsrzero[[i]]$se[1], with.dollar = FALSE, digits = 2),
@@ -247,7 +248,7 @@ for (i in seq(2, length(xis))) {
             xiintercept = tex.catwitherror(fitsxi[[i]]$t0[1], fitsxi[[i]]$se[1], with.dollar = FALSE, digits = 2),
             chixi = fitsxi[[i]]$chisqr / fitsxi[[i]]$dof, pxi = fitsxi[[i]]$Qval)
         fitresults <- rbind(fitresults, newline)
-    }else{
+    } else {
         try(plotwitherror(x = data$beta[maskplot], y = data$r0[maskplot],
                 dy = data$r0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
         newline <- data.frame(xiin=xis[i], r0slope = NA, r0intercept = NA, chir0 = NA, pr0 = NA,
@@ -266,19 +267,19 @@ legendtext[length(xis) + 1] <- "bounds fit"
 fitresults <- fitresults[-1, ]
 legend(legend = legendtext, x = "topleft", title = "$\\xi_\\text{input} = $",
         col = c(cols), pch = c(cols), cex = fontsize)
-if (type=="normal" || type=="sideways"){
+if (type == "normal" || type == "sideways") {
 mtext("$r_0 / a_s$", side = side, line = distance, cex = fontsize) #ylab
 }
-if (type=="slope"){
+if (type == "slope") {
 mtext("$a_s \\Delta V$", side = side, line = distance, cex = fontsize) #ylab
 }
 mtext("$\\beta$", side = 1, line = distance, cex = fontsize) #xlab
-if (type=="sideways") {
-    if (size == 1.33) {
+if (type == "sideways") {
+    if (size  ==  1.33) {
         legend(legend = "sideways", x = "bottomright", cex = fontsize, bty = "n")
     }
 }
-if (type=="normal") {
+if (type == "normal") {
     if (size == 1.33) {
         legend(legend = "normal", x = "bottomright", cex = fontsize, bty = "n")
     }
@@ -314,9 +315,9 @@ bsamplescontlimit[, seq(1, length(xis))] <- plaqren
 bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 
 # plot results to pdf
-if (type=="sideways") pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", opt$omit), title = "")
-if (type=="normal") pdf("tikzplotallfits.pdf", title = "")
-if (type=="slope") pdf("tikzplotallfitsslope.pdf", title = "")
+if (type == "sideways") pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", opt$omit), title = "")
+if (type == "normal") pdf("tikzplotallfits.pdf", title = "")
+if (type == "slope") pdf("tikzplotallfitsslope.pdf", title = "")
 
 # result of all linear fits
 for (i in seq(1, length(xis))){
@@ -446,12 +447,12 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
     i <- i + 1
 }
-plotwitherror(x=result$xiphys^2,y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type=="normal") namepol <- "plotstikz/polynomialnormal.csv"
-if (type=="sideways") namepol <- "plotstikz/polynomialsideways.csv"
-if (type=="slope") namepol <- "plotstikz/polynomialslope.csv"
+if (type == "normal") namepol <- "plotstikz/polynomialnormal.csv"
+if (type == "sideways") namepol <- "plotstikz/polynomialsideways.csv"
+if (type == "slope") namepol <- "plotstikz/polynomialslope.csv"
 # write out result
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
@@ -471,7 +472,7 @@ print(resultspolynomial)
 # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
 # print(fitresults)
 # print(result)
-if (type=="normal") {
+if (type == "normal") {
 write.table(result, "plotstikz/resultsrenormalization.csv",
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, "plotstikz/fitresultsrenormalization.csv",
@@ -480,7 +481,7 @@ saveRDS(resultslist, "plotstikz/listresultsrenormalization.RData")
 saveRDS(fitspolynomial, "plotstikz/listpolynomialrenormalization.RData")
 }
 
-if (type=="sideways") {
+if (type == "sideways") {
 write.table(result, sprintf("plotstikz/resultsrenormalizationsidewaysomit%d.csv", opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationsidewaysomit%d.csv", opt$omit),
@@ -489,7 +490,7 @@ saveRDS(resultslist, sprintf("plotstikz/listresultsrenormalizationsidewaysomit%d
 saveRDS(fitspolynomial, sprintf("plotstikz/listpolynomialrenormalizationsidewaysomit%d.RData", opt$omit))
 }
 
-if (type=="slope") {
+if (type == "slope") {
 write.table(result, sprintf("plotstikz/resultsrenormalizationslope.csv"),
             col.names = TRUE, row.names = FALSE, append = FALSE)
 write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationslope.csv"),
