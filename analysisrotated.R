@@ -81,12 +81,12 @@ option_list <- list(
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
-githash <- printgitcommit(opt$myfunctions)
 }
 
 if (TRUE) {
 # set some constants
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
+githash <- printgitcommit(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip
 bootsamples <- opt$bootsamples
