@@ -20,7 +20,7 @@ option_list <- list(
     make_option(c("-T", "--timeextent"), type = "integer", default = 16,
     help = "time extent of ensemble [default %default]"),
     make_option(c("--myfunctions"), type = "character",
-        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/myfunctions.R",
+        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored [default %default]"),
     make_option(c("--respath"), type = "character", default = "",

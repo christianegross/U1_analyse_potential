@@ -49,7 +49,7 @@ option_list <- list(
     help = "Step between saved configurations [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
-        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/myfunctions.R",
+        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored [default %default]"),
     make_option(c("--respath"), type = "character", default = "",
@@ -65,7 +65,7 @@ githash <- printgitcommit(opt$myfunctions)
 
 if (TRUE) {
 # set constants
-source(opt$myfunctions)
+source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 beta <- opt$beta
 skip <- opt$skip
 bootsamples <- opt$bootsamples

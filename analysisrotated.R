@@ -73,7 +73,7 @@ option_list <- list(
     help = "path to where the plots are stored [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
-        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/myfunctions.R",
+        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored,
             relative to folder where script is executed [default %default]")
@@ -86,7 +86,7 @@ githash <- printgitcommit(opt$myfunctions)
 
 if (TRUE) {
 # set some constants
-source(opt$myfunctions)
+source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 beta <- opt$beta
 skip <- opt$skip
 bootsamples <- opt$bootsamples
