@@ -132,8 +132,9 @@ for (x in seq(0, 3)) {
     for (y in seq(0, 3)) {
     if (x > 0 || y > 0) {
     #save results, list has to have an entry everywhere
-        listresults <- list(FALSE, FALSE, FALSE)
+        resulteffmass <- list(data.frame(R = NA, m = NA, dm = NA), c(0, 0), list(FALSE, FALSE, FALSE))
         uwerrresults <- FALSE
+        if (x<2 && y<2){
         message("\nx = ", x, " y = ", y)
         filename <- sprintf(
                 "%sresult2p1d.u1potential.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fnonplanar",
@@ -179,14 +180,15 @@ for (x in seq(0, 3)) {
         arrows((Nt - start - 1) / 2, 10, (Nt - start - 1) / 2, -10,
                 angle = 90, length = 0.1, code = 0, col = 2)
         drawallticks(all = FALSE, inward = TRUE)
-        listfits[[4 * x + y]] <- resulteffmass[[3]]
-        listtauint[[4 * x + y]] <- uwerrresults
-        listpotshort <- rbind(listpotshort, resulteffmass[[1]])
 
         # plot autocorrelation times of non-bootstrapped results
         try(plot(x = uwerrresults$uwcf$t - 1, y = uwerrresults$uwcf$tauint,
                 main = sprintf("%s, autocorellation times", title),
                 xlab = "t", ylab = "tauint"))
+    }
+        listfits[[4 * x + y]] <- resulteffmass[[3]]
+        listtauint[[4 * x + y]] <- uwerrresults
+        listpotshort <- rbind(listpotshort, resulteffmass[[1]])
     }
     }
 }
@@ -297,19 +299,19 @@ if (opt$plaquette) {
         ratio <- mean(ratiobootsamples)
         dratio <- sd(ratiobootsamples)
 
-        fit.result <- try(bootstrap.nlsfit(fnlin,
-                    c(0.2, 0.2), pot, x, bsamplespot))
-        if (!inherits(fit.result, "try-error")) {
-            print(fit.result)
-            slope <- fit.result$t0[2]
-            dslope <- fit.result$se[2]
-            bsslope <- fit.result$t[, 2]
-            chislope <- fit.result$chisqr
-            icslope <- fit.result$t0[1]
-            dicslope <- fit.result$se[1]
-            bsicslope <- fit.result$t[, 1]
+        # fit.result <- try(bootstrap.nlsfit(fnlin,
+        #             c(0.2, 0.2), pot, x, bsamplespot))
+        # if (!inherits(fit.result, "try-error")) {
+        #     print(fit.result)
+        #     slope <- fit.result$t0[2]
+        #     dslope <- fit.result$se[2]
+        #     bsslope <- fit.result$t[, 2]
+        #     chislope <- fit.result$chisqr
+        #     icslope <- fit.result$t0[1]
+        #     dicslope <- fit.result$se[1]
+        #     bsicslope <- fit.result$t[, 1]
 
-        } else {
+        # } else {
             bsslope <- c()
             bsicslope <- c()
             for (bs in seq(1, bootsamples)) {
@@ -321,7 +323,7 @@ if (opt$plaquette) {
             icslope <- mean(bsicslope)
             dicslope <- sd(bsicslope)
             chislope <- NA
-        }
+        # }
     } else {
         print("no points for xi found")
         fit.result <- NA
@@ -380,7 +382,7 @@ if (opt$plaquette) {
         # if that fails, set results to NA
         fit.pot <- try(bootstrap.nlsfit(fnpot, c(1, 1, 1),
                 y = V, x = sqrt(x^2 + y^2), bsamples, mask = mask))
-        if (!inherits(fit.pot, "try-error")) {
+        if (!inherits(fit.pot, "try-error") & listmeff[[2]][[2]]) {
             print(fit.pot)
             plot(fit.pot, ylab = "a_tV(r)", xlab = "r / a_s",
                     main = "Potential including nonplanar points",
@@ -500,8 +502,8 @@ if (opt$plaquette) {
     }
     results <- results[-1, ]
     print(results)
-    filenamexi <- sprintf("%ssummarysmallbetaone%f.csv",
-            opt$plotpath, opt$betaone)
+    filenamexi <- sprintf("%ssummarysmallbetaone%fL%d.csv",
+            opt$plotpath, opt$betaone, opt$Ns)
     columnnames <- FALSE
     if (!file.exists(filenamexi)) {
         columnnames <- TRUE

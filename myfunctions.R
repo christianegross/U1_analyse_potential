@@ -675,6 +675,7 @@ readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
     index <- 1
     for (i in seq(1, length(names))) {
         name <- names[i]
+        # print(length(listres[[name]]))
         for (j in seq(1, columns[i])) {
             if (columns[i] > 1) {
                 bsamples[, index] <- listres[[name]][[j]]
@@ -721,14 +722,11 @@ fnqin <- function (par, x, boot.r, ...) {
 
 # if a fit was done excluding NA values, but the order of bootstrapsamples is important,
 # fill the result in another error, in which the same indices as in the original array are NA
-fillexceptna <- function (originalarray, resultarray) {
-    if(length(originalarray) - sum(is.na(originalarray)) != length(resultarray)){
-        stop("result and original do not have the same number of entries missing")
-    }
+# insert NA at thze given indices
+fillexceptna <- function (indices, resultarray) {
     result <- resultarray
-    naindices <- which(is.na(originalarray))
-    for (i in seq_len(length(naindices))) {
-        result <- append(result, NA, after=naindices[i]-1)
+    for (i in seq_len(length(indices))) {
+        result <- append(result, NA, after=indices-1)
     }
     return (result)
 }

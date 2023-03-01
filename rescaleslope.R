@@ -67,7 +67,7 @@ newlist <- list(slopescaled=result[["slope"]] / xiscale$val,
     respotential <- readRDS(sprintf("%sresultssubtractedNs%dNt%dbeta%fxi%fbs%d.RData", opt$datapath, opt$lengthlarge, opt$timeextent, opt$beta, opt$xi, opt$bootsamples))
     newlist <- list(slopescaled=result[["slope"]] / respotential[["xicalc"]],
                     dslopescaled=sqrt((result[["dslope"]] / respotential[["xicalc"]])^2+(result[["slope"]] * respotential[["dxicalc"]] / respotential[["xicalc"]]^2)^2),
-                    bsslopescaled=respotential[["bsxicalc"]],
+                    bsslopescaled=result[["bsslope"]],
                     xiren=respotential[["xicalc"]], dxiren=respotential[["dxicalc"]], bsxiren=respotential[["bsxicalc"]])
 }
 resultsmall <- c(newlist, list(p=as.double(result[["p"]]), dp=result[["dp"]], bsp=result[["bsp"]]))
