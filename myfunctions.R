@@ -730,3 +730,12 @@ fillexceptna <- function (indices, resultarray) {
     }
     return (result)
 }
+
+printgitcommit <- function(pathtogit) {
+    #get git commit hash of myfunctions.R, should be the same as of any script
+    cwd <- setwd(pathtogit)
+    githash <- try(system("git rev-parse --short HEAD", intern = TRUE))
+    setwd(cwd)
+    print(paste("## on git commit", githash))
+    return(githash)
+}

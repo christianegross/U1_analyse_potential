@@ -31,6 +31,7 @@ option_list <- list(
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
+githash <- printgitcommit(opt$myfunctions)
 # print(opt)
 }
 
@@ -49,10 +50,10 @@ xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
 distances <- abs(xis-opt$xi)<0.01 ##roundabout way to take 0.33, 0.333333333333333333 equally into account
 
 index <- match(TRUE, distances)
-print(index)
+# print(index)
 
 xiscale <- predict(xifits[[index]], opt$beta)
-print(xiscale$val)
+# print(xiscale$val)
 
 
 newlist <- list(slopescaled=result[["slope"]] / xiscale$val,

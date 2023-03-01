@@ -32,11 +32,7 @@ args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 
-#get git commit hash of myfunctions.R, should be the same as of this script
-cwd <- setwd(opt$myfunctions)
-githash <- try(system("git rev-parse --short HEAD", intern = TRUE))
-setwd(cwd)
-print(paste("## on git commit", githash))
+githash <- printgitcommit(opt$myfunctions)
 
 type <- opt$type
 if (! (type == "normal" || type == "sideways" || type == "slope")) {

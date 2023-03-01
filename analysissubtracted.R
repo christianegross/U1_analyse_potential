@@ -88,6 +88,7 @@ option_list <- list(
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
+githash <- printgitcommit(opt$myfunctions)
 }
 
 if (TRUE) {
