@@ -261,6 +261,8 @@ for (x in seq(1, Ns / 2, 1)) {
     listtauint[[Ns / 2 + x]] <- uwerrresults
     message(negatives[x], " correlators are negative for x = ", x)
 }
+listfits[[Ns]] <- githash
+
 #write out results
 t1 <- -1 #opt$lowerboundmeff
 filenamepotential <- sprintf(
@@ -464,12 +466,12 @@ saveRDS(fit.resultfine, file = filenamefine)
 plot(fit.resultfine, main  =  sprintf(
             "beta = %f, xi = %f, (2 + 1)D, Ns = %d, fine\n
             %d measurements of which skipped %d",
-            beta, xi, Ns, nom * 100, skip * 100),
+            beta, xi, Ns, nom * opt$nsave, skip * opt$nsave),
             ylab = "a_t V_{xt}(x)", xlab = "x / a_s")
 plot(fit.resultcoarse, main  =  sprintf(
             "beta = %f, xi = %f, (2 + 1)D, Ns = %d, coarse\n
             %d measurements of which skipped %d",
-            beta, xi, Ns, nom * 100, skip * 100),
+            beta, xi, Ns, nom * opt$nsave, skip * opt$nsave),
             ylab = "a_s V_{xy}(x)", xlab = "x / a_s")
 
 
@@ -605,7 +607,7 @@ rzeroofc <- na.omit(rzeroofc)
 title <- sprintf(
         "beta = %.3f, xi = %.3f + /-%.3f, (2 + 1)D, Ns = %d\n
         %d measurements of which skipped %d",
-        beta, xicalc, dxicalc, Ns, nom * 100, skip * 100)
+        beta, xicalc, dxicalc, Ns, nom * opt$nsave, skip * opt$nsave)
 
 
 #plot visible combination of temporal and spatial potential
@@ -684,7 +686,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     dp = NA, chi = NA, diff = NA, ddiff = NA, bs = NA,
     xicalcsub = NA, dxicalcsub = NA, xi2sub = NA, dxi2 = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
-    omit = NA, nom = NA, skip = NA, t1 = NA, job = NA,
+    omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash=NA,
     every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
@@ -700,7 +702,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       dxi2 = dxisquaredsub, c = rzeroofc$c[i], rmin = opt$rmin,
                       rmax = opt$rmax, Ns = Ns, Nt = Nt, nape = nape, alpha = alpha,
                       omit = opt$omit, nom = nom, skip = skip,
-                      t1 = t1, job = opt$job, every = opt$every,
+                      t1 = t1, job = opt$job, hash = githash, every = opt$every,
                       tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint,
                       bootl = opt$bootl, lowlim = opt$lowlim)
 resultlist <- rbind(resultlist, newline)

@@ -62,6 +62,13 @@ newlist <- list(slopescaled=result[["slope"]] / xiscale$val,
                 bsslopescaled=result[["bsslope"]] / xiscale$boot,
                 xiren=xiscale$val, dxiren=xiscale$err, bsxiren=xiscale$boot)
 
+for (bs in 1:opt$bootsamples) {
+    if (is.na(result[["bsslope"]][bs]) || is.na(xiscale$boot[bs]) ) {
+        print(paste("NAs at", bs))
+
+    }
+}
+
 # print(newlist)
 
 # resultscaled <- c(result, newlist)

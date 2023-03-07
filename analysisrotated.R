@@ -250,6 +250,8 @@ for (t in seq(1, Nt / 2, 1)) {
     listtauint[[Ns / 2 + t]] <- uwerrresults
     negatives[Ns / 2 + t] <- sum(WL$cf0 < 0)
 }
+listfits[[Ns/2 + Nt/2 + 1]] <- githash
+
 #write out results
 potential <- na.omit(potential)
 filenamepotential <- sprintf(
@@ -464,12 +466,12 @@ saveRDS(fit.resultfine, file = filenamefine)
 try(plot(fit.resultfine, main = sprintf(
         "beta=%.3f, xi=%.3f, (2 + 1)D, Ns=%d, fine\n
         %d measurements of which skipped %d",
-        beta, xi, Ns, nom * 100, skip * 100),
+        beta, xi, Ns, nom * opt$nsave, skip * opt$nsave),
         ylab = "a_s V(t)", xlab = "t / a_t"))
 try(plot(fit.resultcoarse, main = sprintf(
         "beta=%.3f, xi=%.3f, (2 + 1)D, Ns=%d, coarse\n
         %d measurements of which skipped %d",
-        beta, xi, Ns, nom * 100, skip * 100),
+        beta, xi, Ns, nom * opt$nsave, skip * opt$nsave),
         ylab = "a_s V(y)", xlab = "y/a_s"))
 
 # calculate xi in different ways: determine ratio of linear coefficients of the potentials
@@ -652,7 +654,7 @@ bsrzero <- rzerolist[, 1]
 rzeroofc <- rzeroofc[-1, ]
 
 #plot results: overall potential
-title <- sprintf("beta = %.3f, xi = %.3f +/- %.3f, (2+ )D, Ns = %d\n
+title <- sprintf("beta = %.3f, xi = %.3f +/- %.3f, (2+ 1)D, Ns = %d\n
                 %d measurements of which skipped %d",
                 beta, xicalc, dxicalc, Ns, nom * opt$nsave, skip * opt$nsave)
 
@@ -768,7 +770,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         chi = NA, chifine = NA, chicoarse = NA, c = NA, bs = NA, Ns = NA,
         Nt = NA, nape = NA, alpha = NA, omit = NA, nom = NA, skip = NA,
         xi2 = NA, dxi2 = NA, xisingle = NA, dxisingle = NA, t1 = NA,
-        job = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
+        job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
         xirzero = NA, dxirzero = NA, xist = NA, dxist = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
@@ -782,7 +784,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         c = rzeroofc$c[i], bs = bootsamples, Ns = Ns, Nt = Nt,
         nape = nape, alpha = alpha, omit = opt$omit, nom = nom, skip = skip,
         xi2 = xisquared, dxi2 = dxisquared, xisingle = xisingle, dxisingle = dxisingle,
-        t1 = t1, job = opt$job, every = opt$every,
+        t1 = t1, job = opt$job, hash = githash, every = opt$every,
         tauint = uwerrresults$uwcf$tauint[1], dtauint = uwerrresults$uwcf$dtauint[1],
         bootl = opt$bootl, xirzero = differentxiresults[1], dxirzero = differentxiresults[2],
         xist = differentxiresults[3], dxist = differentxiresults[4])

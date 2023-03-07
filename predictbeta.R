@@ -59,7 +59,7 @@ filenameres <- "resultssubtracted"
 side <- 2
 }
 if (type == "slope") {
-dataname <- sprintf("summarysmallbetaone%f.csv", opt$beta)
+dataname <- sprintf("summarysmallbetaone%fL%d.csv", opt$beta, opt$length)
 filenameres <- "resultsmallscaled"
 side <- 2
 }
@@ -100,6 +100,7 @@ for (i in seq(1, nom)) {
     arrayrzero[, i] <- result[, 1]
     arrayp[, i] <- result[, 2]
     arrayxi[, i] <- result[, 3]
+    if (sum(is.na(result)) > 0) print(sum(is.na(result)))
 }
 
 if (type == "slope") {
@@ -110,7 +111,6 @@ if (type == "slope") {
     data$xi <- data$xiin
     try(data[c("xiin", "ratio", "dratio", "st", "dst", "chipot", "icslope", "dicslope", "icpot", "dicpot", "logpot", "dlogpot", "ratioslope", "dratioslope", "ratiopot", "dratiopot", "rzero", "drzero", "puw", "dpuw", "job")] <- NULL)
     # print(data)
-    # print(data.frame(one=data$r0, two=data$dr0, three=data$beta, four=data$xi))
 }
 
 # set up parameters for plotting, initialize output file
@@ -125,7 +125,6 @@ packages <- c("\\usepackage{tikz}",
                 "\\usepackage{amsmath}")
 
 for (size in c(0.65)) {
-# for (size in c(0.65, 0.75, 1.33)) {
 
 
 if (type == "normal") {
@@ -159,17 +158,13 @@ print(nameplot)
 
 # set up limits, masks for selecting the right points
 ylim <- c(min(data$r0 - data$dr0), max(data$r0 + data$dr0))
-mask <- data$beta == opt$beta & data$xi == 1 & data$c == -1.65
-# print(mask)
-# print(data[mask, ])
+mask <- data$beta == opt$beta & data$xi == 1 #& data$c == -1.65
 maskone <- mask
 rzeroone <- data$r0[mask]
-# print(rzeroone)
 xlim <- c(min(data$beta), max(data$beta))
 if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
-# xis <- c(1, 0.8, 0.5, 0.4, 1/3, 0.25)
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
 cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
 fitsrzero <- list(NULL)
@@ -218,24 +213,17 @@ fitresults <- data.frame(xiin = NA, r0slope = NA, r0intercept = NA, chir0 = NA, 
 # determine P(beta_ren), xi(beta_ren)
 # put everything in one dataframe, nicely formatted for easy printing
 for (i in seq(2, length(xis))) {
-    mask <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65 & abs(data$r0 - data$r0[maskone]) < opt$fitlim
-    ##  make sure r0 is available for slope
-    # print(mask)
-    # print(head(arrayrzero[, mask]))
-    # print(data[mask, ])
-    maskplot <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65
+    mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
+    maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
                             data$beta[mask], na.omit(arrayrzero[, mask])))
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
                             data$beta[mask], na.omit(arrayp[, mask])))
     fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
-                            data$beta[mask], na.omit(arrayxi[, mask])))
+                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos=1:4))
 
     if (!inherits(fitsrzero[[i]], "try-error") && !inherits(fitsplaquette[[i]], "try-error") && !inherits(fitsxi[[i]], "try-error")) {
-        # print(paste("fits successful for xi=", xis[i]))
-        # xvaluesplot <- seq((data$r0[maskone] - opt$fitlim - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2],
-        #                 (data$r0[maskone] + opt$fitlim - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2], by = 0.01)
         try(errorpolygon(X = xvalues, fitsrzero[[i]], col.p = cols[i],
                 col.band = cols[i], cex = fontsize, arlength = 0.05 * fontsize))
         try(plotwitherror(x = data$beta[maskplot], y = data$r0[maskplot],
@@ -261,7 +249,6 @@ for (i in seq(2, length(xis))) {
             chixi = fitsxi[[i]]$chisqr / fitsxi[[i]]$dof, pxi = fitsxi[[i]]$Qval)
         fitresults <- rbind(fitresults, newline)
     } else {
-        # print(paste("fits not successful for xi=", xis[i]))
         try(plotwitherror(x = data$beta[maskplot], y = data$r0[maskplot],
                 dy = data$r0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
         newline <- data.frame(xiin=xis[i], r0slope = NA, r0intercept = NA, chir0 = NA, pr0 = NA,
@@ -314,13 +301,11 @@ par(mai = defaultmargin)
 print(result)
 }
 
-# add more data to results for easy printing
-# newframe <- data.frame(xiopt = tex.catwitherror(result$xiphys[seq(2, length(xis))], result$dxiphys[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
-# betaopt = tex.catwitherror(result$beta[seq(2, length(xis))], result$dbeta[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
-# popt = tex.catwitherror(result$p[seq(2, length(xis))], result$dp[seq(2, length(xis))], digits = 2, with.dollar = FALSE))
+## add more data to results for easy printing
+newframe <- data.frame(xiopt = tex.catwitherror(result$xiphys[seq(2, length(xis))], result$dxiphys[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
+betaopt = tex.catwitherror(result$beta[seq(2, length(xis))], result$dbeta[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
+popt = tex.catwitherror(result$p[seq(2, length(xis))], result$dp[seq(2, length(xis))], digits = 2, with.dollar = FALSE))
 
-# fitresults <- cbind(fitresults, newframe)
-# print(fitresults)
 
 # plot results to pdf
 if (type == "sideways") pdf(sprintf("tikzplotallfitssidewaysomit%d.pdf", opt$omit), title = "")
@@ -328,17 +313,14 @@ if (type == "normal") pdf("tikzplotallfits.pdf", title = "")
 if (type == "slope") pdf("tikzplotallfitsslope.pdf", title = "")
 
 # result of all linear fits
-for (i in seq(1, length(xis))){
+for (i in seq(2, length(xis))){
     try(plot(fitsrzero[[i]], main = sprintf("rzero, xiin = %f, chi = %f, p = %f", xis[i], fitsrzero[[i]]$chi / fitsrzero[[i]]$dof, fitsrzero[[i]]$Qval)))
     try(plot(fitsplaquette[[i]], main = sprintf("P, xiin = %f, chi = %f, p = %f", xis[i], fitsplaquette[[i]]$chi / fitsplaquette[[i]]$dof, fitsplaquette[[i]]$Qval)))
     try(plot(fitsxi[[i]], main = sprintf("xi, xiin = %f, chi = %f, p = %f", xis[i], fitsxi[[i]]$chi / fitsxi[[i]]$dof, fitsxi[[i]]$Qval)))
-    mask <- abs(data$xi - xis[i]) < 0.01 & data$c == -1.65 & abs(data$r0 - data$r0[maskone]) < opt$fitlim
-    try(plotwitherror(y=data$xicalc[mask], dy=data$dxicalc[mask], x=data$beta[mask], main=sprintf("xi, xiin=%f", xis[i])))
-}
-print("all linear fits plotted")
+   }
 
 
-if (type == "slope") pdf("tikzplotallfitsslopecontlimit.pdf", title = "")
+# if (type == "slope") pdf("tikzplotallfitsslopecontlimit.pdf", title = "")
 # save and plot results for naive limits
 resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
@@ -432,7 +414,6 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             limplot = fitplaqnaivexiren$t0[1], dlimplot = fitplaqnaivexiren$se[1])))
 
 # xi and beta renorm
-# print(bsamplescontlimit)
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit)))
@@ -469,8 +450,8 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
     i <- i + 1
 }
-plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
-plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+# plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+# plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
 
 resultspolynomial <- resultspolynomial[-1, ]
 if (type == "normal") namepol <- "plotstikz/polynomialnormal.csv"
