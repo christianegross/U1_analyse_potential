@@ -193,7 +193,7 @@ for (x in seq(0, 3)) {
     }
     }
 }
-listfits[[13]] <- githash
+listfits[[16]] <- githash
 #write out results
 filenamelist <- sprintf(
             "%slistmeffsmallNs%dNt%dbeta%fxi%fbsamples%d.RData",
@@ -255,6 +255,7 @@ if (opt$plaquette) {
     }
     listmeff <- readRDS(file = filenamelist)
     bootsamples <- length(listmeff[[5]][[1]]$massfit.tsboot[, 1])
+    print(listmeff)
 
     if (TRUE) { #plaquette
         # determine the plaquette with uwerr
