@@ -104,10 +104,10 @@ for (i in seq(1, nom)) {
 }
 
 if (type == "slope") {
-    data$xicalc <- apply(arrayxi, 2, mean, na.rm=T)
-    data$dxicalc <- apply(arrayxi, 2, sd, na.rm=T)
-    data$r0 <- apply(arrayrzero, 2, mean, na.rm=T)
-    data$dr0 <- apply(arrayrzero, 2, sd, na.rm=T)
+    data$xicalc <- apply(arrayxi, 2, mean, na.rm = T)
+    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = T)
+    data$r0 <- apply(arrayrzero, 2, mean, na.rm = T)
+    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = T)
     data$xi <- data$xiin
     try(data[c("xiin", "ratio", "dratio", "st", "dst", "chipot", "icslope", "dicslope", "icpot", "dicpot", "logpot", "dlogpot", "ratioslope", "dratioslope", "ratiopot", "dratiopot", "rzero", "drzero", "puw", "dpuw", "job")] <- NULL)
     # print(data)
@@ -146,7 +146,7 @@ if (size > 1) {
                     height = mmtoinches(200 * size), packages = packages)
     }
 defaultmargin <- par(c("mai"))
-if (type == "normal") {
+if (type == "normal" || type == "sideways") {
     par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
             defaultmargin[2] * max(1, 0.8 * fontsize), 0.1, 0.1))
 }
@@ -192,7 +192,7 @@ points(x = xvalues,
 points(x = xvalues,
         y = rep(data$r0[mask] + 0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
 plotwitherror(x = data$beta[maskone], y = data$r0[maskone],
-        dy = data$dr0[maskone], col = 1, pch = 1, cex = fontsize, rep=TRUE)
+        dy = data$dr0[maskone], col = 1, pch = 1, cex = fontsize, rep = TRUE)
 
 
 intercepts[, 1] <- rep(opt$beta, bootsamples)
@@ -221,7 +221,7 @@ for (i in seq(2, length(xis))) {
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
                             data$beta[mask], na.omit(arrayp[, mask])))
     fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
-                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos=1:4))
+                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
 
     if (!inherits(fitsrzero[[i]], "try-error") && !inherits(fitsplaquette[[i]], "try-error") && !inherits(fitsxi[[i]], "try-error")) {
         try(errorpolygon(X = xvalues, fitsrzero[[i]], col.p = cols[i],
@@ -229,7 +229,7 @@ for (i in seq(2, length(xis))) {
         try(plotwitherror(x = data$beta[maskplot], y = data$r0[maskplot],
                 dy = data$dr0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
         interceptsimple[i] <- (rzeroone - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2]
-        interceptintermediate <- getintercept(fitsrzero[[i]], arrayrzero[, maskone], bootsamples=length(fitsrzero[[i]]$t[, 1]))
+        interceptintermediate <- getintercept(fitsrzero[[i]], arrayrzero[, maskone], bootsamples = length(fitsrzero[[i]]$t[, 1]))
         intercepts[, i] <- fillexceptna(removed, interceptintermediate)
 
         #do prediction for each bootstrapsample separately, can consider $val and not $boot
@@ -251,9 +251,9 @@ for (i in seq(2, length(xis))) {
     } else {
         try(plotwitherror(x = data$beta[maskplot], y = data$r0[maskplot],
                 dy = data$r0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
-        newline <- data.frame(xiin=xis[i], r0slope = NA, r0intercept = NA, chir0 = NA, pr0 = NA,
+        newline <- data.frame(xiin = xis[i], r0slope = NA, r0intercept = NA, chir0 = NA, pr0 = NA,
                         plaqslope = NA, plaqintercept = NA, chiplaq = NA, pplaq = NA,
-                        xislope=NA, xiintercept=NA, chixi=NA, pxi=NA)
+                        xislope = NA, xiintercept = NA, chixi = NA, pxi = NA)
         fitresults <- rbind(fitresults, newline)
         interceptsimple[i] <- NA
     }
@@ -265,13 +265,15 @@ for (i in seq(2, length(xis))) {
 legendtext[length(xis) + 1] <- "bounds fit"
 
 fitresults <- fitresults[-1, ]
-legend(legend = legendtext, x = "topleft", title = "$\\xi_\\text{input} = $",
-        col = c(cols), pch = c(cols), cex = fontsize)
 if (type == "normal" || type == "sideways") {
 mtext("$r_0 / a_s$", side = side, line = distance, cex = fontsize) #ylab
+legend(legend = legendtext, x = "topleft", title = "$\\xi_\\text{input} = $",
+        col = c(cols), pch = c(cols), cex = fontsize)
 }
 if (type == "slope") {
 mtext("$a_s \\Delta V$", side = side, line = distance, cex = fontsize) #ylab
+legend(legend = legendtext, x = "bottomleft", title = "$\\xi_\\text{input} = $",
+        col = c(cols), pch = c(cols), cex = fontsize)
 }
 mtext("$\\beta$", side = 1, line = distance, cex = fontsize) #xlab
 if (type == "sideways") {
@@ -289,11 +291,11 @@ box(bty = "o")
 tikz.finalize(tikzfile)
 
 # make a dataframe of results
-result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm=T),
-                    dbeta = apply(intercepts, 2, sd, na.rm=T),
-                    xiphys = apply(xiphys, 2, mean, na.rm=T),
-                    dxiphys = apply(xiphys, 2, sd, na.rm=T),
-                    p = apply(plaqren, 2, mean, na.rm=T), dp = apply(plaqren, 2, sd, na.rm=T))
+result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
+                    dbeta = apply(intercepts, 2, sd, na.rm = T),
+                    xiphys = apply(xiphys, 2, mean, na.rm = T),
+                    dxiphys = apply(xiphys, 2, sd, na.rm = T),
+                    p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T))
 result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
 result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
 result <- cbind(result, data.frame(betasimple = interceptsimple))
@@ -388,7 +390,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaqnaive$t0[1], fitplaqnaive$se[1],
             fitplaqnaive$chi / fitplaqnaive$dof, fitplaqnaive$Qval, i),
             plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1),
-            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)), xlab="xi_in", ylab="P"))
+            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)), xlab = "xi_in", ylab = "P"))
     try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaive$t0[1],
             fitplaqnaive$se[1], digits = 2, with.dollar = FALSE),
@@ -405,7 +407,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
             fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i),
             plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1),
-            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)), xlab="xi_ren", ylab="P"))
+            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)), xlab = "xi_ren", ylab = "P"))
     try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaivexiren$t0[1],
             fitplaqnaivexiren$se[1], digits = 2, with.dollar = FALSE),
@@ -418,14 +420,14 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit)))
 
-    if(!inherits(fitplaq, "try-error")){
+    if (!inherits(fitplaq, "try-error")) {
     fitspolynomial[[10 + i]] <- fitplaq
     plot(fitplaq, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitplaq$t0[1], fitplaq$se[1],
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
             plot.range = c(-0.2, 1.2),
             ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(result$p)),
-            xaxs = "i", xlim = c(0, 1), xlab="xi_ren", ylab="P")
+            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren", ylab = "P")
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
             fitplaq$se[1], digits = 2, with.dollar = FALSE),
@@ -442,7 +444,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
             plot.range = c(-0.2, 1.2),
             ylim = c(1.3, 1.75),
-            xlab = "xi_ren", ylab="beta_ren", xaxs = "i", xlim = c(0, 1)))
+            xlab = "xi_ren", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1)))
     try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitbeta$t0[1],
             fitbeta$se[1], digits = 2, with.dollar = FALSE),

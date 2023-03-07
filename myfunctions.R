@@ -366,7 +366,7 @@ plotyerr <- function (x, y, dy, arlength = 0.02, log = "", ...) {
     ylo <- y - dy
     yhi <- y + dy
     dots <- list(...)
-    if (!'ylim' %in% names(dots)) {
+    if (!"ylim" %in% names(dots)) {
         ylim <- c(min(na.omit(ylo)), max(na.omit(yhi)))
         plot(x = x, y = y, ylim = ylim, log = log, ...)
     } else {
@@ -502,7 +502,7 @@ determinerzero <- function (fit.result, bootsamples, c = -1.65, xi = 1) {
     #~     a <- fit.resultscaled$t[bs, 1]
         sigma <- fit.result$t[bs, 2]
         b <- fit.result$t[bs, 3]
-        r1 <- -b / (2 * sigma) + sqrt( (b / (2 * sigma))^2 - c / sigma)
+        r1 <- -b / (2 * sigma) + sqrt((b / (2 * sigma))^2 - c / sigma)
         rzerolist[bs] <- r1
     }
     rzerolist <- na.omit(rzerolist)
@@ -726,7 +726,7 @@ fnqin <- function (par, x, boot.r, ...) {
 fillexceptna <- function (indices, resultarray) {
     result <- resultarray
     for (i in seq_len(length(indices))) {
-        result <- append(result, NA, after=indices-1)
+        result <- append(result, NA, after = indices - 1)
     }
     return (result)
 }

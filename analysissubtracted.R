@@ -686,7 +686,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     dp = NA, chi = NA, diff = NA, ddiff = NA, bs = NA,
     xicalcsub = NA, dxicalcsub = NA, xi2sub = NA, dxi2 = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
-    omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash=NA,
+    omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash = NA,
     every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
@@ -743,7 +743,7 @@ if (opt$smearing) {
 }
 if (file.exists(filenamelist)) {
 listmeff <- readRDS(file = filenamelist)
-} else{
+} else {
   filenamelist <- sprintf(
             "%slistmeff2p1dsubtractedNs%dbeta%fxi%fbsamples%dl%d.RData",
             opt$plotpath, Ns, beta, xi, bootsamples, t1)
@@ -776,7 +776,7 @@ for (i in seq(1, Ns)) {
         if (!is.null(listmeff[[i]][[1]]$effmassfit)) {
             title <- sprintf("%s coarse, x = %d, p = %f",
                 titleall, i, listmeff[[i]][[1]]$effmassfit$Qval)
-        } else{
+        } else {
             title <- sprintf("%s coarse, x = %d", titleall, i)
         }
         message(title)
@@ -797,7 +797,7 @@ for (i in seq(1, Ns)) {
         if (!is.null(listmeff[[i]][[1]]$effmassfit)) {
             title <- sprintf("%s fine, x = %d, p = %f",
                     titleall, i - Ns / 2, listmeff[[i]][[1]]$effmassfit$Qval)
-        } else{
+        } else {
             title <- sprintf("%s fine, x = %d", titleall, i - Ns / 2)
         }
         message(title)

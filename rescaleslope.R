@@ -40,7 +40,7 @@ githash <- printgitcommit(opt$myfunctions)
 print(sprintf("resultspotNs%dNt%dbeta%fxi%fbs%d.RData", opt$length, opt$timeextent, opt$beta, opt$xi, opt$bootsamples))
 result <- readRDS(sprintf("%sresultspotNs%dNt%dbeta%fxi%fbs%d.RData", opt$respath, opt$length, opt$timeextent, opt$beta, opt$xi, opt$bootsamples))
 
-if(opt$xi!=1){
+if (opt$xi != 1) {
 
 xifits <- readRDS(sprintf("%slistresultsrenormalization.RData", opt$datapath))
 
@@ -48,7 +48,7 @@ xifits <- xifits[["fitsxi"]]
 
 # print(xifits[[2]])
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
-distances <- abs(xis-opt$xi)<0.01 ##roundabout way to take 0.33, 0.333333333333333333 equally into account
+distances <- abs(xis - opt$xi) < 0.01 ##roundabout way to take 0.33, 0.333333333333333333 equally into account
 
 index <- match(TRUE, distances)
 # print(index)
@@ -57,13 +57,13 @@ xiscale <- predict(xifits[[index]], opt$beta)
 # print(xiscale$val)
 
 
-newlist <- list(slopescaled=result[["slope"]] / xiscale$val,
-                dslopescaled=sqrt((result[["dslope"]] / xiscale$val)^2+(result[["slope"]] * xiscale$err / xiscale$val^2)^2),
-                bsslopescaled=result[["bsslope"]] / xiscale$boot,
-                xiren=xiscale$val, dxiren=xiscale$err, bsxiren=xiscale$boot)
+newlist <- list(slopescaled = result[["slope"]] / xiscale$val,
+                dslopescaled = sqrt((result[["dslope"]] / xiscale$val)^2 + (result[["slope"]] * xiscale$err / xiscale$val^2)^2),
+                bsslopescaled = result[["bsslope"]] / xiscale$boot,
+                xiren = xiscale$val, dxiren = xiscale$err, bsxiren = xiscale$boot)
 
 for (bs in 1:opt$bootsamples) {
-    if (is.na(result[["bsslope"]][bs]) || is.na(xiscale$boot[bs]) ) {
+    if (is.na(result[["bsslope"]][bs]) || is.na(xiscale$boot[bs])) {
         print(paste("NAs at", bs))
 
     }
@@ -72,14 +72,14 @@ for (bs in 1:opt$bootsamples) {
 # print(newlist)
 
 # resultscaled <- c(result, newlist)
-} else{
+} else {
     respotential <- readRDS(sprintf("%sresultssubtractedNs%dNt%dbeta%fxi%fbs%d.RData", opt$datapath, opt$lengthlarge, opt$timeextent, opt$beta, opt$xi, opt$bootsamples))
-    newlist <- list(slopescaled=result[["slope"]] / respotential[["xicalc"]],
-                    dslopescaled=sqrt((result[["dslope"]] / respotential[["xicalc"]])^2+(result[["slope"]] * respotential[["dxicalc"]] / respotential[["xicalc"]]^2)^2),
-                    bsslopescaled=result[["bsslope"]],
-                    xiren=respotential[["xicalc"]], dxiren=respotential[["dxicalc"]], bsxiren=respotential[["bsxicalc"]])
+    newlist <- list(slopescaled = result[["slope"]] / respotential[["xicalc"]],
+                    dslopescaled = sqrt((result[["dslope"]] / respotential[["xicalc"]])^2 + (result[["slope"]] * respotential[["dxicalc"]] / respotential[["xicalc"]]^2)^2),
+                    bsslopescaled = result[["bsslope"]],
+                    xiren = respotential[["xicalc"]], dxiren = respotential[["dxicalc"]], bsxiren = respotential[["bsxicalc"]])
 }
-resultsmall <- c(newlist, list(p=as.double(result[["p"]]), dp=result[["dp"]], bsp=result[["bsp"]]))
+resultsmall <- c(newlist, list(p = as.double(result[["p"]]), dp = result[["dp"]], bsp = result[["bsp"]]))
 
 saveRDS(resultsmall, sprintf("%sresultsmallscaledNs%dNt%dbeta%fxi%fbs%d.RData", opt$respath, opt$length, opt$timeextent, opt$beta, opt$xi, opt$bootsamples))
 

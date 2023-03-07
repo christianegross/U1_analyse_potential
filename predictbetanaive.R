@@ -164,7 +164,7 @@ for (i in seq(2, length(xis))) {
                 col.band = cols[i], cex = fontsize, arlength = 0.05 * fontsize))
         try(plotwitherror(x = data$beta[maskplot], y = data$r0[maskplot],
                 dy = data$dr0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
-        interceptsimple[i] <- (rzeroone-fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2]
+        interceptsimple[i] <- (rzeroone - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2]
         intercepts[, i] <- getintercept(fitsrzero[[i]], arrayrzero[, maskone], bootsamples)
         prediction <- predict(fitsplaquette[[i]], intercepts[, i])
         plaqren[, i] <- prediction$val

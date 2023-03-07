@@ -90,7 +90,7 @@ for (i in seq(1, nom)) {
     string <- sprintf("i = %d, beta = %f, Ns = %d, Nt = %d, xi = %f",
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xiin[i])
     print(string)
-    correspondnormal <- abs(datanormal$beta - data$beta[i]) < 0.001 & abs(datanormal$xi-data$xiin[i]) < 0.001
+    correspondnormal <- abs(datanormal$beta - data$beta[i]) < 0.001 & abs(datanormal$xi - data$xiin[i]) < 0.001
     print(datanormal$xi[correspondnormal])
     print(datanormal$xicalc[correspondnormal])
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
@@ -101,8 +101,8 @@ for (i in seq(1, nom)) {
     # data$slopescale[i] <- data$slope[i] / data$xiin[i]
     # data$dslopescale[i] <- data$dslope[i] / data$xiin[i]
     arrayslope[, i] <- result[, 1] / datanormal$xicalc[correspondnormal]
-    data$slopescale[i] <- data$slope[i]/datanormal$xicalc[correspondnormal]
-    data$dslopescale[i] <- data$dslope[i]/datanormal$xicalc[correspondnormal]
+    data$slopescale[i] <- data$slope[i] / datanormal$xicalc[correspondnormal]
+    data$dslopescale[i] <- data$dslope[i] / datanormal$xicalc[correspondnormal]
 }
 
 # print(data$slope/data$xiin)
@@ -171,7 +171,7 @@ points(x = seq(1.4, 1.8, by = 0.01),
 points(x = seq(1.4, 1.8, by = 0.01),
         y = rep(data$slopescale[mask] + 0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
 plotwitherror(x = data$beta[maskone], y = data$slopescale[maskone],
-        dy = data$dslopescale[maskone], col = 1, pch = 1, cex = fontsize, rep=TRUE)
+        dy = data$dslopescale[maskone], col = 1, pch = 1, cex = fontsize, rep = TRUE)
 
 
 intercepts[, 1] <- rep(opt$b, bootsamples)
@@ -199,7 +199,7 @@ for (i in seq(2, length(xis))) {
                             data$beta[mask], na.omit(arrayp[, mask])))
     # print(fitsslope[i])
     # print(fitsplaquette[i])
-    xvaluesplot <- seq(1.4, 1.8, by=0.01)
+    xvaluesplot <- seq(1.4, 1.8, by = 0.01)
     # xvaluesplot <- seq((data$slopescale[maskone] - 0.6 - fitsslope[[i]]$t0[1]) / fitsslope[[i]]$t0[2],
     #                     (data$slopescale[maskone] + 0.6 - fitsslope[[i]]$t0[1]) / fitsslope[[i]]$t0[2], by = 0.01)
 
@@ -209,8 +209,8 @@ for (i in seq(2, length(xis))) {
         try(plotwitherror(x = data$beta[maskplot], y = data$slopescale[maskplot],
                 dy = data$dslopescale[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
         interceptsimple[i] <- (slopeone - fitsslope[[i]]$t0[1]) / fitsslope[[i]]$t0[2]
-        interceptintermediate <- getintercept(fitsslope[[i]], arrayslope[, maskone], bootsamples=length(fitsslope[[i]]$t[, 1]))
-        intercepts[, i] <- c(interceptintermediate, rep(NA, (500-length(interceptintermediate))))
+        interceptintermediate <- getintercept(fitsslope[[i]], arrayslope[, maskone], bootsamples = length(fitsslope[[i]]$t[, 1]))
+        intercepts[, i] <- c(interceptintermediate, rep(NA, (500 - length(interceptintermediate))))
         prediction <- predict(fitsplaquette[[i]], intercepts[, i])
         plaqren[, i] <- prediction$val
         newline <- data.frame(xiin = xis[i],
@@ -221,10 +221,10 @@ for (i in seq(2, length(xis))) {
             plaqintercept = tex.catwitherror(fitsplaquette[[i]]$t0[1], fitsplaquette[[i]]$se[1], with.dollar = FALSE, digits = 2),
             chiplaq = fitsplaquette[[i]]$chisqr / fitsplaquette[[i]]$dof, pplaq = fitsplaquette[[i]]$Qval)
         fitresults <- rbind(fitresults, newline)
-    } else{
+    } else {
         try(plotwitherror(x = data$beta[maskplot], y = data$slopescale[maskplot],
                 dy = data$dslopescale[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
-        newline <- data.frame(xiin=xis[i], slopeslope = NA, slopeintercept = NA, chislope = NA, pslope = NA,
+        newline <- data.frame(xiin = xis[i], slopeslope = NA, slopeintercept = NA, chislope = NA, pslope = NA,
                         plaqslope = NA, plaqintercept = NA, chiplaq = NA, pplaq = NA)
         fitresults <- rbind(fitresults, newline)
         interceptsimple[i] <- NA
@@ -246,9 +246,9 @@ box(bty = "o")
 tikz.finalize(tikzfile)
 
 # make a dataframe of results
-result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm=T),
-                    dbeta = apply(intercepts, 2, sd, na.rm=T),
-                    p = apply(plaqren, 2, mean, na.rm=T), dp = apply(plaqren, 2, sd, na.rm=T))
+result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
+                    dbeta = apply(intercepts, 2, sd, na.rm = T),
+                    p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T))
 result <- cbind(result, data.frame(betasimple = interceptsimple))
 par(mai = defaultmargin)
 }
@@ -344,8 +344,8 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
             chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
             type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]))
     } else {
-        plotwitherror(x=xis[c(1, 2, 3, 4, 5, 6, 8)]^2, y = result$p, dy=result$dp,
-            main=sprintf("degree of polynomial:%d", i),
+        plotwitherror(x = xis[c(1, 2, 3, 4, 5, 6, 8)]^2, y = result$p, dy = result$dp,
+            main = sprintf("degree of polynomial:%d", i),
             plot.range = c(-0.2, 1.2), xlab = "", xaxs = "i")
             print("fit not successful")
     }

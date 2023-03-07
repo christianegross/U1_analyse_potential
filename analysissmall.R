@@ -135,7 +135,7 @@ for (x in seq(0, 3)) {
     #save results, list has to have an entry everywhere
         resulteffmass <- list(data.frame(R = NA, m = NA, dm = NA), c(0, 0), list(FALSE, FALSE, FALSE))
         uwerrresults <- FALSE
-        if (x<2 && y<2){
+        if (x < 2 && y < 2) {
         message("\nx = ", x, " y = ", y)
         filename <- sprintf(
                 "%sresult2p1d.u1potential.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fnonplanar",
@@ -384,7 +384,7 @@ if (opt$plaquette) {
         # if that fails, set results to NA
         fit.pot <- try(bootstrap.nlsfit(fnpot, c(1, 1, 1),
                 y = V, x = sqrt(x^2 + y^2), bsamples, mask = mask))
-        if (!inherits(fit.pot, "try-error") & listmeff[[2]][[2]]) {
+        if (!inherits(fit.pot, "try-error") && listmeff[[2]][[2]]) {
             print(fit.pot)
             plot(fit.pot, ylab = "a_tV(r)", xlab = "r / a_s",
                     main = "Potential including nonplanar points",
@@ -469,7 +469,7 @@ if (opt$plaquette) {
      ratio = NA, dratio = NA, st = NA, dst = NA, chipot = NA,
      icslope = NA, dicslope = NA, icpot = NA, dicpot = NA, logpot = NA, dlogpot = NA,
      ratioslope = NA, dratioslope = NA, ratiopot = NA, dratiopot = NA,
-     rzero = NA, drzero = NA, c = NA, puw = NA, dpuw = NA, job = NA, hash=NA,
+     rzero = NA, drzero = NA, c = NA, puw = NA, dpuw = NA, job = NA, hash = NA,
      boot = NA, nom = NA, skip = NA)
      #beta, xi_input, N_t, N_s = lattice extents, p = plaquette from bootstrap.cf
      #slope between V(1) and V(sqrt(2))
@@ -498,7 +498,7 @@ if (opt$plaquette) {
          logpot = logpot, dlogpot = dlogpot, ratioslope = ratioslope,
          dratioslope = dratioslope, ratiopot = ratiopot, dratiopot = dratiopot,
          rzero = rzeros[i], drzero = drzeros[i], c = crz[i],
-         puw = plaquetteuwerr, dpuw = dpuwerr, job = opt$job, hash=githash, boot = bootsamples,
+         puw = plaquetteuwerr, dpuw = dpuwerr, job = opt$job, hash = githash, boot = bootsamples,
          nom = length(measurements[, 1]) + opt$skip, skip = opt$skip)
         results <- rbind(results, newline)
     }
@@ -516,7 +516,7 @@ if (opt$plaquette) {
             opt$plotpath, Ns, Nt, beta, xi, bootsamples)
     saveRDS(resultssummary, file = nameresults)
 
-if(FALSE){
+if (FALSE) {
     # read in results of the temporal normal potential,
     # to compare ineger and non-integer distances,
     # plot both, once zoomed out and once zoomed in
