@@ -693,7 +693,7 @@ try(arrows(rzero, fnforce(fit.resultscaled$t0, rzero, 0),
                 rzero, lowylim, angle = 90, length = 0.1, code = 0))
 try(arrows(rzero, c, 0, c, angle = 90, length = 0.1, code = 0))
 r0polyval1 <- c(fnforce(fit.resultscaled$t0, rzero - drzero, 0)
-                - fnforceerr(fit.resultscaled$se,rzero - drzero, 0, correlation),
+                - fnforceerr(fit.resultscaled$se, rzero - drzero, 0, correlation),
                 fnforce(fit.resultscaled$t0, rzero + drzero, 0)
                 + fnforceerr(fit.resultscaled$se, rzero + drzero, 0, correlation))
 r0polyval1 <- c(r0polyval1, lowylim, lowylim)

@@ -261,7 +261,7 @@ for (x in seq(1, Ns / 2, 1)) {
     listtauint[[Ns / 2 + x]] <- uwerrresults
     message(negatives[x], " correlators are negative for x = ", x)
 }
-listfits[[Ns]] <- githash
+listfits[[Ns + 1]] <- githash
 
 #write out results
 t1 <- -1 #opt$lowerboundmeff

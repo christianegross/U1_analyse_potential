@@ -739,3 +739,40 @@ printgitcommit <- function(pathtogit) {
     print(paste("## on git commit", githash))
     return(githash)
 }
+
+#' Predict values for bootstrapfit
+#' based on hadron-function predict, but here the x-values differ for each bootstrapsample as well
+#'
+#' @param object Object of type bootstrapfit.
+#' @param x Numeric vector with independent variable.
+#' @param error Function to compute error from samples.
+#' @param ... additional parameters to be passed on to the prediction function.
+#'
+#' @return
+#' List with independent variable `x`, predicted central value `val`, error
+#' estimate `err` and sample matrix `boot`.
+#'
+#' @export
+#' @family NLS fit functions
+predictwithxerror.bootstrapfit <- function (object, x, error = object$error.function, ...) {
+  ## to include additional parameter to x$fn originally given as ... to
+  ## bootstrap.nlsfit requires some pull-ups
+  npar <- length(object$par.guess)
+  val <- do.call(object$fn, c(list(par = object$t0[1:npar], x = mean(x), boot.r = 0), object$tofn))
+
+  prediction <- list(x = x, val = val)
+  stopifnot(length(x) == length(object$t[, 1]))
+
+  if(!is.null(object$t)) {
+    ## error band
+    ## define a dummy function to be used in apply
+    prediction_boot_fn <- function (boot.r) {
+      par <- object$t[boot.r, 1:npar, drop = FALSE]
+      do.call(object$fn, c(list(par = par, x = x[boot.r], boot.r = boot.r), object$tofn))
+    }
+    prediction_boot <- do.call(rbind, lapply(1:nrow(object$t), prediction_boot_fn))
+    prediction$boot <- prediction_boot
+  }
+
+  return (prediction)
+}
