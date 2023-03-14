@@ -212,7 +212,7 @@ fitresults <- data.frame(xiin = NA, r0slope = NA, r0intercept = NA, chir0 = NA, 
 # determine beta_ren: r_zero(beta_ren, xi_input) = r_zero(xi_input=1)
 # determine P(beta_ren), xi(beta_ren)
 # put everything in one dataframe, nicely formatted for easy printing
-for (i in seq(1, length(xis))) {
+for (i in seq(2, length(xis))) {
     mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
@@ -303,8 +303,8 @@ result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
                     xiphys = apply(xiphys, 2, mean, na.rm = T),
                     dxiphys = apply(xiphys, 2, sd, na.rm = T),
                     p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T))
-# result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
-# result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
+result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
+result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
 result <- cbind(result, data.frame(betasimple = interceptsimple))
 par(mai = defaultmargin)
 print(result)
@@ -322,7 +322,7 @@ if (type == "normal") pdf("tikzplotallfits.pdf", title = "")
 if (type == "slope") pdf("tikzplotallfitsslope.pdf", title = "")
 
 # result of all linear fits
-for (i in seq(1, length(xis))){
+for (i in seq(2, length(xis))){
     try(plot(fitsrzero[[i]], main = sprintf("rzero, xiin = %f, chi = %f, p = %f", xis[i], fitsrzero[[i]]$chi / fitsrzero[[i]]$dof, fitsrzero[[i]]$Qval)))
     try(plot(fitsplaquette[[i]], main = sprintf("P, xiin = %f, chi = %f, p = %f", xis[i], fitsplaquette[[i]]$chi / fitsplaquette[[i]]$dof, fitsplaquette[[i]]$Qval)))
     try(plot(fitsxi[[i]], main = sprintf("xi, xiin = %f, chi = %f, p = %f", xis[i], fitsxi[[i]]$chi / fitsxi[[i]]$dof, fitsxi[[i]]$Qval)))
@@ -369,7 +369,7 @@ for (i in seq(1, length(xis))) {
     bsamplescontlimitbeta[, i] <- intercepts[, i]
     bsamplescontlimitbeta[, length(xis) + i] <- arrayxi[, row]^2
 }
-# bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-5))
+bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-3))
 
 
 
