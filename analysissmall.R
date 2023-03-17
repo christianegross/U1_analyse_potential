@@ -39,6 +39,9 @@ option_list <- list(
             effective mass [default %default]"),
     make_option(c("--plaquette"), action = "store_true", default = FALSE,
     help = "if true, plaquette and anisotropy are determined [default %default]"),
+    make_option(c("--amplitude"), action = "store_true", default = FALSE,
+    help = "if true, amplitude of spatial 1,1 plaquette is calculated [default %default]"),
+
 
     make_option(c("--smearing"), action = "store_true", default = FALSE,
     help = "are the calculations done based on
@@ -545,4 +548,84 @@ if (FALSE) {
     try(legend(x = "topleft", legend = c("non-integer", "integer"),
             col = c(1, 2), pch = c(1, 2)))
 }
+}
+
+## determine matrix element and potential from 1,1 plaquette
+if(opt$amplitude){
+
+if(opt$fraction !=1 ){
+    stop("not all timeslices are present, correlators cannot be symmetrised and amplitude cannot be determined")
+}
+
+## read in boundaries for amplitude determination, take the same boundaries as for the effective mass
+namelistbounds <- sprintf(
+            "%stableanalysissmallNs%dNt%dbeta%fxi%f.csv",
+            opt$plotpath, Ns, Nt, beta, xi)
+if (opt$smearing) {
+    namelistbounds <- sprintf(
+            "%stableanalysissmallNs%dNt%dbeta%fxi%fnape%dalpha%f.csv",
+            opt$plotpath, Ns, Nt, beta, xi, nape, alpha)
+}
+
+if (file.exists(namelistbounds)) {
+    listbounds <- read.table(namelistbounds, sep = ",", header = TRUE)
+} else {
+    listbounds <- cbind(
+                data.frame(x = c(rep(0, 4), rep(1, 4), rep(2, 4), rep(3, 4))),
+                data.frame(y = rep(c(0, 1, 2, 3), 4)),
+                data.frame(lower = rep(opt$t1, 16)),
+                data.frame(upper = rep(Ntmax - opt$t1 - 2, 16)))
+}
+## open pdf for plot
+filenameforplots <- sprintf(
+            "%samplitudeNs%dNt%dbeta%fxi%fbs%d.pdf",
+            opt$plotpath, Ns, Nt, beta, xi, bootsamples)
+if (opt$smearing) {
+    filenameforplots <- sprintf(
+            "%samplitudeNs%dNt%dbeta%fxi%fnape%dalpha%fbs%d.pdf",
+            opt$plotpath, Ns, Nt, beta, xi, nape, alpha, bootsamples)
+}
+pdf(file = filenameforplots, title = "")
+
+## read in data into cf, symmetrise, determine amplitude
+filename <- sprintf(
+                "%sresult2p1d.u1potential.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%fnonplanar",
+                opt$respath, Nt, Ns, beta, xi, nape, alpha)
+    WL <- readloopfilecfsmall(file = filename, skip = skip,
+                    Nsmax = Nsmax, x = 1, y = 1, Ntmax = Ntmax, start = 1)
+    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = 5)
+    WL <- symmetrise.cf(WL)
+    title <- sprintf("symmetrised correlators of the spatial 1,1 plaquette\n%d configs, skipped %d",
+            (length(WL$cf[, 1]) + opt$skip - 1) * opt$nsave, opt$skip * opt$nsave)
+    try(plot(WL, log = "y", xlab = "t/a_t", ylab = "C(x)",
+            main = sprintf("%s, logscale", title)))
+    WL.matrix <- matrixfit(WL, t1 = listbounds$lower[listbounds$x==1 & listbounds$y==1],
+            t2 = max(listbounds$upper[listbounds$x==1 & listbounds$y==1], Ntmax/2), sym.vec="cosh", useCov = TRUE)
+    plot(WL.matrix)
+    summary(WL.matrix)
+
+## determine spatial-spatial and temporal-spatial plaquette with uwerr
+        measurements <- read.table(filename, header = FALSE, skip = opt$skip)
+        plaquettedatauwerr <- uwerrprimary(measurements[, Nsmax + 3])
+        plaquetteuwerr <- plaquettedatauwerr$value
+        dpuwerr <- plaquettedatauwerr$dvalue
+        plaquettetempdatauwerr <- uwerrprimary(measurements[, (Nsmax + 1)^2 + 2])
+        plaquettetempuwerr <- plaquettetempdatauwerr$value
+        dptempuwerr <- plaquettetempdatauwerr$dvalue
+
+    result <- data.frame(beta=beta, L=Ns, T=Nt, xiin=xi,
+            E=WL.matrix$t0[1], dE=WL.matrix$se[1], A=WL.matrix$t0[2], dA=WL.matrix$se[2],
+            chi=WL.matrix$chisqr / WL.matrix$dof, pval=WL.matrix$Qval,
+            pss = plaquetteuwerr, dpss = dpuwerr, pst = plaquettetempuwerr, dpst = dptempuwerr,
+            bs=bootsamples, hash=githash)
+    filenameres <- sprintf("%smatrixfitb%fxi%fT%dL%d.RData", opt$plotpath, beta, xi, Nt, Ns)
+    saveRDS(WL.matrix, filenameres)
+    filenamexi <- sprintf("%samplitudesbetaone%f.csv",
+            opt$plotpath, opt$betaone)
+    columnnames <- FALSE
+    if (!file.exists(filenamexi)) {
+        columnnames <- TRUE
+    }
+    write.table(result, filenamexi, append = TRUE,
+            row.names = FALSE, col.names = columnnames)
 }
