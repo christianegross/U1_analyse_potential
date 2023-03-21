@@ -551,9 +551,9 @@ if (FALSE) {
 }
 
 ## determine matrix element and potential from 1,1 plaquette
-if(opt$amplitude){
+if (opt$amplitude) {
 
-if(opt$fraction !=1 ){
+if (opt$fraction != 1) {
     stop("not all timeslices are present, correlators cannot be symmetrised and amplitude cannot be determined")
 }
 
@@ -599,8 +599,9 @@ filename <- sprintf(
             (length(WL$cf[, 1]) + opt$skip - 1) * opt$nsave, opt$skip * opt$nsave)
     try(plot(WL, log = "y", xlab = "t/a_t", ylab = "C(x)",
             main = sprintf("%s, logscale", title)))
-    WL.matrix <- matrixfit(WL, t1 = listbounds$lower[listbounds$x==1 & listbounds$y==1],
-            t2 = max(listbounds$upper[listbounds$x==1 & listbounds$y==1], Ntmax/2), sym.vec="cosh", useCov = TRUE)
+    WL.matrix <- matrixfit(WL, t1 = listbounds$lower[listbounds$x == 1 & listbounds$y == 1],
+            t2 = max(listbounds$upper[listbounds$x == 1 & listbounds$y == 1], Ntmax/2), sym.vec = "cosh",
+            parlist = array(c(1, 1), dim = c(2, 1)), neg.vec = c(1), useCov = TRUE)
     plot(WL.matrix)
     summary(WL.matrix)
 
@@ -613,11 +614,11 @@ filename <- sprintf(
         plaquettetempuwerr <- plaquettetempdatauwerr$value
         dptempuwerr <- plaquettetempdatauwerr$dvalue
 
-    result <- data.frame(beta=beta, L=Ns, T=Nt, xiin=xi,
-            E=WL.matrix$t0[1], dE=WL.matrix$se[1], A=WL.matrix$t0[2], dA=WL.matrix$se[2],
-            chi=WL.matrix$chisqr / WL.matrix$dof, pval=WL.matrix$Qval,
+    result <- data.frame(beta = beta, L = Ns, T = Nt, xiin = xi,
+            E = WL.matrix$t0[1], dE = WL.matrix$se[1], A = WL.matrix$t0[2], dA = WL.matrix$se[2],
+            chi = WL.matrix$chisqr / WL.matrix$dof, pval = WL.matrix$Qval,
             pss = plaquetteuwerr, dpss = dpuwerr, pst = plaquettetempuwerr, dpst = dptempuwerr,
-            bs=bootsamples, hash=githash)
+            bs = bootsamples, hash = githash)
     filenameres <- sprintf("%smatrixfitb%fxi%fT%dL%d.RData", opt$plotpath, beta, xi, Nt, Ns)
     saveRDS(WL.matrix, filenameres)
     filenamexi <- sprintf("%samplitudesbetaone%f.csv",

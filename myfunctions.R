@@ -763,7 +763,7 @@ predictwithxerror.bootstrapfit <- function (object, x, error = object$error.func
   prediction <- list(x = x, val = val)
   stopifnot(length(x) == length(object$t[, 1]))
 
-  if(!is.null(object$t)) {
+  if (!is.null(object$t)) {
     ## error band
     ## define a dummy function to be used in apply
     prediction_boot_fn <- function (boot.r) {
