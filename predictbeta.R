@@ -214,6 +214,9 @@ fitresults <- data.frame(xiin = NA, r0slope = NA, r0intercept = NA, chir0 = NA, 
 # determine beta_ren: r_zero(beta_ren, xi_input) = r_zero(xi_input=1)
 # determine P(beta_ren), xi(beta_ren)
 # put everything in one dataframe, nicely formatted for easy printing
+start <- 1
+if (length(data$xi[data$xi==1]<2)) start <- 2
+print(paste("start=", start))
 for (i in seq(1, length(xis))) {
     mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
@@ -324,7 +327,7 @@ if (type == "normal") pdf("tikzplotallfits.pdf", title = "")
 if (type == "slope") pdf("tikzplotallfitsslope.pdf", title = "")
 
 # result of all linear fits
-for (i in seq(1, length(xis))){
+for (i in seq(start, length(xis))){
     try(plot(fitsrzero[[i]], main = sprintf("rzero, xiin = %f, chi = %f, p = %f", xis[i], fitsrzero[[i]]$chi / fitsrzero[[i]]$dof, fitsrzero[[i]]$Qval)))
     try(plot(fitsplaquette[[i]], main = sprintf("P, xiin = %f, chi = %f, p = %f", xis[i], fitsplaquette[[i]]$chi / fitsplaquette[[i]]$dof, fitsplaquette[[i]]$Qval)))
     try(plot(fitsxi[[i]], main = sprintf("xi, xiin = %f, chi = %f, p = %f", xis[i], fitsxi[[i]]$chi / fitsxi[[i]]$dof, fitsxi[[i]]$Qval)))
@@ -371,7 +374,10 @@ for (i in seq(1, length(xis))) {
     bsamplescontlimitbeta[, i] <- intercepts[, i]
     bsamplescontlimitbeta[, length(xis) + i] <- arrayxi[, row]^2
 }
-# bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-5))
+
+if (length(data$xi[data$xi==1]<2)) {
+    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-5))
+}
 
 
 
