@@ -20,6 +20,8 @@ option_list <- list(
 
     make_option(c("--respath"), type = "character", default = "plotstikz/",
     help = "path to where the resulting plots and data are stored [default %default]"),
+    make_option(c("--datapath"), type = "character", default = "./",
+    help = "path to where the data for the analyzed configs are stored [default %default]"),
     make_option(c("--type"), type = "character", default = "normal",
     help = "type of ensembles that shoule be analysed, one of normal, sideways and slope [default %default]"),
     make_option(c("-o", "--omit"), type = "integer", default = 0,
@@ -49,18 +51,18 @@ if (! (type == "normal" || type == "sideways" || type == "slope")) {
 
 # set filenames, read in results, set up containers for bootstrapsamples
 if (type == "sideways") {
-dataname <- sprintf("resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$beta, opt$length)
-filenameres <- "resultsrotated"
+dataname <- sprintf("%s/resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
+filenameres <- sprintf("%s/resultsrotated", opt$datapath)
 side <- 2
 }
 if (type == "normal") {
-dataname <- sprintf("resultsummary2p1dnormalb%.3fNs%d.csv", opt$beta, opt$length)
-filenameres <- "resultssubtracted"
+dataname <- sprintf("%s/resultsummary2p1dnormalb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
+filenameres <- sprintf("%s/resultssubtracted", opt$datapath)
 side <- 2
 }
 if (type == "slope") {
-dataname <- sprintf("summarysmallbetaone%fL%d.csv", opt$beta, opt$length)
-filenameres <- "resultsmallscaled"
+dataname <- sprintf("%s/summarysmallbetaone%fL%d.csv", opt$datapath, opt$beta, opt$length)
+filenameres <- sprintf("%s/resultsmallscaled", opt$datapath)
 side <- 2
 }
 if (!file.exists(dataname)) {
@@ -188,9 +190,9 @@ points(x = xvalues,
 points(x = xvalues,
         y = rep(data$r0[mask] + data$dr0[mask], 41), type = "l", lty = 2)
 points(x = xvalues,
-        y = rep(data$r0[mask] - 0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
+        y = rep(data$r0[mask] - opt$fitlim, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
 points(x = xvalues,
-        y = rep(data$r0[mask] + 0.6, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
+        y = rep(data$r0[mask] + opt$fitlim, 41), type = "l", lty = 3, col = cols[length(xis) + 1])
 plotwitherror(x = data$beta[maskone], y = data$r0[maskone],
         dy = data$dr0[maskone], col = 1, pch = 1, cex = fontsize, rep = TRUE)
 
@@ -463,9 +465,9 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- "plotstikz/polynomialnormal.csv"
-if (type == "sideways") namepol <- "plotstikz/polynomialsideways.csv"
-if (type == "slope") namepol <- "plotstikz/polynomialslope.csv"
+if (type == "normal") namepol <- sprintf("%s/polynomialnormal.csv", opt$respath)
+if (type == "sideways") namepol <- sprintf("%s/polynomialsideways.csv", opt$respath)
+if (type == "slope") namepol <- sprintf("%s/polynomialslope.csv", opt$respath)
 # write out result
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
@@ -486,30 +488,30 @@ print(resultspolynomial)
 # print(fitresults)
 # print(result)
 if (type == "normal") {
-write.table(result, "plotstikz/resultsrenormalization.csv",
+write.table(result, sprintf("%s/resultsrenormalization.csv", opt$respath),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, "plotstikz/fitresultsrenormalization.csv",
+write.table(fitresults, sprintf("%s/fitresultsrenormalization.csv", opt$respath),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, "plotstikz/listresultsrenormalization.RData")
-saveRDS(fitspolynomial, "plotstikz/listpolynomialrenormalization.RData")
+saveRDS(resultslist, sprintf("%s/listresultsrenormalization.RData", opt$respath))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalization.RData", opt$respath))
 }
 
 if (type == "sideways") {
-write.table(result, sprintf("plotstikz/resultsrenormalizationsidewaysomit%d.csv", opt$omit),
+write.table(result, sprintf("%s/resultsrenormalizationsidewaysomit%d.csv", opt$respath, opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationsidewaysomit%d.csv", opt$omit),
+write.table(fitresults, sprintf("%s/fitresultsrenormalizationsidewaysomit%d.csv", opt$respath, opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("plotstikz/listresultsrenormalizationsidewaysomit%d.RData", opt$omit))
-saveRDS(fitspolynomial, sprintf("plotstikz/listpolynomialrenormalizationsidewaysomit%d.RData", opt$omit))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysomit%d.RData", opt$respath, opt$omit))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysomit%d.RData", opt$respath, opt$omit))
 }
 
 if (type == "slope") {
-write.table(result, sprintf("plotstikz/resultsrenormalizationslope.csv"),
+write.table(result, sprintf("%s/resultsrenormalizationslope.csv", opt$respath),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("plotstikz/fitresultsrenormalizationslope.csv"),
+write.table(fitresults, sprintf("%s/fitresultsrenormalizationslope.csv", opt$respath),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("plotstikz/listresultsrenormalizationslope.RData"))
-saveRDS(fitspolynomial, sprintf("plotstikz/listpolynomialrenormalizationslope.RData"))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslope.RData", opt$respath))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslope.RData", opt$respath))
 }
 # move all plots into subfolder
-system("mv -v tikz* plotstikz/")
+system(sprintf("mv -v tikz* %s", opt$respath))
