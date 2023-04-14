@@ -20,12 +20,12 @@ option_list <- list(
     make_option(c("-T", "--timeextent"), type = "integer", default = 16,
     help = "time extent of ensemble [default %default]"),
     make_option(c("--myfunctions"), type = "character",
-        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
+        default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored [default %default]"),
     make_option(c("--respath"), type = "character", default = "",
     help = "path to where the resulting plots and data are stored [default %default]"),
-    make_option(c("--datapath"), type = "character", default = "plotstikz",
+    make_option(c("--datapath"), type = "character", default = "plotstikz/",
     help = "path to where data for renormalized anisotropy [default %default]")
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
@@ -82,5 +82,7 @@ for (bs in 1:opt$bootsamples) {
 resultsmall <- c(newlist, list(p = as.double(result[["p"]]), dp = result[["dp"]], bsp = result[["bsp"]]))
 
 saveRDS(resultsmall, sprintf("%sresultsmallscaledNs%dNt%dbeta%fxi%fbs%d.RData", opt$respath, opt$length, opt$timeextent, opt$beta, opt$xi, opt$bootsamples))
+
+print(paste("slope=", tex.catwitherror(x=resultsmall$slopescaled, dx=resultsmall$dslopescaled, digits=2, with.dollar=F)))
 
 # print(xifits)

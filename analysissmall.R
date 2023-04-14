@@ -159,17 +159,20 @@ for (x in seq(0, 3)) {
         title <- sprintf("%s%d configs, skipped %d", title,
                 (length(WL$cf[, 1]) + skip - 1) * opt$nsave, skip * opt$nsave)
 
-        uwerrresults <- uwerr.cf(WL)
 
         # get boundaries for masses from table
         t1 <- listbounds$lower[listbounds$y == y & listbounds$x == x]
         t2 <- listbounds$upper[listbounds$y == y & listbounds$x == x]
-        resulteffmass <- deteffmasssmall(WL, x, y, t1, t2)
+
+        for (type in c("log", "acosh")) {
+
+        resulteffmass <- deteffmasssmall(WL, x, y, t1, t2, type = type)
 
         # plot, with additional lines indicating half the lattice
         # extent, save results of meff
         # in short and long form (with and without bootstrapsamples)
         names(resulteffmass[[3]]) <- c("effmass", "x", "y")
+        print(paste("type=", type, "effmass=", resulteffmass[[1]][2], "pm", resulteffmass[[1]][3]))
 
         try(plot(resulteffmass[[3]][[1]], xlab = "t / a_t", ylab = "Meff",
                 main = sprintf("%s, t1 = %d, t2 = %d, p = %f",
@@ -184,7 +187,15 @@ for (x in seq(0, 3)) {
         arrows((Nt - start - 1) / 2, 10, (Nt - start - 1) / 2, -10,
                 angle = 90, length = 0.1, code = 0, col = 2)
         drawallticks(all = FALSE, inward = TRUE)
+        }
 
+
+        uwerrresults <- uwerr.cf(WL)
+        # plot autocorrelation times of non-bootstrapped results
+        try(plot(x = uwerrresults$uwcf$t - 1, y = uwerrresults$uwcf$tauint,
+                main = sprintf("%s, autocorellation times", title),
+                xlab = "t", ylab = "tauint"))
+        uwerrresults <- uwerr.cf(WL)
         # plot autocorrelation times of non-bootstrapped results
         try(plot(x = uwerrresults$uwcf$t - 1, y = uwerrresults$uwcf$tauint,
                 main = sprintf("%s, autocorellation times", title),
@@ -258,7 +269,7 @@ if (opt$plaquette) {
     }
     listmeff <- readRDS(file = filenamelist)
     bootsamples <- length(listmeff[[5]][[1]]$massfit.tsboot[, 1])
-    print(listmeff)
+    # print(listmeff)
 
     if (TRUE) { #plaquette
         # determine the plaquette with uwerr
@@ -273,6 +284,7 @@ if (opt$plaquette) {
         plaquettedatauwerr <- uwerrprimary(measurements[, Nsmax + 3])
         plaquetteuwerr <- plaquettedatauwerr$value
         dpuwerr <- plaquettedatauwerr$dvalue
+        tauint <- plaquettedatauwerr$tauint
     }
 
     if (TRUE) { # slope, ratio
@@ -473,7 +485,7 @@ if (opt$plaquette) {
      ratio = NA, dratio = NA, st = NA, dst = NA, chipot = NA,
      icslope = NA, dicslope = NA, icpot = NA, dicpot = NA, logpot = NA, dlogpot = NA,
      ratioslope = NA, dratioslope = NA, ratiopot = NA, dratiopot = NA,
-     rzero = NA, drzero = NA, c = NA, puw = NA, dpuw = NA, job = NA, hash = NA,
+     rzero = NA, drzero = NA, c = NA, puw = NA, dpuw = NA, tauint = NA, job = NA, hash = NA,
      boot = NA, nom = NA, skip = NA)
      #beta, xi_input, N_t, N_s = lattice extents, p = plaquette from bootstrap.cf
      #slope between V(1) and V(sqrt(2))
@@ -502,7 +514,7 @@ if (opt$plaquette) {
          logpot = logpot, dlogpot = dlogpot, ratioslope = ratioslope,
          dratioslope = dratioslope, ratiopot = ratiopot, dratiopot = dratiopot,
          rzero = rzeros[i], drzero = drzeros[i], c = crz[i],
-         puw = plaquetteuwerr, dpuw = dpuwerr, job = opt$job, hash = githash, boot = bootsamples,
+         puw = plaquetteuwerr, dpuw = dpuwerr, tauint = tauint, job = opt$job, hash = githash, boot = bootsamples,
          nom = length(measurements[, 1]) + opt$skip, skip = opt$skip)
         results <- rbind(results, newline)
     }

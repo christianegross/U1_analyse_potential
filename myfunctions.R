@@ -305,8 +305,9 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial) {
             regionplotzoom <- seq(ceiling(0.2 * length(WL.effmass$effMass)) + 1,
                     length(WL.effmass$effMass) - 1)
             if (length(regionplotzoom > 0)) {
-                max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
-                min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom])), 0)
+                # max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
+                max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom[1:8]])), 2)
+                min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom[1:8]])), 0)
                 ylim <- c(min, max)
             }
         } else {
@@ -316,7 +317,7 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial) {
     return(list(WL.effmass, ylim))
 }
 
-deteffmasssmall <- function (WL, x, y, t1, t2) {
+deteffmasssmall <- function (WL, x, y, t1, t2, type = "log") {
     # effective masses for the non-integer potentials
     # WL: bootstrapped data for the Wilson loops
     # t1, t2: lower and upper boundary for effective mass
@@ -331,19 +332,19 @@ deteffmasssmall <- function (WL, x, y, t1, t2) {
     ylim <- c(0, 0)
     listresults <- list(FALSE, FALSE, FALSE)
     newline <- data.frame(R = NA, m = NA, dm = NA)
-    WL.effmass <- bootstrap.effectivemass(WL, type = "log")
+    WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
                     t2 = t2, useCov = TRUE), silent = FALSE)
         listresults <- list(WL.effmass, x, y)
         if (inherits(WL.effmass, "try-error")) {
             #have to recalculate so the correct effective masses are stored instead of error
-            WL.effmass <- bootstrap.effectivemass(WL, type = "log")
+            WL.effmass <- bootstrap.effectivemass(WL, type = type)
             listresults <- list(FALSE, FALSE, FALSE)
             newline <- data.frame(R = sqrt(x^2 + y^2), m = NA, dm = NA)
         } else {
             regionplotzoom <- seq(floor(length(WL.effmass$effMass)) * 0.25,
-                    length(WL.effmass$effMass) - 1)
+                    min(floor(length(WL.effmass$effMass)) * 0.25, length(WL.effmass$effMass)))
             if (length(regionplotzoom > 0)) {
                 max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
                 min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom])), 0)
