@@ -74,6 +74,8 @@ option_list <- list(
     help = "path to where the resultfiles are stored [default %default]"),
     make_option(c("--plotpath"), type = "character", default = "",
     help = "path to where the plots are stored [default %default]"),
+    make_option(c("--effmasstype"), type = "character", default = "log",
+    help = "type of effective mass [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
         default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
@@ -182,7 +184,7 @@ for (y in seq(1, Ns / 2, 1)) {
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == y]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == y]
     WL.effmasslist <- deteffmass(WL = WL, yt = y,
-            potential = potential, t1 = t1, t2 = t2, isspatial = 1)
+            potential = potential, t1 = t1, t2 = t2, isspatial = 1, type = opt$effmasstype)
 
     # plot results, save results off meff in
     # short and long form (with and without bootstrapsamples
@@ -233,7 +235,7 @@ for (t in seq(1, Nt / 2, 1)) {
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == t]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == t]
     WL.effmasslist <- deteffmass(WL = WL, yt = t,
-            potential = potential, t1 = t1, t2 = t2, isspatial = 0)
+            potential = potential, t1 = t1, t2 = t2, isspatial = 0, type = opt$effmasstype)
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], t, TRUE, uwerrresults)
     }
