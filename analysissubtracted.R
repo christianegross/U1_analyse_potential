@@ -44,6 +44,8 @@ option_list <- list(
     help = "input beta at corresponding xi = 1 [default %default]"),
     make_option(c("-x", "--xi"), type = "double", default = 0,
     help = "xi used in lattice [default %default]"),
+    make_option(c("--fraction"), type = "double", default = 0.5,
+    help = "Maximal extent of the Wilson-Loops as a fraction of the lattice size [default %default]"),
 
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, correlators and effective masses
@@ -192,7 +194,7 @@ for (x in seq(1, Ns / 2, 1)) {
     WL <- calcplotWloopnormalspatial(file = filename, skip = skip,
             Ns = Ns, x = x, bootsamples = bootsamples,
             title = title, path = opt$respath, zerooffset = opt$zerooffset,
-            every = opt$every, nsave = opt$nsave, l = opt$bootl)
+            every = opt$every, nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction)
     uwerrresults <- uwerr.cf(WL)
     negatives[x] <- sum(WL$cf0 < 0)
 
@@ -233,7 +235,7 @@ for (x in seq(1, Ns / 2, 1)) {
     WL <- calcplotWloopnormaltemporal(file = filename, skip = skip, Ns = Ns,
             Nt = Nt, x = x, bootsamples = bootsamples, title = title,
             path = opt$respath, zerooffset = opt$zerooffset, every = opt$every,
-            nsave = opt$nsave, l = opt$bootl)
+            nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction)
     uwerrresults <- uwerr.cf(WL)
     negatives[x] <- negatives[x] + sum(WL$cf0 < 0)
 

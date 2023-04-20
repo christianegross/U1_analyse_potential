@@ -36,6 +36,9 @@ option_list <- list(
     make_option(c("-x", "--xi"), type = "double", default = 0,
     help = "xi used in lattice, only used if xidiff = TRUE, else
             xi is assumed to be L/T [default %default]"),
+
+    make_option(c("--fraction"), type = "double", default = 0.5,
+    help = "Maximal extent of the Wilson-Loops as a fraction of the lattice size [default %default]"),
     make_option(c("--zerooffset"), type = "integer", default = 0,
     help = "Offset for selecting the correct loops
             if W(x = 0, y = 0) was measured, set to 1 [default %default]"),
@@ -171,7 +174,7 @@ for (y in seq(1, Ns / 2, 1)) {
             path = opt$respath, skip = skip, Ns = Ns, yt = y,
             title = title, bootsamples = bootsamples,
             zerooffset = opt$zerooffset, nsave = opt$nsave,
-            every = opt$every, l = opt$bootl)
+            every = opt$every, l = opt$bootl, fraction = opt$fraction)
 
     uwerrresults <- uwerr.cf(WL)
 
@@ -222,7 +225,7 @@ for (t in seq(1, Nt / 2, 1)) {
     WL <- calcplotWloopsideways(file = filename,
             path = opt$respath, skip = skip, Ns = Ns, yt = t, title = title,
             bootsamples = bootsamples, zerooffset = opt$zerooffset,
-            nsave = opt$nsave, every = opt$every, l = opt$bootl)
+            nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction)
 
     uwerrresults <- uwerr.cf(WL)
 

@@ -200,6 +200,9 @@ for (x in seq(0, 3)) {
         try(plot(x = uwerrresults$uwcf$t - 1, y = uwerrresults$uwcf$tauint,
                 main = sprintf("%s, autocorellation times", title),
                 xlab = "t", ylab = "tauint"))
+        # uwerrbootstrap <- cbind(as.data.frame(t(apply(X=WL$cf, MARGIN=2L, FUN=uw_wrapper))),
+        #                  t=(1:ncol(WL$cf)))
+
     }
         listfits[[4 * x + y]] <- resulteffmass[[3]]
         listtauint[[4 * x + y]] <- uwerrresults
@@ -280,11 +283,14 @@ if (opt$plaquette) {
         plaquettedata <- bootstrap.cf(plaquettedata, boot.R = bootsamples)
         plaquette <- plaquettedata$cf0[1]
         dp <- plaquettedata$tsboot.se[1]
-        measurements <- read.table(filename, header = FALSE, skip = opt$skip)
-        plaquettedatauwerr <- uwerrprimary(measurements[, Nsmax + 3])
+        measurements <- read.table(filename, header = FALSE, skip = 0)
+        plaquettedatauwerr <- uwerrprimary(measurements[seq(opt$skip, length(measurements[1])), Nsmax + 3])
         plaquetteuwerr <- plaquettedatauwerr$value
         dpuwerr <- plaquettedatauwerr$dvalue
         tauint <- plaquettedatauwerr$tauint
+        plot(x=seq(1, length(measurements[, 1])), y=measurements[ , Nsmax + 3], xlab=sprintf("MCMC-steps/%d", opt$nsave), ylab="P", main="Thermalization")
+        arrows(x0=opt$skip, y0=-1, y1=2)
+
     }
 
     if (TRUE) { # slope, ratio
@@ -463,6 +469,8 @@ if (opt$plaquette) {
         dratiopot <- sd(bsratiopot)
     }
 
+    if (TRUE) {
+
     # Make a list of all results plus bootstrapsamples,
     # a data frame of the results,
     # and save them. Only print columnnames if the file is empty.
@@ -531,6 +539,7 @@ if (opt$plaquette) {
     nameresults <- sprintf("%sresultspotNs%dNt%dbeta%fxi%fbs%d.RData",
             opt$plotpath, Ns, Nt, beta, xi, bootsamples)
     saveRDS(resultssummary, file = nameresults)
+    }
 
 if (FALSE) {
     # read in results of the temporal normal potential,

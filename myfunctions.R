@@ -155,7 +155,7 @@ readloopfilecfonecolumn <- function (file, path = "",
 
 calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
                                  title, path = "", nsave = 100,
-                                 zerooffset = 0, every = 1, l = 2) {
+                                 zerooffset = 0, every = 1, l = 2, fraction = 0.5) {
     # plots loops for the sideways potential
     # x is changed, yt is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -164,7 +164,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
-            Nsmax = Ns / 2, yt = yt, zerooffset = zerooffset, every = every)
+            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -174,8 +174,8 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
       plot(WL, xlab = "x/a_s", ylab = "C(x)",
             main = sprintf("%s, linear scale", title),
             ylim = c(-WL$cf0[3], WL$cf0[3]))
-      points(x = seq(-1, Ns / 2 + 1, 1),
-            y = rep(0, times = length(seq(-1, Ns / 2 + 1, 1))),
+      points(x = seq(-1, Ns * fraction + 1, 1),
+            y = rep(0, times = length(seq(-1, Ns * fraction + 1, 1))),
             col = 2, type = "l")
       message(WL$cf0, " ")
     }
@@ -185,7 +185,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
 
 calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
                                     title, path = "", zerooffset = 0,
-                                    every = 1, nsave = 100, l = 2) {
+                                    every = 1, nsave = 100, l = 2, fraction = 0.5) {
     # plots loops for the spatial normal potential
     # y is cahnged, x is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -193,8 +193,8 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
     # skip: number of configurations that are stripped from the beginnig
     # every: step between read lines
     # l: median blocking size for bootstrap
-    WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Ns / 2, x = x,
-                Nsmax = Ns / 2, zerooffset = zerooffset, every = every)
+    WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Ns * fraction, x = x,
+                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -204,8 +204,8 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
       plot(WL, xlab = "y/a_s", ylab = "C(y)",
             main = sprintf("%s, linear scale", title),
             ylim = c(-WL$cf0[3], WL$cf0[3]))
-      points(x = seq(-1, Ns / 2 + 1, 1),
-            y = rep(0, times = length(seq(-1, Ns / 2 + 1, 1))),
+      points(x = seq(-1, Ns * fraction + 1, 1),
+            y = rep(0, times = length(seq(-1, Ns * fraction + 1, 1))),
                 col = 2, type = "l")
    }
     return(WL)
@@ -213,7 +213,7 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
 
 calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
                                         title, path = "", zerooffset = 0,
-                                        every = 1, nsave = 100, l = 2) {
+                                        every = 1, nsave = 100, l = 2, fraction = 0.5) {
     # plots loops for the spatial temporal potential
     # t is changed, x is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -221,8 +221,8 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
     # skip: number of configurations that are stripped from the beginnig
     # every: step between read lines
     # l: median blocking size for bootstrap
-    WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Nt / 2, x = x,
-                    Nsmax = Ns / 2, zerooffset = zerooffset, every = every)
+    WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Nt * fraction, x = x,
+                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -232,8 +232,8 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
       plot(WL, xlab = "t/a_s", ylab = "C(t)",
             main = sprintf("%s, linear scale", title),
             ylim = c(-WL$cf0[3], WL$cf0[3]))
-      points(x = seq(-1, Nt / 2 + 1, 1),
-            y = rep(0, times = length(seq(-1, Nt / 2 + 1, 1))),
+      points(x = seq(-1, Nt * fraction + 1, 1),
+            y = rep(0, times = length(seq(-1, Nt * fraction + 1, 1))),
                 col = 2, type = "l")
     }
     return(WL)
