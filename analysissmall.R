@@ -280,8 +280,10 @@ if (opt$plaquette) {
         # determine the plaquette with uwerr
         # (takes autocorrelation into account)
         # anf with bootstrap
-        plaquettedata <- readloopfilecfplaquette(file = filename,
-                        skip = skip, Nsmax = Nsmax, Ntmax = Ntmax)
+        # plaquettedata <- readloopfilecfplaquette(file = filename,
+        #                 skip = skip, Nsmax = Nsmax, Ntmax = Ntmax)
+        plaquettedata <- readloopfilecfonecolumn(file = filename, skip = skip,
+                            column = Nsmax + 3, every = 1)
         dpvec <- c()
         for (i in seq(1, 10)) {
             print(i)
@@ -303,20 +305,23 @@ if (opt$plaquette) {
 # [13] "error_fn"          "cov_fn"            "resampling_method"
 # [16] "cf0"               "tsboot.se"         "boot.samples"
         measurements <- read.table(filename, header = FALSE, skip = 0)
-        plaquettedatauwerr <- uwerrprimary(measurements[seq(opt$skip, length(measurements[1])), Nsmax + 3])
+        plaquettedatauwerr <- uwerrprimary(measurements[seq(opt$skip + 1, length(measurements[Nsmax + 3])), Nsmax + 3])
         plaquetteuwerr <- plaquettedatauwerr$value
         dpuwerr <- plaquettedatauwerr$dvalue
         tauint <- plaquettedatauwerr$tauint
         plot(x=seq(1, length(measurements[, 1])), y=measurements[ , Nsmax + 3], xlab=sprintf("MCMC-steps/%d", opt$nsave), ylab="P", main="Thermalization")
         arrows(x0=opt$skip, y0=-1, y1=2)
 
-        print(dpvec)
-        print(dpuwerr)
+        # print(dpvec)
+        # print(dpuwerr)
         print(dpvec/dpuwerr)
+        print(plaquette/plaquetteuwerr)
+        print(plaquetteuwerr)
+        print(plaquette)
 
     }
 
-    if (FALSE) { # slope, ratio
+    if(FALSE) { # slope, ratio
 
     # Read in V(x=1, y=0) and V(sqrt(2)), then determine ratio and
     # slope of these data. Try to determine slope with a linear fit,
