@@ -20,6 +20,8 @@ option_list <- list(
 
     make_option(c("--respath"), type = "character", default = "plotstikz/",
     help = "path to where the resulting plots and data are stored [default %default]"),
+    make_option(c("--summaryname"), type = "character", default = "summaryfile",
+    help = "name of the summary file of the data [default %default]"),
     make_option(c("--datapath"), type = "character", default = "./",
     help = "path to where the data for the analyzed configs are stored [default %default]"),
     make_option(c("--type"), type = "character", default = "normal",
@@ -65,6 +67,14 @@ dataname <- sprintf("%s/summarysmallbetaone%fL%d.csv", opt$datapath, opt$beta, o
 filenameres <- sprintf("%s/resultsmallscaled", opt$datapath)
 side <- 2
 }
+
+## also possibility to give a custom name for the summaryfile
+## if not default, assume custom name is given
+if (opt$summaryname != "summaryfile") {
+    dataname <- opt$summaryname
+    paste("assuming custom filename for summary:", dataname)
+}
+
 if (!file.exists(dataname)) {
     stop(paste("file for results does not exist, check for", dataname))
 }
