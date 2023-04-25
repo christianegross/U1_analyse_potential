@@ -33,6 +33,8 @@ option_list <- list(
     help = "fraction of lattice that was measured [default %default]"),
     make_option(c("-x", "--xi"), type = "double", default = 1,
     help = "xi used in lattice, only used if xidiff = TRUE [default %default]"),
+    make_option(c("--bootl"), type = "double", default = 2,
+    help = "boot-l for bootstrapping samples [default %default]"),
 
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, potential values are determined with
@@ -154,7 +156,7 @@ for (x in seq(0, 3)) {
                 "beta = %.3f x = %d  y = %d W(t = 0) used\n", beta, x, y)
         }
         WL <- calcplotWloopsmall(filename, skip, Nsmax, Ntmax,
-                Nt, x, y, start, bootsamples, title, nsave = opt$nsave)
+                Nt, x, y, start, bootsamples, title, nsave = opt$nsave, l = opt$boot.l)
 
         title <- sprintf("%s%d configs, skipped %d", title,
                 (length(WL$cf[, 1]) + skip - 1) * opt$nsave, skip * opt$nsave)
@@ -280,9 +282,26 @@ if (opt$plaquette) {
         # anf with bootstrap
         plaquettedata <- readloopfilecfplaquette(file = filename,
                         skip = skip, Nsmax = Nsmax, Ntmax = Ntmax)
-        plaquettedata <- bootstrap.cf(plaquettedata, boot.R = bootsamples)
+        dpvec <- c()
+        for (i in seq(1, 10)) {
+            print(i)
+        plaquettedata <- bootstrap.cf(plaquettedata, boot.R = bootsamples, boot.l=2**i)
+
         plaquette <- plaquettedata$cf0[1]
         dp <- plaquettedata$tsboot.se[1]
+        dpvec[i] <- dp
+        }
+        plaquettedata <- bootstrap.cf(plaquettedata, boot.R = bootsamples, boot.l=opt$bootl)
+
+        plaquette <- plaquettedata$cf0[1]
+        dp <- plaquettedata$tsboot.se[1]
+#         print(names(plaquettedata))
+#         [1] "nrObs"             "Time"              "nrStypes"
+#  [4] "symmetrised"       "cf"                "conf.index"
+#  [7] "boot.R"            "boot.l"            "seed"
+# [10] "sim"               "endcorr"           "cf.tsboot"
+# [13] "error_fn"          "cov_fn"            "resampling_method"
+# [16] "cf0"               "tsboot.se"         "boot.samples"
         measurements <- read.table(filename, header = FALSE, skip = 0)
         plaquettedatauwerr <- uwerrprimary(measurements[seq(opt$skip, length(measurements[1])), Nsmax + 3])
         plaquetteuwerr <- plaquettedatauwerr$value
@@ -291,9 +310,13 @@ if (opt$plaquette) {
         plot(x=seq(1, length(measurements[, 1])), y=measurements[ , Nsmax + 3], xlab=sprintf("MCMC-steps/%d", opt$nsave), ylab="P", main="Thermalization")
         arrows(x0=opt$skip, y0=-1, y1=2)
 
+        print(dpvec)
+        print(dpuwerr)
+        print(dpvec/dpuwerr)
+
     }
 
-    if (TRUE) { # slope, ratio
+    if (FALSE) { # slope, ratio
 
     # Read in V(x=1, y=0) and V(sqrt(2)), then determine ratio and
     # slope of these data. Try to determine slope with a linear fit,
@@ -362,7 +385,6 @@ if (opt$plaquette) {
         dratio <- NA
         ratiobootsamples <- rep(NA, bootsamples)
     }
-    }
 
     # plot slope either as the fit or as the two points
     title <- sprintf("beta = %f, xi_in = %f, Ns = %d, Nt = %d",
@@ -373,8 +395,9 @@ if (opt$plaquette) {
         try(plotyerr(x = x, y = pot, dy = dpot,
                 xlab = "r / a_s", ylab = "a_tV(r)", main = title))
     }
+    }
 
-    if (TRUE) { #potential +string tension, r0
+    if (FALSE) { #potential +string tension, r0
     # read in all points of the potential
         fnpot <- function (par, x, boot.r, ...) par[1]  + par[2]  *  x  + par[3]  *  log(x)
         fnforce <- function (par, x, boot.r, ...) (- 1.0)  *  par[2]  *  x^2 - par[3]  *  x
@@ -454,7 +477,7 @@ if (opt$plaquette) {
         }
     }
 
-    if (TRUE) {
+    if (FALSE) {
         # calculate ratio, but subtract either
         # the intercept of the slope or the additive constant
         bsratioslope <- c()
@@ -469,7 +492,7 @@ if (opt$plaquette) {
         dratiopot <- sd(bsratiopot)
     }
 
-    if (TRUE) {
+    if (FALSE) {
 
     # Make a list of all results plus bootstrapsamples,
     # a data frame of the results,
