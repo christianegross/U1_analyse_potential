@@ -284,6 +284,7 @@ if (opt$plaquette) {
         #                 skip = skip, Nsmax = Nsmax, Ntmax = Ntmax)
         plaquettedata <- readloopfilecfonecolumn(file = filename, skip = skip,
                             column = Nsmax + 3, every = 1)
+        p1 <- plaquettedata$cf[, 1]
         dpvec <- c()
         for (i in seq(1, 10)) {
             print(i)
@@ -305,7 +306,15 @@ if (opt$plaquette) {
 # [13] "error_fn"          "cov_fn"            "resampling_method"
 # [16] "cf0"               "tsboot.se"         "boot.samples"
         measurements <- read.table(filename, header = FALSE, skip = 0)
-        plaquettedatauwerr <- uwerrprimary(measurements[seq(opt$skip + 1, length(measurements[Nsmax + 3])), Nsmax + 3])
+        plaquettedatauwerr <- uwerrprimary(measurements[seq(opt$skip + 1, length(measurements[, Nsmax + 3])), Nsmax + 3])
+        p2 <- measurements[seq(opt$skip, length(measurements[, Nsmax + 3])), Nsmax + 3]
+        # print(head(p1))
+        # print(head(p2))
+        # print(tail(p1))
+        # print(tail(p2))
+        # write.table("differenceplaquettes.csv", data.frame(p1=p1, p2=p2), row.names=F, col.names=T)
+        # pdiff <- head(p1)-head(p2)
+        # print(sum(pdiff))
         plaquetteuwerr <- plaquettedatauwerr$value
         dpuwerr <- plaquettedatauwerr$dvalue
         tauint <- plaquettedatauwerr$tauint
