@@ -53,11 +53,25 @@ githash <- printgitcommit(opt$myfunctions)
 c0 <- 1.628e-3
 dc0 <- 9.1e-5
 
-xilist <- c()
-times <- c()
 
 ## get all filenames
 filelist <- getorderedfilelist(path = opt$datapath, basename = opt$basename, last.digits = 6, ending = "")
+
+## prepare emtpy containers
+xilist <- c()
+times <- c()
+
+data <- read.table(file = filelist[1], header = F, skip = 1,
+    colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
+    col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
+
+timesteps <- length(data$t)
+timelist <- data$t
+
+resultxi <- array(data=rep(NA, timesteps * length(filelist) - opt$skip),
+dim=c(timesteps, length(filelist) - opt$skip))
+
+resulttsqE <- resultxi
 
 for (index in seq(opt$skip, length(filelist))) {
     ## for each file, read in necessary columns: t, xi, E
@@ -71,6 +85,9 @@ for (index in seq(opt$skip, length(filelist))) {
     ## select anisotropies corresponding to these indices
     xilist <- append(xilist, data$xi[match])
     times <- append(times, data$t[match])
+    ## save all values for plot
+    resultxi[, index-opt$skip] <- data$xi
+    resulttsqE[, index-opt$skip] <- data$t^2 * data$E
 }
 # print(xi)
 
@@ -95,26 +112,7 @@ if (!file.exists(filename)) {
 write.table(result, filename,
         append = TRUE, row.names = FALSE, col.names = columnnames)
 
-data <- read.table(file = filelist[1], header = F, skip = 1,
-    colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
-    col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
-
-timesteps <- length(data$t)
-timelist <- data$t
-
-resultxi <- array(data=rep(NA, timesteps * length(filelist) - opt$skip),
-dim=c(timesteps, length(filelist) - opt$skip))
-
-resulttsqE <- resultxi
-
-for (index in seq(opt$skip, length(filelist))) {
-    ## for each file, read in necessary columns: t, xi, E
-    data <- read.table(file = filelist[index], header = F, skip = 1,
-    colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
-    col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
-    resultxi[, index-opt$skip] <- data$xi
-    resulttsqE[, index-opt$skip] <- data$t^2 * data$E
-}
+## prepare list of xi(t), E(t), plot
 
 xitime <- apply(resultxi, MARGIN=1, FUN=mean)
 dxitime <- apply(resultxi, MARGIN=1, FUN=sd)
@@ -123,7 +121,7 @@ dEtime <- apply(resulttsqE, MARGIN=1, FUN=sd)
 
 timeresult <- data.frame(t=timelist, xi=xitime, dxi = dxitime, tsqE = Etime, dtsqE = dEtime)
 
-filename <- sprintf("%s/gflowb%fx%fL%dT%d", opt$plotpath, opt$beta, xi, opt$Ns, opt$Nt)
+filename <- sprintf("%s/gflowb%fx%fL%dT%d", opt$plotpath, opt$beta, xiin, opt$Ns, opt$Nt)
 write.table(x=timeresult, file=paste(filename, ".csv", sep=""), row.names=F, col.names=T)
 
 pdf(paste(filename, ".pdf", sep=""), title="")
