@@ -156,7 +156,7 @@ for (x in seq(0, 3)) {
                 "beta = %.3f x = %d  y = %d W(t = 0) used\n", beta, x, y)
         }
         WL <- calcplotWloopsmall(filename, skip, Nsmax, Ntmax,
-                Nt, x, y, start, bootsamples, title, nsave = opt$nsave, l = opt$boot.l)
+                Nt, x, y, start, bootsamples, title, nsave = opt$nsave, l = opt$bootl)
 
         title <- sprintf("%s%d configs, skipped %d", title,
                 (length(WL$cf[, 1]) + skip - 1) * opt$nsave, skip * opt$nsave)
