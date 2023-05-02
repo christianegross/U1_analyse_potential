@@ -59,6 +59,8 @@ option_list <- list(
     help = "path to where additional functions are stored [default %default]"),
     make_option(c("--respath"), type = "character", default = "",
     help = "path to where the resultfiles are stored [default %default]"),
+    make_option(c("--effmasstype"), type = "character", default = "log",
+    help = "type of effective mass [default %default]"),
     make_option(c("--plotpath"), type = "character", default = "",
     help = "path to where the plots are stored [default %default]")
 )
@@ -166,7 +168,7 @@ for (x in seq(0, 3)) {
         t1 <- listbounds$lower[listbounds$y == y & listbounds$x == x]
         t2 <- listbounds$upper[listbounds$y == y & listbounds$x == x]
 
-        for (type in c("log", "acosh")) {
+        for (type in c(opt$effmasstype)) {
 
         resulteffmass <- deteffmasssmall(WL, x, y, t1, t2, type = type)
 
@@ -177,18 +179,18 @@ for (x in seq(0, 3)) {
         print(paste("type=", type, "effmass=", resulteffmass[[1]][2], "pm", resulteffmass[[1]][3]))
 
         try(plot(resulteffmass[[3]][[1]], xlab = "t / a_t", ylab = "Meff",
-                main = sprintf("%s, t1 = %d, t2 = %d, p = %f",
-                title, t1, t2, resulteffmass[[3]][[1]]$effmassfit$Qval)))
+                main = sprintf("%s\ntype=%s, t1 = %d, t2 = %d, p = %f",
+                title, type, t1, t2, resulteffmass[[3]][[1]]$effmassfit$Qval)))
         arrows((Nt - start - 1) / 2, 10, (Nt - start - 1) / 2, -10,
                 angle = 90, length = 0.1, code = 0, col = 2)
-        drawallticks()
+        # drawallticks()
         try(plot(resulteffmass[[3]][[1]], xlab = "t / a_t", ylab = "Meff",
-                main = sprintf("%s, t1 = %d, t2 = %d, p = %f",
-                title, t1, t2, resulteffmass[[3]][[1]]$effmassfit$Qval),
+                main = sprintf("%s\ntype=%s, t1 = %d, t2 = %d, p = %f",
+                title, type, t1, t2, resulteffmass[[3]][[1]]$effmassfit$Qval),
                 ylim = resulteffmass[[2]]))
         arrows((Nt - start - 1) / 2, 10, (Nt - start - 1) / 2, -10,
                 angle = 90, length = 0.1, code = 0, col = 2)
-        drawallticks(all = FALSE, inward = TRUE)
+        # drawallticks(all = FALSE, inward = TRUE)
         }
 
 
