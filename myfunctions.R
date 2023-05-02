@@ -302,13 +302,15 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial, type = "log") {
                     p = WL.effmass$effmassfit$Qval,
                     chi = WL.effmass$effmassfit$chisqr / WL.effmass$effmassfit$dof)
             potential <- rbind(potential, newline)
-            regionplotzoom <- seq(ceiling(0.2 * length(WL.effmass$effMass)) + 1,
+            regionplotzoom <- seq(ceiling(0.4 * length(WL.effmass$effMass)) + 1,
                     length(WL.effmass$effMass) - 1)
-            if (length(regionplotzoom > 0)) {
+            if (length(regionplotzoom) > 0) {
+            if (length(regionplotzoom) > 8) regionplotzoom <- regionplotzoom[1:8]
                 # max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
-                max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom[1:8]])), 2)
-                min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom[1:8]])), 0)
+                max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
+                min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom])), 0)
                 ylim <- c(min, max)
+                print(ylim)
             }
         } else {
             WL.effmass <- bootstrap.effectivemass(WL, type = type)
@@ -346,6 +348,7 @@ deteffmasssmall <- function (WL, x, y, t1, t2, type = "log") {
             regionplotzoom <- seq(floor(length(WL.effmass$effMass)) * 0.25,
                     min(floor(length(WL.effmass$effMass)) * 0.25, length(WL.effmass$effMass)))
             if (length(regionplotzoom > 0)) {
+            if (length(regionplotzoom) > 8) regionplotzoom <- regionplotzoom[1:8]
                 max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
                 min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom])), 0)
                 ylim <- c(min, max)
