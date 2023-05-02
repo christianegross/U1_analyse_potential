@@ -68,8 +68,8 @@ data <- read.table(file = filelist[1], header = F, skip = 1,
 timesteps <- length(data$t)
 timelist <- data$t
 
-resultxi <- array(data=rep(NA, timesteps * length(filelist) - opt$skip),
-dim=c(timesteps, length(filelist) - opt$skip))
+resultxi <- array(data = rep(NA, timesteps * length(filelist) - opt$skip),
+dim = c(timesteps, length(filelist) - opt$skip))
 
 resulttsqE <- resultxi
 
@@ -86,8 +86,8 @@ for (index in seq(opt$skip, length(filelist))) {
     xilist <- append(xilist, data$xi[match])
     times <- append(times, data$t[match])
     ## save all values for plot
-    resultxi[, index-opt$skip] <- data$xi
-    resulttsqE[, index-opt$skip] <- data$t^2 * data$E
+    resultxi[, index - opt$skip] <- data$xi
+    resulttsqE[, index - opt$skip] <- data$t^2 * data$E
 }
 # print(xi)
 
@@ -114,20 +114,20 @@ write.table(result, filename,
 
 ## prepare list of xi(t), E(t), plot
 
-xitime <- apply(resultxi, MARGIN=1, FUN=mean)
-dxitime <- apply(resultxi, MARGIN=1, FUN=sd)
-Etime <- apply(resulttsqE, MARGIN=1, FUN=mean)
-dEtime <- apply(resulttsqE, MARGIN=1, FUN=sd)
+xitime <- apply(resultxi, MARGIN = 1, FUN = mean)
+dxitime <- apply(resultxi, MARGIN = 1, FUN = sd)
+Etime <- apply(resulttsqE, MARGIN = 1, FUN = mean)
+dEtime <- apply(resulttsqE, MARGIN = 1, FUN = sd)
 
-timeresult <- data.frame(t=timelist, xi=xitime, dxi = dxitime, tsqE = Etime, dtsqE = dEtime)
+timeresult <- data.frame(t = timelist, xi = xitime, dxi = dxitime, tsqE = Etime, dtsqE = dEtime)
 
 filename <- sprintf("%s/gflowb%fx%fL%dT%d", opt$plotpath, opt$beta, xiin, opt$Ns, opt$Nt)
-write.table(x=timeresult, file=paste(filename, ".csv", sep=""), row.names=F, col.names=T)
+write.table(x  = timeresult, file = paste(filename, ".csv", sep = ""), row.names = F, col.names = T)
 
-pdf(paste(filename, ".pdf", sep=""), title="")
+pdf(paste(filename, ".pdf", sep = ""), title = "")
 
-plotwitherror(x=timeresult$t, y=timeresult$tsqE, dy=timeresult$dtsqE,
-main="Energy", xlab="t", ylab="t^2E")
+plotwitherror(x = timeresult$t, y = timeresult$tsqE, dy = timeresult$dtsqE,
+main = "Energy", xlab = "t", ylab = "t^2E")
 
-plotwitherror(x=timeresult$t, y=timeresult$xi, dy=timeresult$dxi,
-main="Anisotropy", xlab="t", ylab="xi")
+plotwitherror(x = timeresult$t, y = timeresult$xi, dy = timeresult$dxi,
+main = "Anisotropy", xlab = "t", ylab = "xi")

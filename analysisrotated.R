@@ -441,6 +441,11 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   }
 }
 
+# print(xc)
+# print(yc)
+# print(xf)
+# print(yf)
+
 
 #determine parameters of potentials by bootstrap, save results
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc,
@@ -453,6 +458,7 @@ filenamecoarse <- sprintf(
             "%sfitresultcoarseb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
             opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1)
 }
+
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yf, xf,
@@ -465,6 +471,7 @@ filenamefine <- sprintf(
             "%sfitresultfineb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
             opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1)
 }
+
 saveRDS(fit.resultfine, file = filenamefine)
 
 # plot potentials
@@ -604,6 +611,7 @@ filenamescaled <- sprintf(
             "%sfitresultscaledb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
             opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1)
 }
+
 saveRDS(fit.resultscaled, file = filenamescaled)
 
 strings <- sprintf("\nxi = %f  +/- %f\neta= %f  +- %f\n\n",

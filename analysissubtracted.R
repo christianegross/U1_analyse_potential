@@ -523,7 +523,7 @@ fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
             y = yc, x = yf, bsamples[, 1:Ns], mask = maskc)
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
             main = "matching potentials to determine xi")
-print(fit.match)
+# print(fit.match)
 filenamematch <- sprintf(
             "%sfitresultmatchsubtractedb%fxi%fNt%dNs%dbsamples%domit%dl%dlowlim%d.RData",
             opt$plotpath, beta, xi, Nt, Ns, bootsamples, opt$omit, t1, opt$lowlim)
