@@ -15,7 +15,7 @@ option_list <- list(
     help = "Nt of lattice [default %default]"),
     make_option(c("-n", "--nape"), type = "integer", default = 0,
     help = "Number of APE-smears that were done [default %default]"),
-     make_option(c("--t1"), type = "integer", default = 0,
+     make_option(c("--t1"), type = "integer", default = 2,
     help = "boundaries for determining meff [default %default]"),
 
     make_option(c("-a", "--alpha"), type = "double", default = 1.0,
@@ -73,7 +73,7 @@ if (opt$rotated) {
         upper <- data.frame(upper = rep(opt$Ns / 2, length(spacial)))
         table <- cbind(spacial, yt, lower, upper)
         write.table(table, filename, append = TRUE,
-                row.names = FALSE, col.names = TRUE)
+                row.names = FALSE, col.names = TRUE, sep=",")
     }
 }
 
@@ -98,7 +98,7 @@ if (opt$subtracted) {
         upper <- data.frame(upper = rep(c(opt$Ns / 2 - 2, opt$Nt / 2 - 2), opt$Ns / 2))
         table <- cbind(spacial, yt, lower, upper)
         write.table(table, filename,
-        append = TRUE, row.names = FALSE, col.names = TRUE)
+        append = TRUE, row.names = FALSE, col.names = TRUE, sep=",")
     }
 }
 
@@ -122,6 +122,6 @@ if (opt$small) {
         table <- cbind(x, y, lower, upper)
 
         write.table(table, filename,
-            append = TRUE, row.names = FALSE, col.names = TRUE)
+            append = TRUE, row.names = FALSE, col.names = TRUE, sep=",")
     }
 }
