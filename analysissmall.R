@@ -332,7 +332,7 @@ if (opt$plaquette) {
 
     }
 
-    if(FALSE) { # slope, ratio
+    if(TRUE) { # slope, ratio
 
     # Read in V(x=1, y=0) and V(sqrt(2)), then determine ratio and
     # slope of these data. Try to determine slope with a linear fit,
@@ -413,7 +413,7 @@ if (opt$plaquette) {
     }
     }
 
-    if (FALSE) { #potential +string tension, r0
+    if (TRUE) { #potential +string tension, r0
     # read in all points of the potential
         fnpot <- function (par, x, boot.r, ...) par[1]  + par[2]  *  x  + par[3]  *  log(x)
         fnforce <- function (par, x, boot.r, ...) (- 1.0)  *  par[2]  *  x^2 - par[3]  *  x
@@ -493,7 +493,7 @@ if (opt$plaquette) {
         }
     }
 
-    if (FALSE) {
+    if (TRUE) {
         # calculate ratio, but subtract either
         # the intercept of the slope or the additive constant
         bsratioslope <- c()
@@ -508,7 +508,7 @@ if (opt$plaquette) {
         dratiopot <- sd(bsratiopot)
     }
 
-    if (FALSE) {
+    if (TRUE) {
 
     # Make a list of all results plus bootstrapsamples,
     # a data frame of the results,
