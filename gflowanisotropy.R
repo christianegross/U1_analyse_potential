@@ -92,13 +92,15 @@ for (index in seq(opt$skip, length(filelist))) {
 # print(xi)
 
 ## get mean and error
-xi <- mean(xilist)
-dxi <- sd(xilist)
+# xi <- mean(xilist)
+# dxi <- sd(xilist)
+uwerrxi <- uwerrprimary(xilist)
+uwerrt <- uwerrprimary(times)
 
 
 ## save result
 result <- data.frame(beta = opt$beta, L = opt$Ns, T = opt$Nt, xiin = xiin,
-xi = xi, dxi = dxi, time = mean(times), dtime = sd(times),
+xi = uwerrxi$value, dxi = uwerrxi$dvalue, time = uwerrt$value, dtime = uwerrtime$dvalue,
 c0 = c0, dc0 = dc0, githash = githash,
 noc = length(filelist) - opt$skip, nom = length(xilist))
 print(result)
