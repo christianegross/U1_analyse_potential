@@ -13,6 +13,8 @@ option_list <- list(
 
     make_option(c("-T", "--timeextent"), type = "integer", default = 16,
     help = "time extent of lattice at xi=1 [default %default]"),
+    make_option(c("--crzero"), type = "double", default = -1.65,
+    help = "c used for determining r_0 [default %default]"),
     make_option(c("--myfunctions"), type = "character",
         default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
@@ -85,6 +87,11 @@ data <- read.table(dataname, header = TRUE, sep = " ")
 # data <- na.omit(data)
 if (type == "sideways") {
 data <- data[data$omit == opt$omit, ]
+data <- data[data$c == opt$crzero, ]
+}
+
+if (type == "normal") {
+data <- data[data$c == opt$crzero, ]
 }
 
 nom <- length(data$beta)

@@ -84,6 +84,8 @@ option_list <- list(
 
     make_option(c("--nsave"), type = "integer", default = 0,
     help = "steps between saved configs [default %default]"),
+    make_option(c("--crzero"), type = "double", default = -1.65,
+    help = "c used for determining r_0 [default %default]"),
     make_option(c("--myfunctions"), type = "character",
             default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
     help = "path to where additional functions are stored,
@@ -589,7 +591,7 @@ for (i in seq(1, length(xx), 1)) {
 # c  =  -sigma * r^2 - b * r, use p-q-formula for p = b/sigma, q = c/sigma
 rzeroofc <- data.frame(r0 = NA, dr0 = NA, c = NA)
 
-for (c in list(-1.65)) {
+for (c in list(opt$crzero)) {
 rzerolist <- data.frame(r1 = NA, r2 = NA)
 for (bs in seq(1, bootsamples)) {
 #~     a <- fit.resultscaled$t[bs, 1]
@@ -677,7 +679,7 @@ plot(plaquettecolumn, main = "Thermalisation",
 if (dofit) {
     # save bootstrapsamples and summary of results
 resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2], bsst = fit.resultscaled$t[, 2],
-        rzeros = rzero, drzeros = drzero, crz = -1.65, bsrzeros = bsrzero,
+        rzeros = rzero, drzeros = drzero, crz = opt$crzero, bsrzeros = bsrzero,
         p = plaquettedata$value, dp = plaquettedata$dvalue, bsp = plaquettecf$cf.tsboot$t[, 1],
         beta = beta, xiin = xi, Nt = Nt, Ns = Ns, bootsamples = bootsamples,
         nom = nom, skip = opt$skip, lowlim = opt$lowlim,
