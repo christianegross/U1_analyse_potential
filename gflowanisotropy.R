@@ -24,7 +24,7 @@ option_list <- list(
     help = "Is xi different to L/T? [default %default]"),
     make_option(c("--datapath"), type = "character", default = "./",
     help = "path to where the datafiles are stored [default %default]"),
-    make_option(c("--plotpath"), type = "character", default = "",
+    make_option(c("--plotpath"), type = "character", default = "./",
     help = "path to where the plots are stored [default %default]"),
     make_option(c("--basename"), type = "character", default = "gradient_flow",
     help = "basename of resultfiles [default %default]"),
@@ -68,7 +68,7 @@ data <- read.table(file = filelist[1], header = F, skip = 1,
 timesteps <- length(data$t)
 timelist <- data$t
 
-resultxi <- array(data = rep(NA, timesteps * length(filelist) - opt$skip),
+resultxi <- array(data = rep(NA, timesteps * (length(filelist) - opt$skip)),
 dim = c(timesteps, length(filelist) - opt$skip))
 
 resulttsqE <- resultxi
@@ -79,7 +79,7 @@ for (index in seq(opt$skip, length(filelist))) {
     colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
     col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
     ## determine t^2E
-    data$tsqE <- data$t^2 * data$E
+    data$tsqE <- 2 * data$t * data$t * data$E
     ## determine indices for which t^2E in c0 +/- dc0
     match <- which(abs(data$tsqE - c0) < dc0)
     ## select anisotropies corresponding to these indices
@@ -87,9 +87,11 @@ for (index in seq(opt$skip, length(filelist))) {
     times <- append(times, data$t[match])
     ## save all values for plot
     resultxi[, index - opt$skip] <- data$xi
-    resulttsqE[, index - opt$skip] <- data$t^2 * data$E
+    resulttsqE[, index - opt$skip] <- 2 * data$t^2 * data$E
 }
 # print(xi)
+
+# print(resulttsqE[, 100])
 
 ## get mean and error
 # xi <- mean(xilist)
@@ -100,7 +102,7 @@ uwerrt <- uwerrprimary(times)
 
 ## save result
 result <- data.frame(beta = opt$beta, L = opt$Ns, T = opt$Nt, xiin = xiin,
-xi = uwerrxi$value, dxi = uwerrxi$dvalue, time = uwerrt$value, dtime = uwerrtime$dvalue,
+xi = uwerrxi$value, dxi = uwerrxi$dvalue, time = uwerrt$value, dtime = uwerrt$dvalue,
 c0 = c0, dc0 = dc0, githash = githash,
 noc = length(filelist) - opt$skip, nom = length(xilist))
 print(result)
@@ -133,3 +135,4 @@ main = "Energy", xlab = "t", ylab = "t^2E")
 
 plotwitherror(x = timeresult$t, y = timeresult$xi, dy = timeresult$dxi,
 main = "Anisotropy", xlab = "t", ylab = "xi")
+
