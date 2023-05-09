@@ -60,12 +60,17 @@ filelist <- getorderedfilelist(path = opt$datapath, basename = opt$basename, las
 ## prepare emtpy containers
 xilist <- c()
 times <- c()
+xilistmin <- c()
+timesmin <- c()
 
 data <- read.table(file = filelist[1], header = F, skip = 1,
-    colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
-    col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
+    colClasses = c("numeric", "numeric", "NULL", "numeric", "NULL", rep("NULL", 4)),
+    # colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
+    col.names = c("t", "xi", NA, NA, NA, "E", rep(NA, 3)))
+    # col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
 
 timesteps <- length(data$t)
+print(timesteps)
 timelist <- data$t
 
 resultxi <- array(data = rep(NA, timesteps * (length(filelist) - opt$skip)),
@@ -73,18 +78,26 @@ dim = c(timesteps, length(filelist) - opt$skip))
 
 resulttsqE <- resultxi
 
-for (index in seq(opt$skip, length(filelist))) {
+for (index in seq(opt$skip + 1, length(filelist))) {
+    # print(filelist[index])
     ## for each file, read in necessary columns: t, xi, E
     data <- read.table(file = filelist[index], header = F, skip = 1,
     colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
     col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
-    ## determine t^2E
+    ## determine t^2E, take 2*E due to Lüschers formula
     data$tsqE <- 2 * data$t * data$t * data$E
     ## determine indices for which t^2E in c0 +/- dc0
     match <- which(abs(data$tsqE - c0) < dc0)
+    # print(match)
     ## select anisotropies corresponding to these indices
     xilist <- append(xilist, data$xi[match])
     times <- append(times, data$t[match])
+    ## determine indices for which abs(t^2E-c0) is minimal
+    match <- which(abs(data$tsqE - c0) == min(abs(data$tsqE - c0)))
+    print(match)
+    ## select anisotropies corresponding to these indices
+    xilistmin <- append(xilistmin, data$xi[match])
+    timesmin <- append(timesmin, data$t[match])
     ## save all values for plot
     resultxi[, index - opt$skip] <- data$xi
     resulttsqE[, index - opt$skip] <- 2 * data$t^2 * data$E
@@ -98,11 +111,14 @@ for (index in seq(opt$skip, length(filelist))) {
 # dxi <- sd(xilist)
 uwerrxi <- uwerrprimary(xilist)
 uwerrt <- uwerrprimary(times)
+uwerrximin <- uwerrprimary(xilistmin)
+uwerrtmin <- uwerrprimary(timesmin)
 
 
 ## save result
 result <- data.frame(beta = opt$beta, L = opt$Ns, T = opt$Nt, xiin = xiin,
 xi = uwerrxi$value, dxi = uwerrxi$dvalue, time = uwerrt$value, dtime = uwerrt$dvalue,
+ximin = uwerrximin$value, dximin = uwerrximin$dvalue, timemin = uwerrtmin$value, dtimemin = uwerrtmin$dvalue,
 c0 = c0, dc0 = dc0, githash = githash,
 noc = length(filelist) - opt$skip, nom = length(xilist))
 print(result)
