@@ -50,8 +50,8 @@ githash <- printgitcommit(opt$myfunctions)
 
 ## as determied in https://arxiv.org/pdf/2212.09627.pdf
 ## take c0 to reproduce the result from the potential measurements
-c0 <- 1.628e-3
-dc0 <- 9.1e-5
+c0 <- 1.628e-5
+dc0 <- 0.5e-5
 
 
 ## get all filenames
@@ -64,10 +64,10 @@ xilistmin <- c()
 timesmin <- c()
 
 data <- read.table(file = filelist[1], header = F, skip = 1,
-    colClasses = c("numeric", "numeric", "NULL", "numeric", "NULL", rep("NULL", 4)),
-    # colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
-    col.names = c("t", "xi", NA, NA, NA, "E", rep(NA, 3)))
-    # col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
+    # colClasses = c("numeric", "numeric", "NULL", "NULL", "NULL", "numeric", rep("NULL", 3)),
+    colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
+    # col.names = c("t", "xi", NA, NA, NA, "E", rep(NA, 3)))
+    col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
 
 timesteps <- length(data$t)
 print(timesteps)
@@ -82,7 +82,9 @@ for (index in seq(opt$skip + 1, length(filelist))) {
     # print(filelist[index])
     ## for each file, read in necessary columns: t, xi, E
     data <- read.table(file = filelist[index], header = F, skip = 1,
+    # colClasses = c("numeric", "numeric", "NULL", "NULL", "NULL", "numeric", rep("NULL", 3)),
     colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
+    # col.names = c("t", "xi", NA, NA, NA, "E", rep(NA, 3)))
     col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
     ## determine t^2E, take 2*E due to Lüschers formula
     data$tsqE <- 2 * data$t * data$t * data$E
