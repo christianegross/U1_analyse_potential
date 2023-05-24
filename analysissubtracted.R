@@ -12,6 +12,8 @@ option_list <- list(
 
     make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
     help = "how many bootstrapsamples should be drawn [default %default]"),
+    make_option(c("--maxrows"), type = "integer", default = -1,
+    help = "Maximum of configurations that are read in, -1=all [default %default]"),
     make_option(c("-r", "--Ns"), type = "integer", default = 16,
     help = "Ns of lattice [default %default]"),
 
@@ -198,7 +200,8 @@ for (x in seq(1, Ns / 2, 1)) {
     WL <- calcplotWloopnormalspatial(file = filename, skip = skip,
             Ns = Ns, x = x, bootsamples = bootsamples,
             title = title, path = opt$respath, zerooffset = opt$zerooffset,
-            every = opt$every, nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction)
+            every = opt$every, nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
+            maxrows = opt$maxrows)
     uwerrresults <- uwerr.cf(WL)
     negatives[x] <- sum(WL$cf0 < 0)
 
@@ -239,7 +242,8 @@ for (x in seq(1, Ns / 2, 1)) {
     WL <- calcplotWloopnormaltemporal(file = filename, skip = skip, Ns = Ns,
             Nt = Nt, x = x, bootsamples = bootsamples, title = title,
             path = opt$respath, zerooffset = opt$zerooffset, every = opt$every,
-            nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction)
+            nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
+            maxrows = opt$maxrows)
     uwerrresults <- uwerr.cf(WL)
     negatives[x] <- negatives[x] + sum(WL$cf0 < 0)
 

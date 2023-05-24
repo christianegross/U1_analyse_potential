@@ -11,6 +11,8 @@ option_list <- list(
 
     make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
     help = "how many bootstrapsamples should be drawn [default %default]"),
+    make_option(c("--maxrows"), type = "integer", default = -1,
+    help = "Maximum of configurations that are read in, -1=all [default %default]"),
     make_option(c("-r", "--Ns"), type = "integer", default = 16,
     help = "L of lattice (spatial extent) [default %default]"),
 
@@ -178,7 +180,8 @@ for (y in seq(1, Ns / 2, 1)) {
             path = opt$respath, skip = skip, Ns = Ns, yt = y,
             title = title, bootsamples = bootsamples,
             zerooffset = opt$zerooffset, nsave = opt$nsave,
-            every = opt$every, l = opt$bootl, fraction = opt$fraction)
+            every = opt$every, l = opt$bootl, fraction = opt$fraction,
+            maxrows = opt$maxrows)
 
     uwerrresults <- uwerr.cf(WL)
 
@@ -229,7 +232,8 @@ for (t in seq(1, Nt / 2, 1)) {
     WL <- calcplotWloopsideways(file = filename,
             path = opt$respath, skip = skip, Ns = Ns, yt = t, title = title,
             bootsamples = bootsamples, zerooffset = opt$zerooffset,
-            nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction)
+            nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction,
+            maxrows = opt$maxrows)
 
     uwerrresults <- uwerr.cf(WL)
 

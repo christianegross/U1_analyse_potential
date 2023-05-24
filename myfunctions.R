@@ -11,10 +11,12 @@ library(hadron)
 # but makes it possible to measure the normal and the
 # sideways potential with one file.
 # file is the filename, path the path to the file
+# the number of rows that are read in can be limited with the maxrows parameter,
+# a negative number means all rows are read
 
 readloopfilecfrotated <- function (file, path  = "",
                                     skip = 0, Nsmax,
-                                    yt, zerooffset = 0, every = 1) {
+                                    yt, zerooffset = 0, every = 1, maxrows = -1) {
     # reads in the Wilson loop data for the sideways( = rotated) potential,
     # used to calculate V(yt), into a cf-container
     # Read in W(x, yt) for all possible x
@@ -27,7 +29,7 @@ readloopfilecfrotated <- function (file, path  = "",
     # every: step between read lines
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
-  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip))
+  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   nom <- length(tmp[, 1])
@@ -43,7 +45,7 @@ readloopfilecfrotated <- function (file, path  = "",
 
 readloopfilecfsub <- function (file, path = "", skip = 0,
                             Nytmax, x, Nsmax,
-                            zerooffset = 0, every = 1) {
+                            zerooffset = 0, every = 1, maxrows = -1) {
     # reads in the Wilson loop data for the normal potential,
     # from which the anisotropy could be determined by subtracting the points,
     # used to calculate V(x), into a cf-container
@@ -57,7 +59,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
 
-  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip))
+  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   nom <- length(tmp[, 1])
@@ -72,7 +74,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfsmall <- function (file, path = "", skip = 0,
-                                Nsmax, x, y, Ntmax, start = 0) {
+                                Nsmax, x, y, Ntmax, start = 0, maxrows = -1) {
     # Reads in nonplanar Wilson loops, measured only for small distances.
     # Nsmax: maximum extent measured in the spacial x- and y-direction,
     # typically min(4, lattice size, those directions are kept fixed here.
@@ -83,7 +85,7 @@ readloopfilecfsmall <- function (file, path = "", skip = 0,
     # start: smallest t that was measured
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
-  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip))
+  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   Time <- Ntmax + 1 - start
@@ -97,7 +99,7 @@ readloopfilecfsmall <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfplaquette <- function (file, path = "", skip = 0,
-                                    Nsmax, Ntmax, every = 1) {
+                                    Nsmax, Ntmax, every = 1, maxrows = -1) {
     # reads W(x = 1, t = 1, y = 0) and W(x = 1, y = 1, t = 0)
     # into one cf-container from the file with nonplanar loops
     # Nsmax: maximum extent measured in the spacial x-direction,
@@ -105,7 +107,7 @@ readloopfilecfplaquette <- function (file, path = "", skip = 0,
     # Ntmax: temporal extent of the lattice
     # skip: number of configurations that are stripped from the beginnig
     # every: step between read lines
-  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip))
+  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   Time <- 2
@@ -121,7 +123,7 @@ readloopfilecfplaquette <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfonecolumn <- function (file, path = "",
-                                    skip = 0, column = 1, every = 1) {
+                                    skip = 0, column = 1, every = 1, maxrows = -1) {
     # reads column into a cf container
     # column has to be read twice so the expectation value can be
     # determined with bootstrap.cf
@@ -130,7 +132,7 @@ readloopfilecfonecolumn <- function (file, path = "",
     # every: step between read lines
     # used instead of uwerr to get the expectation value
     # to get bootstrap samples
-  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip))
+  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   Time <- 1
@@ -155,7 +157,7 @@ readloopfilecfonecolumn <- function (file, path = "",
 
 calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
                                  title, path = "", nsave = 100,
-                                 zerooffset = 0, every = 1, l = 2, fraction = 0.5) {
+                                 zerooffset = 0, every = 1, l = 2, fraction = 0.5, maxrows = -1) {
     # plots loops for the sideways potential
     # x is changed, yt is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -164,7 +166,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
-            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every)
+            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -185,7 +187,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
 
 calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
                                     title, path = "", zerooffset = 0,
-                                    every = 1, nsave = 100, l = 2, fraction = 0.5) {
+                                    every = 1, nsave = 100, l = 2, fraction = 0.5, maxrows = -1) {
     # plots loops for the spatial normal potential
     # y is cahnged, x is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -194,7 +196,7 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Ns * fraction, x = x,
-                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every)
+                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -213,7 +215,7 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
 
 calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
                                         title, path = "", zerooffset = 0,
-                                        every = 1, nsave = 100, l = 2, fraction = 0.5) {
+                                        every = 1, nsave = 100, l = 2, fraction = 0.5, maxrows = -1) {
     # plots loops for the spatial temporal potential
     # t is changed, x is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -222,7 +224,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Nt * fraction, x = x,
-                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every)
+                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -241,7 +243,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
 
 calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
                                 Nt, x, y, start, bootsamples,
-                                title, nsave = 100, l = 2) {
+                                title, nsave = 100, l = 2, maxrows = -1) {
     # plots loops for the non-integer potential
     # t is changed, x and y are kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -250,7 +252,7 @@ calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
     # l: median blocking size for bootstrap
     # additionally plots lines signifying half the lattice extent
     WL <- readloopfilecfsmall(file = filename, skip = skip,
-                    Nsmax = Nsmax, x = x, y = y, Ntmax = Ntmax, start = start)
+                    Nsmax = Nsmax, x = x, y = y, Ntmax = Ntmax, start = start, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s%d configs, skipped %d", title,
             (length(WL$cf[, 1]) + skip - 1) * nsave, skip * nsave)
@@ -310,7 +312,7 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial, type = "log") {
                 max <- min(max(na.omit(WL.effmass$effMass[regionplotzoom])), 2)
                 min <- max(min(na.omit(WL.effmass$effMass[regionplotzoom])), 0)
                 ylim <- c(min, max)
-                print(ylim)
+                # print(ylim)
             }
         } else {
             WL.effmass <- bootstrap.effectivemass(WL, type = type)
