@@ -1,6 +1,16 @@
 library("hadron")
 library(optparse)
 
+## Example use of script:
+## cd /hiskp4/gross/masterthesis/analyse/flowresults/
+## Rscript ../code/U1_analyse_potential/gflowanisotropy.R --beta 1.6521 --skip 1900 -r 16 -t 20 --betaone 1.6521 --xidiff -x 0.8 --datapath confL16.T20.b1.6521.x0.80 --plotpath results/
+
+## TODO: replace measurement of xi, at the moment, we are calculating the expactation value of the ratio E_ts/E_ss,
+## but we should be calculating the ratio of the expectation values
+## to do this: read in E_ss as well, determine E_ts=E-E_ss,
+## do this for all configs and then take expectation value of E_ts and E_ss
+
+## read in parameters from command line
 if (TRUE) {
     # set option list
 option_list <- list(
@@ -15,7 +25,7 @@ option_list <- list(
     make_option(c("-t", "--Nt"), type = "integer", default = 16,
     help = "T of lattice (temporal extent) [default %default]"),
     make_option(c("--betaone"), type = "double", default = 0,
-    help = "input beta at corresponding xi = 1 [default %default]"),
+    help = "input beta at corresponding xi = 1, appears in summarytable of results [default %default]"),
     make_option(c("-x", "--xi"), type = "double", default = 0,
     help = "xi used in lattice, only used if xidiff = TRUE, else
             xi is assumed to be L/T [default %default]"),
@@ -31,9 +41,9 @@ option_list <- list(
 
     make_option(c("--myfunctions"), type = "character",
         default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
-#~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
-    help = "path to where additional functions are stored,
-            relative to folder where script is executed [default %default]")
+    help = "path to where this script is stored,
+            relative to folder where script is executed,
+            only needed for printing git hash [default %default]")
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
@@ -45,24 +55,33 @@ if (opt$xidiff) {
     xiin <- opt$xi
 }
 
-source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
-githash <- printgitcommit(opt$myfunctions)
+# determine git commit hash
+printgitcommit <- function(pathtogit) {
+    #get git commit hash of myfunctions.R, should be the same as of any script
+    cwd <- setwd(pathtogit)
+    githash <- try(system("git rev-parse --short HEAD", intern = TRUE))
+    setwd(cwd)
+    print(paste("## on git commit", githash))
+    return(githash)
+}
+try(githash <- printgitcommit(opt$myfunctions))
 
 ## as determied in https://arxiv.org/pdf/2212.09627.pdf
 ## take c0 to reproduce the result from the potential measurements
-c0 <- 1.628e-5
-dc0 <- 0.5e-5
+c0 <- 1.628e-3
+dc0 <- 9.1e-5
 
 
 ## get all filenames
 filelist <- getorderedfilelist(path = opt$datapath, basename = opt$basename, last.digits = 6, ending = "")
-
 ## prepare emtpy containers
-xilist <- c()
-times <- c()
+xilistrange <- c()
+timesrange <- c()
 xilistmin <- c()
 timesmin <- c()
 
+## read in the data to determine the times,
+## only read in selected columns to save time
 data <- read.table(file = filelist[1], header = F, skip = 1,
     # colClasses = c("numeric", "numeric", "NULL", "NULL", "NULL", "numeric", rep("NULL", 3)),
     colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
@@ -70,17 +89,16 @@ data <- read.table(file = filelist[1], header = F, skip = 1,
     col.names = c("t", "xi", NA, NA, "E", rep(NA, 4)))
 
 timesteps <- length(data$t)
-print(timesteps)
 timelist <- data$t
 
+## empty arrays in which results for all times for xi, tsqE are stored
 resultxi <- array(data = rep(NA, timesteps * (length(filelist) - opt$skip)),
-dim = c(timesteps, length(filelist) - opt$skip))
+        dim = c(timesteps, length(filelist) - opt$skip))
 
 resulttsqE <- resultxi
 
 for (index in seq(opt$skip + 1, length(filelist))) {
-    # print(filelist[index])
-    ## for each file, read in necessary columns: t, xi, E
+    ## for each file, read in necessary columns: t, xi, E, skip header
     data <- read.table(file = filelist[index], header = F, skip = 1,
     # colClasses = c("numeric", "numeric", "NULL", "NULL", "NULL", "numeric", rep("NULL", 3)),
     colClasses = c("numeric", "numeric", "NULL", "NULL", "numeric", rep("NULL", 4)),
@@ -90,41 +108,49 @@ for (index in seq(opt$skip + 1, length(filelist))) {
     data$tsqE <- 2 * data$t * data$t * data$E
     ## determine indices for which t^2E in c0 +/- dc0
     match <- which(abs(data$tsqE - c0) < dc0)
-    # print(match)
     ## select anisotropies corresponding to these indices
-    xilist <- append(xilist, data$xi[match])
-    times <- append(times, data$t[match])
+    xilistrange <- append(xilistrange, data$xi[match])
+    timesrange <- append(timesrange, data$t[match])
     ## determine indices for which abs(t^2E-c0) is minimal
     match <- which(abs(data$tsqE - c0) == min(abs(data$tsqE - c0)))
-    print(match)
+    # print(match)
     ## select anisotropies corresponding to these indices
     xilistmin <- append(xilistmin, data$xi[match])
     timesmin <- append(timesmin, data$t[match])
+    ## TODO: determine anisotropy, Energy by interpolating between the t^2Es that are closest to c0
     ## save all values for plot
     resultxi[, index - opt$skip] <- data$xi
     resulttsqE[, index - opt$skip] <- 2 * data$t^2 * data$E
 }
-# print(xi)
-
-# print(resulttsqE[, 100])
 
 ## get mean and error
-# xi <- mean(xilist)
-# dxi <- sd(xilist)
-uwerrxi <- uwerrprimary(xilist)
-uwerrt <- uwerrprimary(times)
+## if all times are the same, uwerr does not work
+uwerrxirange <- uwerrprimary(xilistrange)
+try(uwerrtrange <- uwerrprimary(timesrange))
 uwerrximin <- uwerrprimary(xilistmin)
-uwerrtmin <- uwerrprimary(timesmin)
+try(uwerrtmin <- uwerrprimary(timesmin))
 
 
 ## save result
-result <- data.frame(beta = opt$beta, L = opt$Ns, T = opt$Nt, xiin = xiin,
-xi = uwerrxi$value, dxi = uwerrxi$dvalue, time = uwerrt$value, dtime = uwerrt$dvalue,
+## nom: number of occurences which fulfill abs(t^2E-c0) < dc0
+## noc: number of different starting configurations
+err <- try(result <- data.frame(beta = opt$beta, L = opt$Ns, T = opt$Nt, xiin = xiin,
+xirange = uwerrxirange$value, dxirange = uwerrxirange$dvalue, timerange = uwerrtrange$value, dtimerange = uwerrtrange$dvalue,
 ximin = uwerrximin$value, dximin = uwerrximin$dvalue, timemin = uwerrtmin$value, dtimemin = uwerrtmin$dvalue,
 c0 = c0, dc0 = dc0, githash = githash,
-noc = length(filelist) - opt$skip, nom = length(xilist))
+noc = length(filelist) - opt$skip, nom = length(xilistrange)))
+
+## if taking the means did not work, assume the time is the same everywhere
+if(inherits(err, "try-error")){
+ result <- data.frame(beta = opt$beta, L = opt$Ns, T = opt$Nt, xiin = xiin,
+xirange = uwerrxirange$value, dxirange = uwerrxirange$dvalue, timerange = times[1], dtimerange = 0,
+ximin = uwerrximin$value, dximin = uwerrximin$dvalue, timemin = times[1], dtimemin = 0,
+c0 = c0, dc0 = dc0, githash = githash,
+noc = length(filelist) - opt$skip, nom = length(xilistrange))
+}
 print(result)
 
+## save results
 filename <- sprintf("%ssummaryanisotropygflowb%.3f.csv",
                     opt$plotpath, opt$betaone)
 columnnames <- FALSE
@@ -135,6 +161,9 @@ write.table(result, filename,
         append = TRUE, row.names = FALSE, col.names = columnnames)
 
 ## prepare list of xi(t), E(t), plot
+## for each time, determine mean value and sd of Energy and anisotropy
+## Maybe replace sd by different function to take autocorrelation into account?
+## plot and save the results
 
 xitime <- apply(resultxi, MARGIN = 1, FUN = mean)
 dxitime <- apply(resultxi, MARGIN = 1, FUN = sd)
