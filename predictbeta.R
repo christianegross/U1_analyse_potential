@@ -28,9 +28,9 @@ option_list <- list(
     help = "path to where the data for the analyzed configs are stored [default %default]"),
     make_option(c("--type"), type = "character", default = "normal",
     help = "type of ensembles that shoule be analysed, one of normal, sideways and slope [default %default]"),
-    make_option(c("-o", "--omit"), type = "integer", default = 0,
-    help = "omission of points from the sideways potential [default %default]"),
-    make_option(c("--fitlim"), type = "double", default = 0.6,
+    make_option(c("-o", "--omit"), type = "integer", default = -1,
+    help = "omission of highest points from the potential, -1=any [default %default]"),
+    make_option(c("--fitlim"), type = "double", default = 0.3,
     help = "how much may the value of r0 deviate from the xi=1 value to still be considered? [default %default]"),
 
     make_option(c("--naive"), action = "store_true", default = FALSE,
@@ -86,12 +86,15 @@ if (!file.exists(dataname)) {
 data <- read.table(dataname, header = TRUE, sep = " ")
 # data <- na.omit(data)
 if (type == "sideways") {
-data <- data[data$omit == opt$omit, ]
 data <- data[data$c == opt$crzero, ]
 }
 
 if (type == "normal") {
 data <- data[data$c == opt$crzero, ]
+}
+
+if(opt$omit >=0){
+data <- data[data$omit == opt$omit, ]
 }
 
 nom <- length(data$beta)
@@ -150,7 +153,7 @@ for (size in c(0.65)) {
 
 
 if (type == "normal") {
-    nameplot <- sprintf("%srenormr0beta%fratio%.2f", path, opt$beta, size)
+    nameplot <- sprintf("%srenormr0beta%fratio%.2fomit%d", path, opt$beta, size, opt$omit)
 }
 if (type == "sideways") {
     nameplot <- sprintf("%srenormr0sidewaysbeta%fratio%.2fomit%d", path, opt$beta, size, opt$omit)
@@ -179,11 +182,11 @@ if (type == "normal" || type == "sideways") {
 print(nameplot)
 
 # set up limits, masks for selecting the right points
-ylim <- c(min(data$r0 - data$dr0), max(data$r0 + data$dr0))
 mask <- data$beta == opt$beta & data$xi == 1 #& data$c == -1.65
 maskone <- mask
 rzeroone <- data$r0[mask]
 xlim <- c(min(data$beta), max(data$beta))
+ylim <- c(max(rzeroone - 2 * opt$fitlim, min(data$r0 - data$dr0)), min(rzeroone + 2 * opt$fitlim, max(data$r0 + data$dr0)))
 if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results

@@ -82,7 +82,7 @@ option_list <- list(
     help = "type of effective mass [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
-        default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
+    default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored,
             relative to folder where script is executed [default %default]")
@@ -317,23 +317,15 @@ fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
 }
 
 # read in data
-filenamepotential <- sprintf(
-            "%spotentialmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
 filenamelist <- sprintf(
             "%slistmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fbsamples%d.RData",
             opt$plotpath, Nt, Ns, beta, xi, bootsamples)
 
 if (opt$smearing) {
-    filenamepotential <- sprintf(
-            "%spotentialmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
     filenamelist <- sprintf(
             "%slistmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData",
             opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
 }
-potential <- read.table(filenamepotential, header = TRUE)
-
 if (opt$determinemeff) {
     t1 <- opt$lowerboundmeff
 } else {

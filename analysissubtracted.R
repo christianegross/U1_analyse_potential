@@ -89,7 +89,7 @@ option_list <- list(
     make_option(c("--crzero"), type = "double", default = -1.65,
     help = "c used for determining r_0 [default %default]"),
     make_option(c("--myfunctions"), type = "character",
-            default = "/hiskp4/gross/masterthesis/su2/build/debug/analysisscripts/",
+    default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
     help = "path to where additional functions are stored,
             relative to folder where script is executed [default %default]")
 )
@@ -332,22 +332,15 @@ fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
 }
 
 t1 <- opt$lowerboundmeff
-filenamepotential <- sprintf(
-            "%spotentialmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
 filenamelist <- sprintf(
             "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.RData",
             opt$plotpath, Nt, Ns, beta, xi, bootsamples)
 
 if (opt$smearing) {
-    filenamepotential <- sprintf(
-            "%spotentialmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
     filenamelist <- sprintf(
             "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData",
             opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
 }
-potential <- read.table(filenamepotential, header = TRUE)
 
 
 listmeff <- readRDS(file = filenamelist)
