@@ -93,7 +93,7 @@ if (type == "normal") {
 data <- data[data$c == opt$crzero, ]
 }
 
-if(opt$omit >=0){
+if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
 }
 
@@ -389,7 +389,7 @@ bsamplescontlimit[, seq(1, length(xis))] <- plaqren
 bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 for (i in seq(1, length(xis))) {
-    if(opt$naive) {
+    if (opt$naive) {
     row <- data$beta == opt$beta & abs(data$xi - xis[i]) < 0.01
     pnaive[i] <- data$p[row]
     xirennaive[i] <- data$xicalc[row]
@@ -423,7 +423,7 @@ resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
                     p = NA, type = NA, limplot = NA, dlimplot = NA)
 i <- 1
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
-    if(opt$naive) {
+    if (opt$naive) {
     # naive xi and beta
     fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xis^2, y = pnaive, bsamples = na.omit(bsamplescontlimitnaive)))
