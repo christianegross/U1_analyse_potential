@@ -136,7 +136,7 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
             errors[j] <- uwerrresults$dvalue
             derrors[j] <- uwerrresults$ddvalue
             errorsnaive[j] <- sd(WL$cf[, j]) / sqrt(length(WL$cf[, j]))
-            plot(uwerrresults, main = paste("spatial unblocked, x  = ", j))
+            try(plot(uwerrresults, main = paste("spatial unblocked, x  = ", j, "y = ", y)))
        }
     tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = 1, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
             errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)), errorsnaive  =  as.data.frame(t(errorsnaive))))
@@ -182,7 +182,7 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         errors[j] <- uwerrresults$dvalue
         derrors[j] <- uwerrresults$ddvalue
         errorsnaive[j] <- sd(WL$cf[, j]) / sqrt(length(WL$cf[, j]))
-            plot(uwerrresults, main = paste("temporal unblocked, x  = ", j))
+        try(plot(uwerrresults, main = paste("temporal unblocked, x  = ", j, "t = ", t)))
     }
     tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = 1, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
             errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)), errorsnaive  =  as.data.frame(t(errorsnaive))))
@@ -238,27 +238,27 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
         dcolumnname <- paste("derrors.V", j, sep = "")
         columnname2 <- paste("errorsnaive.V", j, sep = "")
         mask <- tauintdf$yt == y & tauintdf$spatial == T
-        plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname], dy = tauintdf[mask, dcolumnname],
+        try(plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname], dy = tauintdf[mask, dcolumnname],
         xlab = "1 / l", ylab = "error", main = paste("x = ", j, "y = ", y, "Errors"),
-        ylim = c(min(c(tauintdf[mask, columnname], tauintdf[mask, columnname2])), max(c(tauintdf[mask, columnname], tauintdf[mask, columnname2]))),
-        xlim = c(0, 1))
-        plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname2], rep = T, col = 2, pch = 2)
+        ylim = c(min(tauintdf[mask, columnname2]), max(tauintdf[mask, columnname2])),
+        xlim = c(0, 1)))
+        try(plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname2], rep = T, col = 2, pch = 2))
         reldev <- max(tauintdf[mask, columnname2]) / tauintdf[mask & tauintdf$l == 1, columnname2]
         reldev <- sprintf("%.3f", (reldev - 1) * 100)
 
         ## line for result of uwerr, l=1
-        mask <- tauintdf$yt == t & tauintdf$spatial == F & tauintdf$l == 1
-        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname], 4), col = 1)
-        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] + rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
-        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] - rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
+        mask <- tauintdf$yt == y & tauintdf$spatial == T & tauintdf$l == 1
+        try(lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname], 4), col = 1))
+        try(lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] + rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2))
+        try(lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] - rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2))
 
-        legend(x = "topright", title = "max rel dev to l = 1:", legend = c(paste(reldev, "%")), pch = NA, col = NA)
-        legend(x = "bottomright", legend = c("uwerr", "sd / sqrt(N)"), col = c(1, 2), pch = c(1, 2))
+        try(legend(x = "topright", title = "max rel dev to l = 1:", legend = c(paste(reldev, "%")), pch = NA, col = NA))
+        try(legend(x = "bottomright", legend = c("uwerr", "sd / sqrt(N)"), col = c(1, 2), pch = c(1, 2)))
         }}
         ## autocorrelation time
-        plot(NA, xlim = c(1, Ns / 2), ylim = c(0, max(maxtimes)), xlab = "j", ylab = "tauint",
-        main = paste("y = ", y, "Autocorrelation time"))
-        lines(x = seq(0, opt$Nt, by = 1), y = rep(0.5, opt$Nt+1), col = 2)
+        try(plot(NA, xlim = c(1, Ns / 2), ylim = c(0, max(maxtimes)), xlab = "j", ylab = "tauint",
+        main = paste("y = ", y, "Autocorrelation time")))
+        try(lines(x = seq(0, opt$Nt, by = 1), y = rep(0.5, opt$Nt+1), col = 2))
         for (j in seq(1, opt$Ns * opt$fraction)){
             mask <- tauintdf$spatial == T & tauintdf$l == 1 & tauintdf$yt == y
             columnname <- paste("times.V", j, sep = "")
@@ -274,28 +274,28 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         dcolumnname <- paste("derrors.V", j, sep = "")
         columnname2 <- paste("errorsnaive.V", j, sep = "")
         mask <- tauintdf$yt == t & tauintdf$spatial == F
-        plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname], dy = tauintdf[mask, dcolumnname],
+        try(plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname], dy = tauintdf[mask, dcolumnname],
         xlab = "1 / l", ylab = "error", main = paste("x = ", j, "t = ", t, "Errors"),
-        ylim = c(min(c(tauintdf[mask, columnname], tauintdf[mask, columnname2])), max(c(tauintdf[mask, columnname], tauintdf[mask, columnname2]))),
-        xlim = c(0, 1))
+        ylim = c(min(tauintdf[mask, columnname2]), max(tauintdf[mask, columnname2])),
+        xlim = c(0, 1)))
 
-        plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname2], rep = T, col = 2, pch = 2)
+        try(plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname2], rep = T, col = 2, pch = 2))
         reldev <- max(tauintdf[mask, columnname2]) / tauintdf[mask & tauintdf$l == 1, columnname2]
         reldev <- sprintf("%.3f", (reldev - 1) * 100)
 
         ## line for result of uwerr, l=1
         mask <- tauintdf$yt == t & tauintdf$spatial == F & tauintdf$l == 1
-        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname], 4), col = 1)
-        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] + rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
-        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] - rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
+        try(lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname], 4), col = 1))
+        try(lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] + rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2))
+        try(lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] - rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2))
 
-        legend(x = "topright", title = "max rel dev to l = 1:", legend = c(paste(reldev, "%")), pch = NA, col = NA)
-        legend(x = "bottomright", legend = c("uwerr", "sd / sqrt(N)"), col = c(1, 2), pch = c(1, 2))
+        try(legend(x = "topright", title = "max rel dev to l = 1:", legend = c(paste(reldev, "%")), pch = NA, col = NA))
+        try(legend(x = "bottomright", legend = c("uwerr", "sd / sqrt(N)"), col = c(1, 2), pch = c(1, 2)))
         }}
         ## autocorrelation time
-        plot(NA, xlim = c(1, Ns / 2), ylim = c(0, max(maxtimes)), xlab = "x", ylab = "tauint",
-        main = paste("t = ", t, "Autocorrelation time"))
-        lines(x = seq(0, opt$Nt, by = 1), y = rep(0.5, opt$Nt+1), col = 2)
+        try(plot(NA, xlim = c(1, Ns / 2), ylim = c(0, max(maxtimes)), xlab = "x", ylab = "tauint",
+        main = paste("t = ", t, "Autocorrelation time")))
+        try(lines(x = seq(0, opt$Nt, by = 1), y = rep(0.5, opt$Nt+1), col = 2))
         for (j in seq(1, opt$Ns * opt$fraction)){
             mask <- tauintdf$spatial == F & tauintdf$l == 1 & tauintdf$yt == t
             columnname <- paste("times.V", j, sep = "")
@@ -304,6 +304,6 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         }
 }
 
-plot(therm, main=paste("thermalised values, skip=", opt$skip), xlab="MCMC-steps", ylab="P")
+try(plot(therm, main=paste("thermalised values, skip=", opt$skip), xlab="MCMC-steps", ylab="P"))
 
 print(warnings())
