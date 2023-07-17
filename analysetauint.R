@@ -122,14 +122,14 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
 
     WL <- readloopfilecfrotated(file  =  filename, path  =  opt$respath, skip  =  skip,
             Nsmax  =  Ns * opt$fraction, yt  =  y, zerooffset  =  opt$zerooffset, every  =  opt$every, maxrows  =  opt$maxrows)
-    if(y == 1) therm <- WL$cf[, 1]
+    if (y == 1) therm <- WL$cf[, 1]
     autotime <- c()
     dautotime <- c()
     errors <- c()
     derrors <- c()
     errorsnaive <- c()
     for (j in seq(1, opt$Ns * opt$fraction)){
-            uwerrresults <- uwerr(data = WL$cf[, j], S=opt$sparam)
+            uwerrresults <- uwerr(data = WL$cf[, j], S = opt$sparam)
             autotime[j] <- uwerrresults$tauint
             dautotime[j] <- uwerrresults$dtauint
             maxtimes <- append(maxtimes, autotime[j])
@@ -147,20 +147,10 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
         ## WL <- bootstrap.cf(WL, boot.R  =  bootsamples, boot.l  =  boot.l)
             for (j in seq(1, opt$Ns * opt$fraction)){
                 myblocks <- blockts(data = WL$cf[, j], l = boot.l)
-                # print(myblocks)
-                uwerrresults <- uwerrprimary(data = myblocks, S=opt$sparam)
-                !inherits(uwerrresults, "try-error") {
-                    autotime[j] <- uwerrresults$tauint
-                    dautotime[j] <- uwerrresults$dtauint
-                    errors[j] <- uwerrresults$dvalue
-                    derrors[j] <- uwerrresults$ddvalue
-                    plot(uwerrresults, main = paste("spatial block ", boot.l, "x = ", j))
-                } else {
-                    autotime[j] <- NA
-                    dautotime[j] <- NA
-                    errors[j] <- NA
-                    derrors[j] <- NA
-                }
+                autotime[j] <- NA
+                dautotime[j] <- NA
+                errors[j] <- NA
+                derrors[j] <- NA
                 errorsnaive[j] <- sd(myblocks) / sqrt(length(myblocks))
             }
         tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = boot.l, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
@@ -185,7 +175,7 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
     derrors <- c()
     errorsnaive <- c()
     for (j in seq(1, opt$Ns * opt$fraction)){
-        uwerrresults <- uwerr(data = WL$cf[, j], S=opt$sparam)
+        uwerrresults <- uwerr(data = WL$cf[, j], S = opt$sparam)
         autotime[j] <- uwerrresults$tauint
         dautotime[j] <- uwerrresults$dtauint
         maxtimes <- append(maxtimes, autotime[j])
@@ -202,19 +192,10 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         ## WL <- bootstrap.cf(WL, boot.R  =  bootsamples, boot.l  =  boot.l)
             for (j in seq(1, opt$Ns * opt$fraction)){
                 myblocks <- blockts(data = WL$cf[, j], l = boot.l)
-                uwerrresults <- uwerrprimary(data = myblocks, S=opt$sparam)
-                !inherits(uwerrresults, "try-error") {
-                    autotime[j] <- uwerrresults$tauint
-                    dautotime[j] <- uwerrresults$dtauint
-                    errors[j] <- uwerrresults$dvalue
-                    derrors[j] <- uwerrresults$ddvalue
-                    plot(uwerrresults, main = paste("temporal block ", boot.l, "x = ", j))
-                } else {
-                    autotime[j] <- NA
-                    dautotime[j] <- NA
-                    errors[j] <- NA
-                    derrors[j] <- NA
-                }
+                autotime[j] <- NA
+                dautotime[j] <- NA
+                errors[j] <- NA
+                derrors[j] <- NA
                 errorsnaive[j] <- sd(myblocks) / sqrt(length(myblocks))
             }
         tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = boot.l, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
@@ -262,16 +243,22 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
         ylim = c(min(c(tauintdf[mask, columnname], tauintdf[mask, columnname2])), max(c(tauintdf[mask, columnname], tauintdf[mask, columnname2]))),
         xlim = c(0, 1))
         plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname2], rep = T, col = 2, pch = 2)
-        lines(x = seq(0, 1, by = 0.1), y = rep(1, 11), col = 2)
         reldev <- max(tauintdf[mask, columnname2]) / tauintdf[mask & tauintdf$l == 1, columnname2]
         reldev <- sprintf("%.3f", (reldev - 1) * 100)
+
+        ## line for result of uwerr, l=1
+        mask <- tauintdf$yt == t & tauintdf$spatial == F & tauintdf$l == 1
+        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname], 4), col = 1)
+        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] + rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
+        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] - rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
+
         legend(x = "topright", title = "max rel dev to l = 1:", legend = c(paste(reldev, "%")), pch = NA, col = NA)
         legend(x = "bottomright", legend = c("uwerr", "sd / sqrt(N)"), col = c(1, 2), pch = c(1, 2))
         }}
         ## autocorrelation time
         plot(NA, xlim = c(1, Ns / 2), ylim = c(0, max(maxtimes)), xlab = "j", ylab = "tauint",
         main = paste("y = ", y, "Autocorrelation time"))
-        lines(x = seq(0, opt$Nt, by = 1), y = rep(1, opt$Nt+1), col = 2)
+        lines(x = seq(0, opt$Nt, by = 1), y = rep(0.5, opt$Nt+1), col = 2)
         for (j in seq(1, opt$Ns * opt$fraction)){
             mask <- tauintdf$spatial == T & tauintdf$l == 1 & tauintdf$yt == y
             columnname <- paste("times.V", j, sep = "")
@@ -293,16 +280,22 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         xlim = c(0, 1))
 
         plotwitherror(x = 1. / tauintdf$l[mask], y = tauintdf[mask, columnname2], rep = T, col = 2, pch = 2)
-        lines(x = seq(0, 1, by = 0.1), y = rep(1, 11), col = 2)
         reldev <- max(tauintdf[mask, columnname2]) / tauintdf[mask & tauintdf$l == 1, columnname2]
         reldev <- sprintf("%.3f", (reldev - 1) * 100)
+
+        ## line for result of uwerr, l=1
+        mask <- tauintdf$yt == t & tauintdf$spatial == F & tauintdf$l == 1
+        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname], 4), col = 1)
+        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] + rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
+        lines(x = seq(-1, 2, by = 1), y = rep(tauintdf[mask, columnname] - rep(tauintdf[mask, dcolumnname], 4)), col = 1, lty = 2)
+
         legend(x = "topright", title = "max rel dev to l = 1:", legend = c(paste(reldev, "%")), pch = NA, col = NA)
         legend(x = "bottomright", legend = c("uwerr", "sd / sqrt(N)"), col = c(1, 2), pch = c(1, 2))
         }}
         ## autocorrelation time
         plot(NA, xlim = c(1, Ns / 2), ylim = c(0, max(maxtimes)), xlab = "x", ylab = "tauint",
         main = paste("t = ", t, "Autocorrelation time"))
-        lines(x = seq(0, opt$Nt, by = 1), y = rep(1, opt$Nt+1), col = 2)
+        lines(x = seq(0, opt$Nt, by = 1), y = rep(0.5, opt$Nt+1), col = 2)
         for (j in seq(1, opt$Ns * opt$fraction)){
             mask <- tauintdf$spatial == F & tauintdf$l == 1 & tauintdf$yt == t
             columnname <- paste("times.V", j, sep = "")
