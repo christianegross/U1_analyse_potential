@@ -23,6 +23,8 @@ option_list <- list(
 
     make_option(c("-a", "--alpha"), type  =  "double", default  =  1.0,
     help  =  "alpha used in APE-smearing [default %default]"),
+    make_option(c("-S", "--sparam"), type  =  "double", default  =  1.5,
+    help  =  "S parameter for uwerr [default %default]"),
 
     make_option(c("--betaone"), type  =  "double", default  =  0,
     help  =  "input beta at corresponding xi  =  1 [default %default]"),
@@ -89,7 +91,7 @@ alpha <- opt$alpha
 options(digits = 7)
 }
 
-
+## set larger S
 # set names for plot, for saving results
 filenameforplots <- sprintf(
             "%stauintplotsuwerrNt%dNs%dbeta%fxi%f.pdf",
@@ -122,36 +124,46 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
             Nsmax  =  Ns * opt$fraction, yt  =  y, zerooffset  =  opt$zerooffset, every  =  opt$every, maxrows  =  opt$maxrows)
     if(y == 1) therm <- WL$cf[, 1]
     autotime <- c()
+    dautotime <- c()
     errors <- c()
     derrors <- c()
     errorsnaive <- c()
     for (j in seq(1, opt$Ns * opt$fraction)){
-            uwerrresults <- uwerr(data = WL$cf[, j])
+            uwerrresults <- uwerr(data = WL$cf[, j], S=opt$sparam)
             autotime[j] <- uwerrresults$tauint
+            dautotime[j] <- uwerrresults$dtauint
             maxtimes <- append(maxtimes, autotime[j])
             errors[j] <- uwerrresults$dvalue
             derrors[j] <- uwerrresults$ddvalue
             errorsnaive[j] <- sd(WL$cf[, j]) / sqrt(length(WL$cf[, j]))
-            plot(uwerrresults, main = paste("unblocked, x  = ", j))
+            plot(uwerrresults, main = paste("spatial unblocked, x  = ", j))
        }
-    tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = 1, times = as.data.frame(t(autotime)),
+    tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = 1, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
             errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)), errorsnaive  =  as.data.frame(t(errorsnaive))))
 
     if (opt$errorall || y == 1) {
-    for (boot.l in c(2, 4, 8, 16, 32, 64)) {
+    for (boot.l in c(2, 4, 8, 16, 32, 64, 128, 256)) {
         ## do not do bootstrapping yet, analyse the result of blocking first
         ## WL <- bootstrap.cf(WL, boot.R  =  bootsamples, boot.l  =  boot.l)
             for (j in seq(1, opt$Ns * opt$fraction)){
                 myblocks <- blockts(data = WL$cf[, j], l = boot.l)
                 # print(myblocks)
-                uwerrresults <- uwerrprimary(data = myblocks)
-                autotime[j] <- uwerrresults$tauint
-                errors[j] <- uwerrresults$dvalue
-                derrors[j] <- uwerrresults$ddvalue
+                uwerrresults <- uwerrprimary(data = myblocks, S=opt$sparam)
+                !inherits(uwerrresults, "try-error") {
+                    autotime[j] <- uwerrresults$tauint
+                    dautotime[j] <- uwerrresults$dtauint
+                    errors[j] <- uwerrresults$dvalue
+                    derrors[j] <- uwerrresults$ddvalue
+                    plot(uwerrresults, main = paste("spatial block ", boot.l, "x = ", j))
+                } else {
+                    autotime[j] <- NA
+                    dautotime[j] <- NA
+                    errors[j] <- NA
+                    derrors[j] <- NA
+                }
                 errorsnaive[j] <- sd(myblocks) / sqrt(length(myblocks))
-                plot(uwerrresults, main = paste("block ", boot.l, "x = ", j))
             }
-        tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = boot.l, times = as.data.frame(t(autotime)),
+        tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = boot.l, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
                 errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)), errorsnaive  =  as.data.frame(t(errorsnaive))))
     }}
 }}
@@ -168,33 +180,44 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
             Nsmax  =  Ns * opt$fraction, yt  =  t, zerooffset  =  opt$zerooffset, every  =  opt$every, maxrows  =  opt$maxrows)
 
     autotime <- c()
+    dautotime <- c()
     errors <- c()
     derrors <- c()
     errorsnaive <- c()
     for (j in seq(1, opt$Ns * opt$fraction)){
-        uwerrresults <- uwerr(data = WL$cf[, j])
+        uwerrresults <- uwerr(data = WL$cf[, j], S=opt$sparam)
         autotime[j] <- uwerrresults$tauint
+        dautotime[j] <- uwerrresults$dtauint
         maxtimes <- append(maxtimes, autotime[j])
         errors[j] <- uwerrresults$dvalue
         derrors[j] <- uwerrresults$ddvalue
         errorsnaive[j] <- sd(WL$cf[, j]) / sqrt(length(WL$cf[, j]))
+            plot(uwerrresults, main = paste("temporal unblocked, x  = ", j))
     }
-    tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = 1, times = as.data.frame(t(autotime)),
+    tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = 1, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
             errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)), errorsnaive  =  as.data.frame(t(errorsnaive))))
     if (opt$errorall || t == 1) {
-    for (boot.l in c(2, 4, 8, 16, 32)) {
+    for (boot.l in c(2, 4, 8, 16, 32, 64, 128, 256)) {
         ## do not do bootstrapping yet, analyse the result of blocking first
         ## WL <- bootstrap.cf(WL, boot.R  =  bootsamples, boot.l  =  boot.l)
             for (j in seq(1, opt$Ns * opt$fraction)){
                 myblocks <- blockts(data = WL$cf[, j], l = boot.l)
-                uwerrresults <- uwerrprimary(data = myblocks)
-                autotime[j] <- uwerrresults$tauint
-                errors[j] <- uwerrresults$dvalue
-                derrors[j] <- uwerrresults$ddvalue
+                uwerrresults <- uwerrprimary(data = myblocks, S=opt$sparam)
+                !inherits(uwerrresults, "try-error") {
+                    autotime[j] <- uwerrresults$tauint
+                    dautotime[j] <- uwerrresults$dtauint
+                    errors[j] <- uwerrresults$dvalue
+                    derrors[j] <- uwerrresults$ddvalue
+                    plot(uwerrresults, main = paste("temporal block ", boot.l, "x = ", j))
+                } else {
+                    autotime[j] <- NA
+                    dautotime[j] <- NA
+                    errors[j] <- NA
+                    derrors[j] <- NA
+                }
                 errorsnaive[j] <- sd(myblocks) / sqrt(length(myblocks))
-                plot(uwerrresults, main = paste("block ", boot.l, "x = ", j))
             }
-        tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = boot.l, times = as.data.frame(t(autotime)),
+        tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = boot.l, times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
                 errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)), errorsnaive  =  as.data.frame(t(errorsnaive))))
     }}
 }}
@@ -252,7 +275,8 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
         for (j in seq(1, opt$Ns * opt$fraction)){
             mask <- tauintdf$spatial == T & tauintdf$l == 1 & tauintdf$yt == y
             columnname <- paste("times.V", j, sep = "")
-            try(plotwitherror(x = j, y = tauintdf[mask, columnname], rep = TRUE))
+            dcolumnname <- paste("dtimes.V", j, sep = "")
+            try(plotwitherror(x = j, y = tauintdf[mask, columnname], dy = tauintdf[mask, dcolumnname], rep = TRUE))
         }
 }
 for (t in seq(1, Nt * opt$fraction, 1)) {
@@ -282,7 +306,8 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         for (j in seq(1, opt$Ns * opt$fraction)){
             mask <- tauintdf$spatial == F & tauintdf$l == 1 & tauintdf$yt == t
             columnname <- paste("times.V", j, sep = "")
-            try(plotwitherror(x = j, y = tauintdf[mask, columnname], rep = TRUE))
+            dcolumnname <- paste("dtimes.V", j, sep = "")
+            try(plotwitherror(x = j, y = tauintdf[mask, columnname], dy = tauintdf[mask, dcolumnname], rep = TRUE))
         }
 }
 
