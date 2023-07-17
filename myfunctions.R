@@ -16,7 +16,7 @@ library(hadron)
 
 readloopfilecfrotated <- function (file, path  = "",
                                     skip = 0, Nsmax,
-                                    yt, zerooffset = 0, every = 1, maxrows = -1) {
+                                    yt, zerooffset = 0, every = 1, maxrows = -1, Time) {
     # reads in the Wilson loop data for the sideways( = rotated) potential,
     # used to calculate V(yt), into a cf-container
     # Read in W(x, yt) for all possible x
@@ -29,6 +29,7 @@ readloopfilecfrotated <- function (file, path  = "",
     # every: step between read lines
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
+  if(missing(Time)) Time <- Nsmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
@@ -45,7 +46,7 @@ readloopfilecfrotated <- function (file, path  = "",
 
 readloopfilecfsub <- function (file, path = "", skip = 0,
                             Nytmax, x, Nsmax,
-                            zerooffset = 0, every = 1, maxrows = -1) {
+                            zerooffset = 0, every = 1, maxrows = -1, Time) {
     # reads in the Wilson loop data for the normal potential,
     # from which the anisotropy could be determined by subtracting the points,
     # used to calculate V(x), into a cf-container
@@ -59,6 +60,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
 
+  if(missing(Time)) Time <- Nsmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
@@ -74,7 +76,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfsmall <- function (file, path = "", skip = 0,
-                                Nsmax, x, y, Ntmax, start = 0, maxrows = -1) {
+                                Nsmax, x, y, Ntmax, start = 0, maxrows = -1, Time) {
     # Reads in nonplanar Wilson loops, measured only for small distances.
     # Nsmax: maximum extent measured in the spacial x- and y-direction,
     # typically min(4, lattice size, those directions are kept fixed here.
@@ -85,6 +87,7 @@ readloopfilecfsmall <- function (file, path = "", skip = 0,
     # start: smallest t that was measured
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
+  if(missing(Time)) Time <- Nsmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
@@ -166,7 +169,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
-            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
+            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows, Time = Ns)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -196,7 +199,7 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Ns * fraction, x = x,
-                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
+                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows, Time = Ns)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -224,7 +227,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Nt * fraction, x = x,
-                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
+                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows, Time = Nt)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
