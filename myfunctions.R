@@ -16,7 +16,7 @@ library(hadron)
 
 readloopfilecfrotated <- function (file, path  = "",
                                     skip = 0, Nsmax,
-                                    yt, zerooffset = 0, every = 1, maxrows = -1, Time) {
+                                    yt, zerooffset = 0, every = 1, maxrows = -1,  maxt) {
     # reads in the Wilson loop data for the sideways( = rotated) potential,
     # used to calculate V(yt), into a cf-container
     # Read in W(x, yt) for all possible x
@@ -29,15 +29,14 @@ readloopfilecfrotated <- function (file, path  = "",
     # every: step between read lines
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
-  if(missing(Time)) Time <- Nsmax
+  if (missing(maxt))  maxt <- Nsmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   nom <- length(tmp[, 1])
-  Time <- Nsmax
   ii <- seq((yt + zerooffset - 1) * (Nsmax + zerooffset) + 1 + zerooffset,
          (yt + zerooffset) * (Nsmax + zerooffset), 1)
-  ret <- cf_meta(nrObs = 1, Time = Time, nrStypes = 1)
+  ret <- cf_meta(nrObs = 1, Time =  maxt, nrStypes = 1)
   ret <- cf_orig(ret, cf = tmp[seq(1, nom, every), ii])
   ret$conf.index <- confno
 
@@ -46,7 +45,7 @@ readloopfilecfrotated <- function (file, path  = "",
 
 readloopfilecfsub <- function (file, path = "", skip = 0,
                             Nytmax, x, Nsmax,
-                            zerooffset = 0, every = 1, maxrows = -1, Time) {
+                            zerooffset = 0, every = 1, maxrows = -1, maxt) {
     # reads in the Wilson loop data for the normal potential,
     # from which the anisotropy could be determined by subtracting the points,
     # used to calculate V(x), into a cf-container
@@ -60,15 +59,14 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
 
-  if(missing(Time)) Time <- Nsmax
+  if(missing(maxt))  maxt <- Nytmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   nom <- length(tmp[, 1])
-  Time <- Nytmax
   ii <- seq((Nsmax + zerooffset) * zerooffset + zerooffset + x,
             (Nsmax + zerooffset) * (Nytmax + zerooffset), Nsmax + zerooffset)
-  ret <- cf_meta(nrObs = 1, Time = Time, nrStypes = 1)
+  ret <- cf_meta(nrObs = 1, Time =  maxt, nrStypes = 1)
   ret <- cf_orig(ret, cf = tmp[seq(1, nom, every), ii])
   ret$conf.index <- confno
 
@@ -76,7 +74,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfsmall <- function (file, path = "", skip = 0,
-                                Nsmax, x, y, Ntmax, start = 0, maxrows = -1, Time) {
+                                Nsmax, x, y, Ntmax, start = 0, maxrows = -1,  maxt) {
     # Reads in nonplanar Wilson loops, measured only for small distances.
     # Nsmax: maximum extent measured in the spacial x- and y-direction,
     # typically min(4, lattice size, those directions are kept fixed here.
@@ -87,14 +85,13 @@ readloopfilecfsmall <- function (file, path = "", skip = 0,
     # start: smallest t that was measured
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
-  if(missing(Time)) Time <- Nsmax
+  if (missing(maxt))  maxt <- Ntmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
-  Time <- Ntmax + 1 - start
   ii <- seq(((x) * (Nsmax + 1) + y + 1) + (start * (Nsmax + 1) * (Nsmax + 1)),
             (Nsmax + 1) * (Nsmax + 1) * (Ntmax + 1), (Nsmax + 1) * (Nsmax + 1))
-  ret <- cf_meta(nrObs = 1, Time = Time, nrStypes = 1)
+  ret <- cf_meta(nrObs = 1, Time =  maxt, nrStypes = 1)
   ret <- cf_orig(ret, cf = tmp[, ii])
   ret$conf.index <- confno
 
@@ -169,7 +166,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
-            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows, Time = Ns)
+            Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -199,10 +196,11 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Ns * fraction, x = x,
-                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows, Time = Ns)
+                Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
+
     plot(WL, log = "y", xlab = "y/a_s", ylab = "C(y)",
             main = sprintf("%s, logscale", title))
     if (-1 %in% sign(WL$cf0)) {
@@ -227,7 +225,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
     # every: step between read lines
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Nt * fraction, x = x,
-                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows, Time = Nt)
+                    Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
