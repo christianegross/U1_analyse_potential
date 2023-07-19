@@ -9,8 +9,6 @@ option_list <- list(
     make_option(c("--skip"), type = "integer", default = 1000,
     help = "how many lines are skipped when reading in [default %default]"),
 
-    make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
-    help = "how many bootstrapsamples should be drawn [default %default]"),
     make_option(c("--maxrows"), type = "integer", default = -1,
     help = "Maximum of configurations that are read in, -1 = all [default %default]"),
     make_option(c("-r", "--Ns"), type = "integer", default = 16,
@@ -26,8 +24,6 @@ option_list <- list(
     make_option(c("-S", "--sparam"), type = "double", default = 1.5,
     help = "S parameter for uwerr [default %default]"),
 
-    make_option(c("--betaone"), type = "double", default = 0,
-    help = "input beta at corresponding xi = 1 [default %default]"),
     make_option(c("-x", "--xi"), type = "double", default = 0,
     help = "xi used in lattice, only used if xidiff = TRUE, else
             xi is assumed to be L / T [default %default]"),
@@ -40,11 +36,6 @@ option_list <- list(
 
     make_option(c("-e", "--every"), type = "integer", default = 1,
     help = "only reads every eth line [default %default]"),
-    make_option(c("--bootl"), type = "integer", default = 2,
-    help = "block length in bootstrapping configurations [default %default]"),
-
-    make_option(c("--nsave"), type = "integer", default = 0,
-    help = "steps between saved configs [default %default]"),
     make_option(c("--smearing"), action = "store_true", default = FALSE,
     help = "are the calculations done based on
             smeared lattices? (changes filenames) [default %default]"),
@@ -58,12 +49,9 @@ option_list <- list(
     help = "path to where the resultfiles are stored [default %default]"),
     make_option(c("--plotpath"), type = "character", default = "",
     help = "path to where the plots are stored [default %default]"),
-    make_option(c("--effmasstype"), type = "character", default = "log",
-    help = "type of effective mass [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
-    default = " / hiskp4 / gross / masterthesis / analyse / code / U1_analyse_potential / ",
-#~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
+    default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
     help = "path to where additional functions are stored,
             relative to folder where script is executed [default %default]")
 )
@@ -78,7 +66,6 @@ source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 githash <- printgitcommit(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip
-bootsamples <- opt$bootsamples
 Ns <- opt$Ns
 Nt <- opt$Nt
 xi <- Ns / Nt
@@ -94,12 +81,12 @@ options(digits = 7)
 ## set larger S
 # set names for plot, for saving results
 filenameforplots <- sprintf(
-            "%stauintplotsuwerrNt%dNs%dbeta%fxi%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi)
+            "%stauintplotsuwerrNt%dNs%dbeta%fxi%fS%.3f.pdf",
+            opt$plotpath, Nt, Ns, beta, xi, opt$sparam)
 if (opt$smearing) {
     filenameforplots <- sprintf(
-            "%stauintplotsuwerrNt%dNs%dbeta%fxi%fnape%dalpha%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha)
+            "%stauintplotsuwerrNt%dNs%dbeta%fxi%fS%.3fnape%dalpha%f.pdf",
+            opt$plotpath, Nt, Ns, beta, xi, opt$sparam, nape, alpha)
 }
 pdf(file = filenameforplots, title = "")
 listtauint <- list()
@@ -146,7 +133,6 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
     if (opt$errorall || y == 1 || y == 2) {
     for (boot.l in c(2, 4, 8, 16, 32, 64, 128, 256)) {
         ## do not do bootstrapping yet, analyse the result of blocking first
-        ## WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = boot.l)
             for (j in seq(1, opt$Ns * opt$fraction)){
                 myblocks <- blockts(data = WL$cf[, j], l = boot.l)
                 autotime[j] <- NA
@@ -195,7 +181,6 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
     if (opt$errorall || t == 1 || t == 2) {
     for (boot.l in c(2, 4, 8, 16, 32, 64, 128, 256)) {
         ## do not do bootstrapping yet, analyse the result of blocking first
-        ## WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = boot.l)
             for (j in seq(1, opt$Ns * opt$fraction)){
                 myblocks <- blockts(data = WL$cf[, j], l = boot.l)
                 autotime[j] <- NA
@@ -213,13 +198,13 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
 
 # write out results
 filenameuwerr <- sprintf(
-            "%stauintNt%dNs%dbeta%fxi%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
+            "%stauintNt%dNs%dbeta%fxi%fS%.3f.csv",
+            opt$plotpath, Nt, Ns, beta, xi, opt$sparam)
 
 if (opt$smearing) {
     filenameuwerr <- sprintf(
-            "%stauintNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
+            "%stauintNt%dNs%dbeta%fxi%fnape%dalpha%fS%.3f.csv",
+            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, opt$sparam)
 }
 write.table(tauintdf, file = filenameuwerr, row.names = F, col.names = T)
 
@@ -228,12 +213,12 @@ write.table(tauintdf, file = filenameuwerr, row.names = F, col.names = T)
 ## into separate file, so one is not overwhelmed by the output of uwerr
 
 filenameforplots <- sprintf(
-            "%stauintplotsNt%dNs%dbeta%fxi%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi)
+            "%stauintplotsNt%dNs%dbeta%fxi%fS%.3f.pdf",
+            opt$plotpath, Nt, Ns, beta, xi, opt$sparam)
 if (opt$smearing) {
     filenameforplots <- sprintf(
-            "%stauintplotsNt%dNs%dbeta%fxi%fnape%dalpha%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha)
+            "%stauintplotsNt%dNs%dbeta%fxi%fS%.3fnape%dalpha%f.pdf",
+            opt$plotpath, Nt, Ns, beta, xi, opt$sparam, nape, alpha)
 }
 pdf(file = filenameforplots, title = "")
 
