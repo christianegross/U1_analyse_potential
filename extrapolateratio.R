@@ -9,10 +9,12 @@ S <-  as.numeric(args[2])
 
 if (beta == 1.65) {
 
-betas <-  c(1.65, 1.615, 1.58, 1.515, 1.48, 1.46, 1.43) # beta = 1.65
+betas <-  c(1.65, 1.615, 1.58, 1.515, 1.48, 1.46, 1.4378) # beta = 1.65
 columns <-  c(1, 1, 11, 1, 1, 1, 1) # beta = 1.65
-betaextrapolate <-  c(1.45, 1.47) # beta = 1.65
-Ntextrapolate <-  48 # beta = 1.65
+# betaextrapolate <-  c(1.45, 1.47) # beta = 1.65
+# Ntextrapolate <-  48 # beta = 1.65
+betaextrapolate <- c()
+Ntextrapolate <- 0
 }
 
 if (beta == 1.7) {
@@ -36,7 +38,8 @@ resxi <-  read.table(sprintf("plotstikz/resultsrenormalizationbeta%f.csv", betas
 # print(resxi)
 # print(resxi$xiphys)
 # print(resxi$dxiphys)
-tableresname <-  "resultsummary2p1dnormalb1.700Ns16_170723.csv"
+# tableresname <-  "resultsummary2p1dnormalb1.700Ns16_170723.csv"
+tableresname <-  "resultsummary2p1dnormalb1.700Ns16.csv"
 tableres <-  read.table(tableresname, header = T)
 
 resultxi <-  data.frame()
@@ -108,6 +111,7 @@ for (i in seq(1, length(betas))) {
 result <-  data.frame(P3 = P3, dP3 = dP3, P16 = P16, dP16 = dP16, xiphyssq = resultxi$xiphys^2, dxiphyssq = resultxi$dxiphys^2, betas = betas)
 filename <-  sprintf("extrapolatebeta%fbs%dS%f.csv", betas[1], bootsamples, S)
 write.table(result, filename, row.names = F, col.names = T)
+write.table(resultxi, sprintf("resultxisingleextrapolatebeta%f.csv", betas[i]), row.names = F, col.names = T)
 }
 
 filename <-  sprintf("extrapolatebeta%fbs%dS%f.csv", betas[1], bootsamples, S)
@@ -162,8 +166,6 @@ fit.ratio <-  bootstrap.nlsfit(fnpar, par.guess = c(1, 1, 1), y = P3 / P16, x = 
 # summary(fit.ratio)
 plot(fit.ratio, plot.range = c( - 0.1, 1.3), xlab = "xi_ren^2", ylab = "P(3) / P(16)", main = "anisotropy from data")
 
-resultlist <- list(fit.contlim16 = fit.contlim16, fit.contlim3 = fit.contlim3, fit.xibeta = fit.xibeta, fit.ratio = fit.ratio, P3 = list(P3val = P3, P3err = dP3, P3boot = bootstraps3))
-saveRDS(resultlist, file = sprintf("listextrapolatebeta%f.RData", betas[1]))
 
 string <-  sprintf("continuum limit at L = 3 for beta = %f:\nbeta = %s, P = %s\ncalculated from P(16) = %s and ratio = %s", betas[1],
 tex.catwitherror(x = fit.xibeta$t0[1], dx = fit.xibeta$se[1], digits = 2, with.dollar = F),
@@ -177,10 +179,14 @@ inversepar <- function(par, x, boot.r, ...){
     return( (-par[2]/2./par[3]) - sqrt((par[2]/2./par[3])^2-(par[1]-x)/par[3]))
 }
 
+fitcubicroot <- function(par, x, boot.r, ...){
+    return( par[1] + par[2]*x + par[3]*sqrt(x) + par[4]*x^(1./3.))
+}
 
 
-fitinverse <- bootstrap.nlsfit(fncub, par.guess = c(1, 1, 1, 1), y = resultxi$xiphys^2, x = betas, bsamples = bootstrapsxi)
-# print(fitinverse)
+
+fitinverse <- bootstrap.nlsfit(fitcubicroot, par.guess = c(1, 1, 1, 1), y = resultxi$xiphys^2, x = betas, bsamples = bootstrapsxi)
+print(fitinverse)
 plot(fitinverse, main = "xi(beta) for L = 16", xlab = "beta", ylab = "xi_ren^2", plot.range = c(1, 2), ylim = c(-0.1, 1.1))
 lines(x = seq(0, 3), y = rep(0, 4), col = "red")
 
@@ -189,6 +195,7 @@ lines(x = seq(0, 3), y = rep(0, 4), col = "red")
 
 rootpar <- function(x, par, bootr = 1) fnpar(par, x, bootr)
 rootcub <- function(x, par, bootr = 1) fncub(par, x, bootr)
+rootinv <- function(x, par, bootr = 1) fitcubicroot(par, x, bootr)
 
 find_root <- function(func, fit.result, interval = c(1, 2)){
     # mean value
@@ -204,8 +211,22 @@ find_root <- function(func, fit.result, interval = c(1, 2)){
     return(res)
 }
 
-betalim <- find_root(rootcub, fitinverse, interval = c(1.3, 1.6))
+betalim <- find_root(rootinv, fitinverse, interval = c(1.3, 1.6))
 string <- sprintf("root-finding: %f  + /- %f", betalim$t0, betalim$se)
 print(string)
 string <- sprintf("fit with xy: %f  + /- %f", fit.xibeta$t0[1], fit.xibeta$se[1])
 print(string)
+
+
+resultlist <- list(fit.contlim16 = fit.contlim16, fit.contlim3 = fit.contlim3,
+        fit.xibeta = fit.xibeta, fit.ratio = fit.ratio,
+        P3 = list(P3val = P3, P3err = dP3, P3boot = bootstraps3),
+        betainv = betalim, fitinv = fitinverse)
+saveRDS(resultlist, file = sprintf("listextrapolatebeta%f.RData", betas[1]))
+write.table(resultxi, sprintf("resultxisingleextrapolatebeta%f.csv", betas[1]), row.names = F, col.names = T)
+
+
+xilist <- resultxi$xiphys^2
+dxilist <- 2*resultxi$xiphys*resultxi$dxiphys
+xilistboot <- bootstrapsxi
+
