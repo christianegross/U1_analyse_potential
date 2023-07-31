@@ -6,10 +6,14 @@ bootsamples <-  500
 
 beta <-  as.numeric(args[1])
 S <-  as.numeric(args[2])
+readindata <- FALSE
+if (length(args) > 2) readindata <- as.logical(args[3])
+normal <- TRUE
 
+if (normal) {
 if (beta == 1.65) {
 
-betas <-  c(1.65, 1.615, 1.58, 1.515, 1.48, 1.46, 1.4378) # beta = 1.65
+betas <-  c(1.65, 1.615, 1.58, 1.515, 1.48, 1.46, 1.42) # beta = 1.65
 columns <-  c(1, 1, 11, 1, 1, 1, 1) # beta = 1.65
 # betaextrapolate <-  c(1.45, 1.47) # beta = 1.65
 # Ntextrapolate <-  48 # beta = 1.65
@@ -23,6 +27,27 @@ betas <-  c(1.7, 1.65, 1.6075, 1.55, 1.525, 1.5, 1.49) # beta = 1.7
 columns <-  c(11, 11, 1, 11, 1, 1, 1) # beta = 1.7
 betaextrapolate <-  c() # beta = 1.7
 Ntextrapolate <-  0 # beta = 1.7
+}
+}
+
+if (!normal) { #sideways potentials
+if (beta == 1.65) {
+
+betas <-  c(1.65, 1.615, 1.58, 1.515, 1.48, 1.46, 1.42) # beta = 1.65
+columns <-  c(1, 1, 11, 1, 1, 1, 1) # beta = 1.65
+# betaextrapolate <-  c(1.45, 1.47) # beta = 1.65
+# Ntextrapolate <-  48 # beta = 1.65
+betaextrapolate <- c()
+Ntextrapolate <- 0
+}
+
+if (beta == 1.7) {
+
+betas <-  c(1.7, 1.65, 1.6075, 1.55, 1.525, 1.5, 1.49) # beta = 1.7
+columns <-  c(11, 11, 1, 11, 1, 1, 1) # beta = 1.7
+betaextrapolate <-  c() # beta = 1.7
+Ntextrapolate <-  0 # beta = 1.7
+}
 }
 
 Nt <-  c(16, 20, 24, 32, 40, 48, 64)
@@ -44,22 +69,47 @@ tableres <-  read.table(tableresname, header = T)
 
 resultxi <-  data.frame()
 
+## assume error for intercept with r0(xi=1) for dbeta
+dbeta <- read.table(sprintf("plotstikz/resultsrenormalizationbeta%f.csv", betas[1]), header=TRUE)
+dbeta <- dbeta$dbeta
+if (is.na(dbeta[1])) dbeta[1] <- 1e-4
+
+## assume error for intercept with r0(point) for dbeta
+resfit <- readRDS(sprintf("plotstikz/listresultsrenormalizationbeta%f.RData", betas[1]))
+dbeta2 <- c()
+bootstrapsbeta <- array(NA, dim=c(bootsamples, length(betas)))
 
 for (i in seq(1, length(betas))) {
     # print(Nt[i])
     if (Nt[i] !=  Ntextrapolate) {
     mask <-  tableres$beta == betas[i] & abs(tableres$xi - 16 / Nt[i]) < 1e-5
-    resultxi <-  rbind(resultxi, data.frame(xiphys = tableres$xicalc[mask], dxiphys = tableres$dxicalc[mask]))
+    rzero <- readinbootstrapsamples(beta = betas[i], Ns = 16,
+                    Nt = Nt[i], xi = 16/Nt[i], columns = c(1),
+                    names = c("bsrzeros"), filename = "resultssubtracted")
+    if(i != 1){
+        bootstrapsbeta[, i] <- getintercept(fitresult = resfit$fitsrzero[[i]], rzeroone = rzero)
+    } else {
+        bootstrapsbeta[, i] <- parametric.bootstrap(bootsamples, betas[i], 1e-4, seed = 54321 + 1000 * betas[1])
+    }
+    resultxi <-  rbind(resultxi, data.frame(xiphys = tableres$xicalc[mask], dxiphys = tableres$dxicalc[mask], dbeta=sd(bootstrapsbeta[, i])))
     } else {
     mask1 <-  tableres$beta == betaextrapolate[1] & abs(tableres$xi - 16 / Nt[i]) < 1e-5
     mask2 <-  tableres$beta == betaextrapolate[2] & abs(tableres$xi - 16 / Nt[i]) < 1e-5
+    rzero1 <- readinbootstrapsamples(beta = betaextrapolate[1], Ns = 16,
+                    Nt = Nt[i], xi = 16/Nt[i], columns = c(1),
+                    names = c("bsrzeros"), filename = "resultssubtracted")
+    rzero2 <- readinbootstrapsamples(beta = betaextrapolate[2], Ns = 16,
+                    Nt = Nt[i], xi = 16/Nt[i], columns = c(1),
+                    names = c("bsrzeros"), filename = "resultssubtracted")
+    bootstrapsbeta[, i] <- getintercept(fitresult = resfit$fitsrzero[i], rzeroone = 0.5*(rzero1+rzero2))
     resultxi <-  rbind(resultxi, data.frame(xiphys = (tableres$xicalc[mask1] + tableres$xicalc[mask2]) * 0.5,
-        dxiphys = sqrt(tableres$dxicalc[mask1]^2 + tableres$dxicalc[mask2]^2) * 0.5))
-    # print("do extrapolation")
+        dxiphys = sqrt(tableres$dxicalc[mask1]^2 + tableres$dxicalc[mask2]^2) * 0.5), dbeta=sd(bootstrapsbeta[, i]))
+
     }
 }
+print(resultxi)
 
-if(FALSE){
+if (readindata) {
 pdf(sprintf("extrapolatecontroluwerrbeta%f.pdf", betas[1]), title = "")
 list3 <-  list()
 list16 <-  list()
@@ -126,7 +176,7 @@ bootstraps3 <-  parametric.bootstrap(bootsamples, P3, dP3, seed = 12345 + 1000 *
 bootstraps16 <-  parametric.bootstrap(bootsamples, P16, dP16, seed = 24680 + 1000 * betas[1])
 bootstrapsxi <-  parametric.bootstrap(bootsamples, resultxi$xiphys, resultxi$dxiphys, seed = 67890 + 1000 * betas[1])
 bootstrapsxi <-  bootstrapsxi^2
-bootstrapsbeta <-  parametric.bootstrap(bootsamples, betas, rep(1e-2, length(betas)), seed = 54321 + 1000 * betas[1])
+# bootstrapsbeta <-  parametric.bootstrap(bootsamples, betas, dbeta, seed = 54321 + 1000 * betas[1])
 # bootstrapsbeta <- t(array(rep(betas, bootsamples), dim = c(length(betas), bootsamples)))
 # print(head(bootstrapsbeta))
 
