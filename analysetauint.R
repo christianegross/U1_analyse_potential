@@ -93,12 +93,14 @@ listtauint <- list()
 tauintdf <- data.frame()
 maxtimes <- c()
 therm <- c()
+blocklengths <- c(0)
 ## Determine autocorrelation for each point.
 ## Determine effect of blocksize on error for y=1, t=1, ans all y, t if errorall is set
 ## Determine unblocked for l=1, then with increasing blocksize.
 ## Determine error naively with standard deviation over sqrt(N), where N=number of blocks
 ## as well as with uwerr method
 ## To be able to compare to a method with autocorrelation
+## From the autocorrelation, determine an estimate of the needed blocklength
 ## First, spatial loops
 ## For y==1, save x=1, spatial-spatial plaquette, to be able to look at thermalisation
 for (y in seq(1, Ns * opt$fraction, 1)) {
@@ -125,6 +127,11 @@ for (y in seq(1, Ns * opt$fraction, 1)) {
             errorsnaive[j] <- sd(WL$cf[, j]) / sqrt(length(WL$cf[, j]))
             try(plot(uwerrresults, main = paste("spatial unblocked, x  = ", j, "y = ", y)))
        }
+    xiauto <- exp(-1/autotime)
+    blocklen <- sqrt(2*xiauto / (xiauto - 1)^2)
+    # print(blocklen)
+    blocklengths <- c(blocklengths, blocklen)
+    # print(blocklengths)
     tauintdf <- rbind(tauintdf, data.frame(yt = y, spatial = T, l = 1,
             times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
             errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)),
@@ -174,6 +181,11 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
         errorsnaive[j] <- sd(WL$cf[, j]) / sqrt(length(WL$cf[, j]))
         try(plot(uwerrresults, main = paste("temporal unblocked, x  = ", j, "t = ", t)))
     }
+    xiauto <- exp(-1/autotime)
+    blocklen <- sqrt(2 * xiauto / (xiauto - 1)^2)
+    # print(blocklen)
+    blocklengths <- c(blocklengths, blocklen)
+    # print(blocklengths)
     tauintdf <- rbind(tauintdf, data.frame(yt = t, spatial = F, l = 1,
             times = as.data.frame(t(autotime)), dtimes = as.data.frame(t(dautotime)),
             errors = as.data.frame(t(errors)), derrors = as.data.frame(t(derrors)),
@@ -304,5 +316,15 @@ for (t in seq(1, Nt * opt$fraction, 1)) {
 }
 
 try(plot(therm, main=paste("thermalised values, skip=", opt$skip), xlab = "MCMC-steps", ylab = "P"))
-
+try(plot(blocklengths, xlab="index", ylab="estimate for l"))
+maxlen <- max(blocklengths)
+try(legend(x="top", legend=sprintf("%3f\n%d", maxlen, ceiling(5*maxlen)), col=NA, pch=NA))
+print(sprintf("%3f\n%d", maxlen, ceiling(5*maxlen)))
 print(warnings())
+
+lenresult <- data.frame(beta=opt$beta, xi=xi, Ns=Ns, Nt=Nt, maxlen=maxlen, estimatel=ceiling(5*maxlen), maxautotime = max(maxtimes), estimatelauto = 4*max(maxtimes)^2)
+columnnames <- FALSE
+if (!file.exists("overviewestimatedbootl.csv")) {
+    columnnames <- TRUE
+}
+write.table(x=lenresult, file="overviewestimatedbootl.csv", append=TRUE, row.names=FALSE, col.names = columnnames)
