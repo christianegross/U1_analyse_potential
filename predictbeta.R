@@ -246,6 +246,7 @@ for (i in seq(1, length(xis))) {
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
                             data$beta[mask], na.omit(arrayrzero[, mask])))
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
+    print(removed)
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
                             data$beta[mask], na.omit(arrayp[, mask])))
     fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
@@ -296,6 +297,7 @@ for (i in seq(1, length(xis))) {
     legendtext[i] <- sprintf("%.3f", xis[i])
 }
 
+# arrows(x0=1.42, x1=1.42, y0=0, y1=10)
 # make legend for plot
 legendtext[length(xis) + 1] <- "bounds fit"
 
@@ -402,7 +404,7 @@ for (i in seq(1, length(xis))) {
 }
 
 if (length(data$xi[data$xi==1]<2)) {
-    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-5))
+    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-4))
 }
 
 
@@ -423,6 +425,7 @@ resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
                     p = NA, type = NA, limplot = NA, dlimplot = NA)
 i <- 1
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
+    print(paste("Doing fits of polynomial degree", i))
     if (opt$naive) {
     # naive xi and beta
     fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
@@ -456,6 +459,14 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             chi = fitplaqnaivexiren$chi / fitplaqnaivexiren$dof,
             p = fitplaqnaivexiren$Qval, type = "naivexiren",
             limplot = fitplaqnaivexiren$t0[1], dlimplot = fitplaqnaivexiren$se[1])))
+
+## print if there was an error in fitting
+    if (inherits(fitplaqnaive, "try-error")){
+        print(paste("There was an error with fitplaqnaive for polynomial degree", i))
+    }
+    if (inherits(fitplaqnaivexiren, "try-error")){
+        print(paste("There was an error with fitplaqnaivexiren for polynomial degree", i))
+    }
     }
 
 # xi and beta renorm
@@ -493,6 +504,14 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitbeta$se[1], digits = 2, with.dollar = FALSE),
             chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
             type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
+
+## print if there were any errors in fitting
+    if (inherits(fitplaq, "try-error")){
+        print(paste("There was an error with fitplaq for polynomial degree", i))
+    }
+    if (inherits(fitbeta, "try-error")){
+        print(paste("There was an error with fitbeta for polynomial degree", i))
+    }
     i <- i + 1
 }
 # plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
