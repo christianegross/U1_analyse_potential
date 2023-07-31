@@ -298,7 +298,8 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial, type = "log") {
     WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
-                t2 = t2, useCov = TRUE), silent = FALSE)
+                t2 = t2, useCov = FALSE), silent = FALSE)
+        ## usecov=FALSE
         if (!inherits(WL.effmass, "try-error")) {
             newline <- data.frame(R = yt, m = WL.effmass$effmassfit$t0[1],
                     dm = WL.effmass$effmassfit$se[1], space = isspatial,
@@ -340,7 +341,7 @@ deteffmasssmall <- function (WL, x, y, t1, t2, type = "log") {
     WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
-                    t2 = t2, useCov = TRUE), silent = FALSE)
+                    t2 = t2, useCov = FALSE), silent = FALSE)
         listresults <- list(WL.effmass, x, y)
         if (inherits(WL.effmass, "try-error")) {
             #have to recalculate so the correct effective masses are stored instead of error
