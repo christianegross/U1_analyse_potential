@@ -6,7 +6,7 @@ if (TRUE) {
 option_list <- list(
     make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
     help = "how many bootstrapsamples should be drawn [default %default]"),
-    make_option(c("-b", "--betaone"), type = "double", default = 1.7,
+    make_option(c("-b", "--beta"), type = "double", default = 1.7,
     help = "beta at xi=1 [default %default]"),
     make_option(c("-L", "--length"), type = "integer", default = 16,
     help = "spatial extent of lattice at xi=1 [default %default]"),
@@ -200,7 +200,7 @@ plaqren <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, leng
 xiphys <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 
 legendtext <- c("1.000")
-xvalues <- seq(opt$betaone-0.4, opt$betaone+0.2, length.out=41)
+xvalues <- seq(opt$beta-0.4, opt$beta+0.2, length.out=41)
 
 par(lwd = linewidth)
 

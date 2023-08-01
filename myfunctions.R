@@ -711,6 +711,19 @@ getintercept <- function(fitresult, rzeroone, bootsamples = 500) {
     return(intercepts)
 }
 
+# determine the intercept between a linear function and a constant
+#c = a*x + b
+#c-b = a*x
+#(c-b)/a = x
+getinterceptfromparams <- function(bsa, bsb, rzeroone, bootsamples = 500) {
+    intercepts <- c()
+    for (bs in seq(1, bootsamples)){
+        intercepts[bs] <- (rzeroone[bs] - bsb[bs]) / bsa[bs]
+        # print(paste("a=", bsa[bs], "b=", bsb[bs], "rzero=", rzeroone[bs], "intercept=", intercepts[bs]))
+    }
+    return(intercepts)
+}
+
 # polynomials of first to fifth order, of a form that can be used by bootstrap.nlsfit
 fnlin <- function (par, x, boot.r, ...) {
     return (par[1]  +  par[2] * x)
