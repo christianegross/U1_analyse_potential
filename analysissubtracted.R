@@ -365,16 +365,15 @@ filename <- sprintf(
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
 plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
-newline <- data.frame(value = plaquettedata$value, dvalue = plaquettedata$dvalue,
-            ddvalue = plaquettedata$ddvalue, tauint = plaquettedata$tauint,
-            dtauint = plaquettedata$dtauint)
 nom <- floor(length(plaquettecolumn))
 
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
 
 plaquettecf <- readloopfilecfonecolumn(file = filename, skip = skip,
-        column = column)#, every = opt$every, boot.l = opt$bootl)
-plaquettecf <- bootstrap.cf(plaquettecf, boot.R = bootsamples)
+        column = column, every = opt$every)
+bootl <- max(opt$bootl, 4 * plaquettedata$tauint^2)
+plaquettecf <- bootstrap.cf(plaquettecf,
+                boot.R = bootsamples, boot.l = bootl)
 
 
 
@@ -677,7 +676,7 @@ if (dofit) {
     # save bootstrapsamples and summary of results
 resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2], bsst = fit.resultscaled$t[, 2],
         rzeros = rzero, drzeros = drzero, crz = opt$crzero, bsrzeros = bsrzero,
-        p = plaquettedata$value, dp = plaquettedata$dvalue, bsp = plaquettecf$cf.tsboot$t[, 1],
+        p = plaquettecf$cf.tsboot$t0[1], dp = plaquettecf$tsboot.se[1], bsp = plaquettecf$cf.tsboot$t[, 1],
         beta = beta, xiin = xi, Nt = Nt, Ns = Ns, bootsamples = bootsamples,
         nom = nom, skip = opt$skip, lowlim = opt$lowlim,
         xicalc  =  fit.match$t0[2], dxicalc  =  fit.match$se[2], bsxicalc = fit.match$t[, 2])
@@ -697,7 +696,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       xi2 = xisquared, dxi2 = dxisquared,
                       r0 = rzeroofc$r0[i], dr0 = rzeroofc$dr0[i],
                       st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2],
-                      p = plaquettedata$value, dp = plaquettedata$dvalue,
+                      p = plaquettecf$cf.tsboot$t0[1], dp = plaquettecf$tsboot.se[1],
                       chi = fit.resultscaled$chisqr / fit.resultscaled$dof,
                       diff = fit.match$t0[1], ddiff = fit.match$se[1],
                       bs = bootsamples, xicalcsub = xicalcsub,
@@ -729,93 +728,4 @@ nameresults <- sprintf(
 saveRDS(resultssummary, file = nameresults)
 }
 
-if (opt$plotonlymeff) {
-    # makes plot of effective masses, effective masses zoomed in
-    # from existing data
-
-# read in
-
-filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
-
-if (opt$smearing) {
-    filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
-}
-if (file.exists(filenamelist)) {
-listmeff <- readRDS(file = filenamelist)
-} else {
-  filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedNt%dNs%dbeta%fxi%fbsamples%dl%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1)
-if (opt$smearing) {
-    filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%dl%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1)
-}
-  listmeff <- readRDS(file = filenamelist)
-}
-
-filenameforplots <- sprintf("
-            %splotsonlymeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi)
-if (opt$smearing) {
-    filenameforplots <- sprintf(
-            "%splotsonlymeff2p1subtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha)
-}
-pdf(file = filenameforplots, title = "")
-print(filenameforplots)
-
-# plot effective masses, set limits to zoom in
-# first spatial, then temporal potential
-
-for (i in seq(1, Ns)) {
-    if (listmeff[[i]][[2]]) {
-        titleall <- sprintf("beta = %.2f ", beta)
-    if (i <= Ns / 2) {
-        if (!is.null(listmeff[[i]][[1]]$effmassfit)) {
-            title <- sprintf("%s coarse, x = %d, p = %f",
-                titleall, i, listmeff[[i]][[1]]$effmassfit$Qval)
-        } else {
-            title <- sprintf("%s coarse, x = %d", titleall, i)
-        }
-        message(title)
-#~         print(names(listmeff[[i]][[1]]))
-        max <- min(max(na.omit(listmeff[[i]][[1]]$effMass[2:(Ns / 2 - 1)])), 4)
-        if (i > 7) {
-            max <- min(max(na.omit(listmeff[[i]][[1]]$effMass[2:(Ns / 2 - 1)])), 5)
-        }
-        min <- max(min(na.omit(listmeff[[i]][[1]]$effMass[2:(Ns / 2 - 1)])), 0)
-        ylim <- c(min, max)
-        message(ylim)
-        try(plot(listmeff[[i]][[1]], xlab = "y/a_s",
-                ylab = "Meff", main = title))
-        try(plot(listmeff[[i]][[1]], xlab = "y/a_s",
-                ylab = "Meff", ylim = ylim, main = title))
-    }
-    if (i > Ns / 2) {
-        if (!is.null(listmeff[[i]][[1]]$effmassfit)) {
-            title <- sprintf("%s fine, x = %d, p = %f",
-                    titleall, i - Ns / 2, listmeff[[i]][[1]]$effmassfit$Qval)
-        } else {
-            title <- sprintf("%s fine, x = %d", titleall, i - Ns / 2)
-        }
-        message(title)
-        max <- min(max(na.omit(listmeff[[i]][[1]]$effMass[2:(Nt / 2 - 1)])), 4)
-        if ((i + Ns / 2) > 7) {
-            max <- min(max(na.omit(listmeff[[i]][[1]]$effMass[2:(Nt / 2 - 1)])), 5)
-        }
-        min <- max(min(na.omit(listmeff[[i]][[1]]$effMass[2:(Nt / 2 - 1)])), 0)
-        ylim <- c(min, max)
-        message(ylim)
-        try(plot(listmeff[[i]][[1]], xlab = "t/a_t",
-                ylab = "Meff", main = title))
-        try(plot(listmeff[[i]][[1]], xlab = "t/a_t",
-                ylab = "Meff", ylim = ylim, main = title))
-    }
-    }
-}
-}
+message(warnings())
