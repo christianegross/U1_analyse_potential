@@ -7,12 +7,12 @@ option_list <- list(
     make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
     help = "how many bootstrapsamples should be drawn [default %default]"),
     make_option(c("-b", "--beta"), type = "double", default = 1.7,
-    help = "beta at xi=1 [default %default]"),
+    help = "beta at xi = 1 [default %default]"),
     make_option(c("-L", "--length"), type = "integer", default = 16,
-    help = "spatial extent of lattice at xi=1 [default %default]"),
+    help = "spatial extent of lattice at xi = 1 [default %default]"),
 
     make_option(c("-T", "--timeextent"), type = "integer", default = 16,
-    help = "time extent of lattice at xi=1 [default %default]"),
+    help = "time extent of lattice at xi = 1 [default %default]"),
     make_option(c("--crzero"), type = "double", default = -1.65,
     help = "c used for determining r_0 [default %default]"),
     make_option(c("--myfunctions"), type = "character",
@@ -29,9 +29,9 @@ option_list <- list(
     make_option(c("--type"), type = "character", default = "normal",
     help = "type of ensembles that shoule be analysed, one of normal, sideways and slope [default %default]"),
     make_option(c("-o", "--omit"), type = "integer", default = -1,
-    help = "omission of highest points from the potential, -1=any [default %default]"),
+    help = "omission of highest points from the potential, -1 = any [default %default]"),
     make_option(c("--fitlim"), type = "double", default = 0.3,
-    help = "how much may the value of r0 deviate from the xi=1 value to still be considered? [default %default]"),
+    help = "how much may the value of r0 deviate from the xi = 1 value to still be considered? [default %default]"),
 
     make_option(c("--naive"), action = "store_true", default = FALSE,
     help = "if true, continuum limit with beta and xi unrenormalized is calculated [default %default]")
@@ -76,7 +76,7 @@ side <- 2
 
 ## also possibility to give a custom name for the summaryfile
 ## if not default, assume custom name is given
-if (opt$summaryname != "summaryfile") {
+if (opt$summaryname !=  "summaryfile") {
     dataname <- opt$summaryname
     paste("assuming custom filename for summary:", dataname)
 }
@@ -94,7 +94,7 @@ if (type == "normal") {
 data <- data[data$c == opt$crzero, ]
 }
 
-if (opt$omit >=0) {
+if (opt$omit >=  0) {
 data <- data[data$omit == opt$omit, ]
 }
 
@@ -123,9 +123,9 @@ for (i in seq(1, nom)) {
                     names = c("bsslopescaled", "bsp", "bsxiren"), filename = filenameres)
     }
     # print(head(result))
-    arrayrzero[, i] <- result[, 1]
-    arrayp[, i] <- result[, 2]
-    arrayxi[, i] <- result[, 3]
+    arrayrzero[, i] <- result[1:opt$bootsamples, 1]
+    arrayp[, i] <- result[1:opt$bootsamples, 2]
+    arrayxi[, i] <- result[1:opt$bootsamples, 3]
     if (sum(is.na(result)) > 0) print(sum(is.na(result)))
 }
 
@@ -142,114 +142,61 @@ if (type == "slope") {
 ## define ansatz for multifit
 ## goal: fit obs(beta, xi) with one single fit.
 ## x is a matrix containing all x-values x_1, x_2, ...
-ansatz <- function(x, par){
+ansatzmulti <- function(x, par) {
   beta <- x[1]
   xi <- x[2]
   a <- par[1]
-  if (abs(xi-1.0) < 1e-3){
+  if (abs(xi-1.0) < 1e-3) {
     b <- par[2]
-  } else if(abs(xi-0.8) < 1e-3){
+  } else if (abs(xi - 0.8) < 1e-3) {
     b <- par[3]
-  } else if(abs(xi-2./3.) < 1e-3){
+  } else if (abs(xi - 2./3.) < 1e-3) {
     b <- par[4]
-  } else if (abs(xi-0.5) < 1e-3){
+  } else if (abs(xi - 0.5) < 1e-3) {
     b <- par[5]
-  } else if(abs(xi-0.4) < 1e-3){
+  } else if (abs(xi - 0.4) < 1e-3) {
     b <- par[6]
-  } else if(abs(xi-1./3.) < 1e-3){
+  } else if (abs(xi - 1./3.) < 1e-3) {
     b <- par[7]
-  } else if(abs(xi-0.25) < 1e-3){
+  } else if (abs(xi - 0.25) < 1e-3) {
     b <- par[8]
   } else {
-    stop("invalid xi in fit ansatz")
+    stop(paste("invalid xi in fit ansatz, you gave", xi))
   }
-  return (a*beta + b)
+  return (a * beta + b)
 }
 
 
-## define a function that uses the actual bootstrapsamples
-## based on function from fit_xiyey
-#' fit boostrap by boostrap (generated from y and dy)
-#' x = matrix of size n \times N_pts
-#' returns a list with bootstraps of parameters, their mean, stderr, chi^2, reduced chi^2
-usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter=10000, method="BFGS", N_bts = 500){
-    N_pts <- length(y) # number of points
-    N_par <- length(guess)
-    N_dof = N_pts - N_par
-
-    par_bts <- matrix(data=NA, N_bts, N_par)
-    ch2_bts <- matrix(data=NA, N_bts, N_par)
-
-    # y_bts <- matrix(data=rnorm(N_bts*N_pts, y, ey), ncol=N_pts, byrow=TRUE)
-
-    ansatz <- NA
-    for (i in 1:N_bts){
-        mini <- fit_xiyey(
-            ansatz = ansatz, x=x, y=y_bts[i,], ey=ey,
-            guess = guess,
-            maxiter=maxiter, method=method)
-
-        if (i==1){
-            ansatz <- mini[["ansatz"]]
-            N_dof <- mini[["N_dof"]]
-        }
-
-        par_bts[i,] <- mini[["par"]]
-        ch2_bts[i,] <- mini[["ch2"]]
-    }
-
-    # mean and standard error on the bootstraps
-
-    par_val <- apply(par_bts, 2, mean)
-    par_sd <- apply(par_bts, 2, sd)
-
-    ch2_val <- apply(ch2_bts, 2, mean)
-    ch2_sd <- apply(ch2_bts, 2, sd)
-
-    res <- list(
-        ansatz=ansatz,
-        N_bts=N_bts, N_pts = N_pts, N_par=N_par,
-        x=x,
-        par=list(bts=par_bts, val=par_val, dval=par_sd),
-        ch2=list(bts=ch2_bts, val=ch2_val, dval=ch2_sd),
-        ch2_dof=list(
-            bts=ch2_bts/N_dof, val=ch2_val/N_dof,
-            dval=ch2_sd/N_dof)
-        )
-
-    return(res)
-}
 
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
 intercepts <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 plaqren <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 xiphys <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 intercepts[, 1] <- rep(opt$beta, bootsamples)
-plaqren[, 1] <- arrayp[, data$beta==opt$beta & data$xi==1]
-xiphys[, 1] <- arrayxi[, data$beta==opt$beta & data$xi==1]
+plaqren[, 1] <- arrayp[, data$beta == opt$beta & data$xi == 1]
+xiphys[, 1] <- arrayxi[, data$beta == opt$beta & data$xi == 1]
 
 
 ## do fit - similar to predictbeta, but hopefully less messy
 ## for r0, P, xi
 
-rzerozero <- data$r0[data$beta==opt$beta & data$xi==1]
+rzerozero <- data$r0[data$beta == opt$beta & data$xi == 1]
 mask <- abs(data$r0 - rzerozero) < opt$fitlim
-x <- matrix(data=c(data$beta[mask], data$xi[mask]), byrow=TRUE, nrow=2)
+x <- matrix(data = c(data$beta[mask], data$xi[mask]), byrow = TRUE, nrow = 2)
 
 start <- 1
-if (length(data$xi[data$xi==1 & mask]<3)) start <- 2
+if (length(data$xi[data$xi == 1 & mask] < 3)) start <- 2
 
 ## r0
 
 y <- data$r0[mask]
 dy <- data$dr0[mask]
 y_bts <- arrayrzero[, mask]
+resultrzero <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
+summary.multifit(resultrzero)
 
-resultrzero <- usebootstrap.fit_xiyey(ansatz=ansatz, x=x, y=y, ey=dy, y_bts = y_bts, guess=c(5, rep(-6, 7)), N_bts = opt$bootsamples)
-print(resultrzero)
-
-for(i in seq(start, length(xis))) {
-    intercepts[, i] <- getinterceptfromparams(bsa = resultrzero$par$bts[, 1], bsb = resultrzero$par$bts[, 1 + i], rzeroone = arrayrzero[, data$beta==opt$beta & data$xi==1], bootsamples = opt$bootsamples)
+for (i in seq(start, length(xis))) {
+    intercepts[, i] <- getinterceptfromparams(bsa = resultrzero$par$bts[, 1], bsb = resultrzero$par$bts[, 1 + i], rzeroone = arrayrzero[, data$beta == opt$beta & data$xi == 1], bootsamples = opt$bootsamples)
 }
 
 ## xi
@@ -258,14 +205,18 @@ y <- data$xicalc[mask]
 dy <- data$dxicalc[mask]
 y_bts <- arrayxi[, mask]
 
-resultxi <- usebootstrap.fit_xiyey(ansatz=ansatz, x=x, y=y, ey=dy, y_bts = y_bts, guess=c(5, rep(-6, 7)), N_bts = opt$bootsamples)
-# print(resultxi)
-for(i in seq(start, length(xis))) {
-    xren <- matrix(data=c(intercepts[, i], rep(xis[i], opt$bootsamples)), byrow=TRUE, nrow=2)
-    for(bs in seq(1, opt$bootsamples)) {
-        xiphys[bs, i] <- ansatz(x = xren[, bs], par = resultxi$par$bts[bs, ])
+print("xiphys")
+resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
+summary.multifit(resultxi)
+for (i in seq(start, length(xis))) {
+    xren <- matrix(data = c(intercepts[, i], rep(xis[i], opt$bootsamples)), byrow = TRUE, nrow = 2)
+    for (bs in seq(1, opt$bootsamples)) {
+        xiphys[bs, i] <- ansatzmulti(x = xren[, bs], par = resultxi$par$bts[bs, ])
     }
 }
+
+
+
 
 ## p
 
@@ -273,13 +224,14 @@ y <- data$p[mask]
 dy <- data$dp[mask]
 y_bts <- arrayp[, mask]
 
-resultp <- usebootstrap.fit_xiyey(ansatz=ansatz, x=x, y=y, ey=dy, y_bts = y_bts, guess=c(5, rep(-6, 7)), N_bts = opt$bootsamples)
-# print(resultp)
+print("plaq")
+resultp <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
+summary.multifit(resultp)
 
-for(i in seq(start, length(xis))) {
-    xren <- matrix(data=c(intercepts[, i], rep(xis[i], opt$bootsamples)), byrow=TRUE, nrow=2)
-    for(bs in seq(1, opt$bootsamples)) {
-        plaqren[bs, i] <- ansatz(x = xren[, bs], par = resultp$par$bts[bs, ])
+for (i in seq(start, length(xis))) {
+    xren <- matrix(data = c(intercepts[, i], rep(xis[i], opt$bootsamples)), byrow = TRUE, nrow = 2)
+    for (bs in seq(1, opt$bootsamples)) {
+        plaqren[bs, i] <- ansatzmulti(x = xren[, bs], par = resultp$par$bts[bs, ])
     }
 }
 
@@ -292,15 +244,10 @@ result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
 print(result)
 
 
-## plot: write separate function that calculates polygon for every xi
-## TODO: generalize predict.bootstrapfit to take function, x, bootstraps of parameters
-## TODO: generalize errorpolygon to take arbitrary function, params
-
-
 ## contlimit: like in predictbeta
 
-pdf(paste("multifitb", opt$beta, ".pdf"))
 
+pdf(paste("multifitb", opt$beta, ".pdf", sep = ""), title = "")
 
 if (TRUE) {
 
@@ -329,7 +276,7 @@ for (i in seq(1, length(xis))) {
     # bsamplescontlimitbeta[, length(xis) + i] <- arrayxi[, row]^2
 }
 
-if (length(data$xi[data$xi==1 & mask]<3)) {
+if (length(data$xi[data$xi == 1 & mask] < 3)) {
     bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootsamples, c(opt$beta), c(1e-4))
 }
 
@@ -339,7 +286,7 @@ if (length(data$xi[data$xi==1 & mask]<3)) {
 
 
 # for each polynomial:
-# fitplaq: xi=xi_ren, p=p_interpolated -> xi and beta renormalized
+# fitplaq: xi = xi_ren, p = p_interpolated -> xi and beta renormalized
 # for each: do fit to continuum limit, plot, add results to list and table
 # list: region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq, region 16-20 beta
 # na.omit removes entire row containing na
@@ -387,23 +334,104 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
 
 ## print if there were any errors in fitting
-    if (inherits(fitplaq, "try-error")){
+    if (inherits(fitplaq, "try-error")) {
         print(paste("There was an error with fitplaq for polynomial degree", i))
     }
-    if (inherits(fitbeta, "try-error")){
+    if (inherits(fitbeta, "try-error")) {
         print(paste("There was an error with fitbeta for polynomial degree", i))
     }
     i <- i + 1
 }
-# plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
-# plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+# plotwitherror(x = result$xiphys^2, y = result$beta, dy = apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx = apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2 * length(xis))], 2, sd))
+# plotwitherror(x = result$xiphys^2, y = result$p, dy = result$dp, dx = apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2 * length(xis))], 2, sd))
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- sprintf("%s/polynomialnormalbeta%f.csv", opt$respath, opt$beta)
-if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysbeta%f.csv", opt$respath, opt$beta)
-if (type == "slope") namepol <- sprintf("%s/polynomialslopebeta%f.csv", opt$respath, opt$beta)
+if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%f.csv", opt$respath, opt$beta)
+if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%f.csv", opt$respath, opt$beta)
+if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%f.csv", opt$respath, opt$beta)
 # write out result
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
 }
+
+
+## plot
+supports <- 1000
+
+xlim <- c(0.95 * min(data$beta[mask]), 1.05 * max(data$beta[mask]))
+ylim <- c(0.95 * min(data$r0[mask]), 1.05 * max(data$r0[mask]))
+
+plot(NA, xlim = xlim * c(1.05, 0.95), ylim = ylim * c(1.05, 0.95), xlab = "beta", ylab = "r_0/a_s", main = "r_0/a_s(beta, xi) with multifit")
+legendtext <- c()
+
+if (start !=  1) {
+    plotwitherror(x = data$beta[mask & data$xi == 1], y = data$r0[mask & data$xi == 1], dy = data$dr0[mask & data$xi == 1], col = 1, pch = 1, rep = TRUE)
+    append(legendtext, "1.00")
+}
+
+drzerozero <- data$dr0[data$beta == opt$beta & data$xi == 1]
+lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero, 100), lty = 1)
+lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero + drzerozero, 100), lty = 2)
+lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero - drzerozero, 100), lty = 2)
+
+for (i in seq(start, length(xis))) {
+    print("xi")
+    print(xis[i])
+    xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
+    errorpolygonmultifit(X = xplot, fitresult = resultrzero, col.p = i, pch = i,
+        mask = abs(resultrzero$x[2, ] - xis[i]) < 1e-3, ylim = ylim)
+    legendtext[i] <-  sprintf("%.2f", xis[i])
+}
+
+legend(x = "topleft", legend = legendtext, col = seq(1, length(xis)), pch = seq(1, length(xis)))
+
+
+
+xlim <- c(0.95 * min(data$beta[mask]), 1.05 * max(data$beta[mask]))
+ylim <- c(0.95 * min(data$xicalc[mask]), 1.05 * max(data$xicalc[mask]))
+
+plot(NA, xlim = xlim * c(1.05, 0.95), ylim = ylim * c(1.05, 0.95), xlab = "beta", ylab = "xicalc", main = "xicalc(beta, xi) with multifit")
+legendtext <- c()
+
+if (start !=  1) {
+    plotwitherror(x = data$beta[mask & data$xi == 1], y = data$xicalc[mask & data$xi == 1],
+        dy = data$dxicalc[mask & data$xi == 1], col = 1, pch = 1, rep = TRUE)
+    append(legendtext, "1.00")
+}
+
+for (i in seq(start, length(xis))) {
+    print("xi")
+    print(xis[i])
+    xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
+    errorpolygonmultifit(X = xplot, fitresult = resultxi, col.p = i, pch = i,
+        mask = abs(resultrzero$x[2, ] - xis[i]) < 1e-3, ylim = ylim)
+    legendtext[i] <-  sprintf("%.2f", xis[i])
+}
+
+legend(x = "topleft", legend = legendtext, col = seq(1, length(xis)), pch = seq(1, length(xis)))
+
+
+
+xlim <- c(0.95 * min(data$beta[mask]), 1.05 * max(data$beta[mask]))
+ylim <- c(0.95 * min(data$p[mask]), 1.05 * max(data$p[mask]))
+
+plot(NA, xlim = xlim * c(1.05, 0.95), ylim = ylim * c(1.05, 0.95), xlab = "beta", ylab = "p", main = "p(beta, xi) with multifit")
+legendtext <- c()
+
+if (start !=  1) {
+    plotwitherror(x = data$beta[mask & data$xi == 1], y = data$p[mask & data$xi == 1], dy = data$dp[mask & data$xi == 1], col = 1, pch = 1, rep = TRUE)
+    append(legendtext, "1.00")
+}
+
+for (i in seq(start, length(xis))) {
+    print("xi")
+    print(xis[i])
+    xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
+    errorpolygonmultifit(X = xplot, fitresult = resultp, col.p = i, pch = i,
+        mask = abs(resultrzero$x[2, ] - xis[i]) < 1e-3, ylim = ylim)
+    legendtext[i] <-  sprintf("%.2f", xis[i])
+}
+
+legend(x = "topleft", legend = legendtext, col = seq(1, length(xis)), pch = seq(1, length(xis)))
+

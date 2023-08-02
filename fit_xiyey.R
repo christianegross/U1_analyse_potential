@@ -42,6 +42,7 @@ fit_xiyey <-function(ansatz, x, y, ey,
     res[["ch2"]] <- ch2_value
     res[["dof"]] <- N_dof # degrees of freedom
     res[["ch2_dof"]] <- ch2_value/N_dof
+    res[["boot"]] <- FALSE # no bootstrapsamples available in this result
 
     return(res)
 }

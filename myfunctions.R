@@ -824,3 +824,169 @@ blockts <- function(data, l=2) {
   return(invisible(ncf))
 }
 
+## define a function that uses the actual bootstrapsamples
+## based on function from fit_xiyey
+#' fit boostrap by boostrap (generated from y and dy)
+#' x = matrix of size n \times N_pts
+#' returns a list with bootstraps of parameters, their mean, stderr, chi^2, reduced chi^2
+usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter=10000, method="BFGS", N_bts = 500){
+    N_pts <- length(y) # number of points
+    N_par <- length(guess)
+    N_dof <- N_pts - N_par
+
+    par_bts <- matrix(data=NA, N_bts, N_par)
+    ch2_bts <- matrix(data=NA, N_bts, N_par)
+
+    ## First do the fit on the mean data:
+    mini <- fit_xiyey(
+                ansatz = ansatz, x=x, y=y, ey=ey,
+                guess = guess,
+                maxiter=maxiter, method=method)
+
+    par_val <- mini[["par"]]
+
+    ch2_val <- mini[["ch2"]]
+
+    for (i in 1:N_bts){
+        mini <- fit_xiyey(
+            ansatz = ansatz, x=x, y=y_bts[i,], ey=ey,
+            guess = guess,
+            maxiter=maxiter, method=method)
+
+        par_bts[i,] <- mini[["par"]]
+    }
+
+    par_sd <- apply(par_bts, 2, sd)
+
+    res <- list(
+        ansatz=ansatz,
+        N_bts=N_bts, N_pts = N_pts, N_par = N_par, N_dof = N_dof,
+        x=x,
+        par=list(bts=par_bts, val=par_val, dval=par_sd),
+        ch2=ch2_val,
+        y = list(y = y, dy = ey, y_bts = y_bts), boot=TRUE
+        )
+
+    attr(res, "class") <- c("multifit", "list")
+    return(res)
+}
+
+
+#' Predict values for multifit, based on predict.bootstrapfit
+#'
+#' @param object result of multifit.
+#' @param x Numeric vector with independent variable.
+#' @param error Function to compute error from samples.
+#' @param ... additional parameters to be passed on to the prediction function.
+#'
+#' @return
+#' List with independent variable `x`, predicted central value `val`, error
+#' estimate `err` and sample matrix `boot`.
+#'
+#' @export
+#' @family NLS fit functions
+predict.anyfunction <- function (fn, par, par_bts, x, error = sd, ...) {
+  ## to include additional parameter to x$fn originally given as ... to
+  ## bootstrap.nlsfit requires some pull-ups
+  if(length(par)!=length(par_bts[1, ])) stop("length of parameters and bootstrapsamples do not match")
+  getresvector <- function(fn, par, x, ...) {
+    res <- c()
+    for (i in seq(1, length(x[1, ]))) {
+        tmp <- fn(x = x[, i], par = par, ...)
+        res[i] <- tmp
+    }
+    return(res)
+  }
+  npar <- length(par)
+  val <- getresvector(fn = fn, par = par, x = x, ...)
+
+  prediction <- list(x = x, val = val)
+
+  if (!missing(par_bts)) {
+    ## error band
+    ## define a dummy function to be used in apply
+    prediction_boot_fn <- function (boot.r) {
+      par <- par_bts[boot.r, 1:npar, drop = FALSE]
+      res <- getresvector(fn = fn, par = par, x = x, ...)
+      return(res)
+    }
+    prediction_boot <- do.call(rbind, lapply(1:nrow(par_bts), prediction_boot_fn))
+    prediction$boot <- prediction_boot
+
+    err <- apply(prediction_boot, 2, error, na.rm = TRUE)
+    stopifnot(length(err) == length(x[1, ]))
+    prediction$err <- err
+  }
+
+  return (prediction)
+}
+
+
+## plot result of multifit with rep=TRUE
+## plotindex: which row of matrix is used as the independent variable
+errorpolygonmultifit <- function (X, fitresult, col.p, col.band = "gray",
+                        polygon = TRUE, arlength = 0.1, pch = 1, plotindex = 1, mask, ylim, ...) {
+    # like plot of bootstrapfit, but with rep=TRUE
+    prediction <- predict.anyfunction(fn = fitresult$ansatz, par = fitresult$par$val, par_bts = fitresult$par$bts, X)
+    if (missing(pch)) {
+        p.pch <- col.p
+    } else {
+        p.pch <- pch
+    }
+    if(missing(mask)) mask <- seq(1:length(X[1, ]))
+    limits <- plotwitherror(x = fitresult$x[plotindex, mask], y = fitresult$y$y[mask],
+            dy = fitresult$y$dy[mask], col = col.p, pch = p.pch, rep=TRUE, ...)
+    if(missing(ylim)) ylim <- limits$ylim
+
+    if (polygon) {
+        polyval <- c(prediction$val + prediction$err,
+                rev(prediction$val - prediction$err))
+        if (any(polyval < ylim[1]) || any(polyval > ylim[2])) {
+          polyval[polyval < ylim[1]] <- ylim[1]
+          polyval[polyval > ylim[2]] <- ylim[2]
+        }
+        col.band <- "gray"
+        pcol <- col2rgb(col.band, alpha = TRUE) / 255
+        pcol[4] <- 0.65
+        pcol <- rgb(red = pcol[1], green = pcol[2],
+                    blue = pcol[3], alpha = pcol[4])
+        polygon(x = c(X[plotindex, ], rev(X[plotindex, ])), y = polyval, col = pcol,
+                lty = 0, lwd = 0.001, border = pcol)
+    }
+    lines(x = X[plotindex, ], y = prediction$val, col = col.p, ...)
+}
+
+
+## TODO: make more pretty
+## taken from summary.bootstrapnlsfit
+summary.multifit <- function(object, ..., digits = 2, title="") {
+    # print(object)
+    y <- object$y$y
+    dy <- object$y$dy
+    npar <- object$N_par
+    values <- object$par$val
+    errors <- object$par$dval
+    tmp <- apply(X=array(c(values, errors), dim=c(length(values), 2)), MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
+    cat(title)
+    cat("\nresult of multifit with bootstrap\n\n")
+    if (object$boot) {
+        bias <- values-apply(X=object$par$bts, MARGIN=2, FUN=mean, na.rm=TRUE)
+        dim(bias) <- c(length(bias), 1)
+        bias <- apply(X=bias, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
+        ci16 <- apply(X=object$par$bts, MARGIN=2, FUN=quantile, probs=c(0.16), drop=FALSE, na.rm=TRUE)
+        dim(ci16) <- c(length(ci16), 1)
+        ci16 <- apply(X=ci16, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
+        ci84 <- apply(X=object$par$bts, MARGIN=2, FUN=quantile, probs=c(0.84), drop=FALSE, na.rm=TRUE)
+        dim(ci84) <- c(length(ci84), 1)
+        ci84 <- apply(X=ci84, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
+        cat("    best fit parameters with errors, bootstrap bias and 68% confidence interval\n\n")
+        print(data.frame(par=tmp[1:npar], bias=bias[1:npar], ci16=ci16[1:npar], ci84=ci84[1:npar]))
+    } else {
+        cat("best fit parameters with error\n\n")
+        print(data.frame(par=tmp[1:npar]))
+    }
+    cat("\n   chi^2 and fit quality\n")
+    cat("chisqr / dof =", object$ch2, "/", object$N_dof, "=", object$ch2 / object$N_dof, "\n\n\n")
+
+
+}
