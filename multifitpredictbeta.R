@@ -113,9 +113,10 @@ for (i in seq(1, nom)) {
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
     if (type == "normal" || type == "sideways") {
+    end <- sprintf("omit%d", data$omit[i])
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
-                    names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres)
+                    names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
     }
     if (type == "slope") {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
@@ -250,7 +251,7 @@ resultslist <- list(resultp = resultp, plaqren = plaqren, resultxi = resultxi,
 ## contlimit: like in predictbeta
 
 
-pdf(paste("multifitb", opt$beta, ".pdf", sep = ""), title = "")
+pdf(paste("multifit", opt$type", b", opt$beta,, "omit", opt$omit, ".pdf", sep = ""), title = "")
 
 if (TRUE) {
 
@@ -446,18 +447,18 @@ legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
 
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%f.csv", opt$respath, opt$beta)
-if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%f.csv", opt$respath, opt$beta)
-if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%f.csv", opt$respath, opt$beta)
+if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit)
+if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit)
+if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit)
 # write out result
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 
 
 if (type == "normal") {
-write.table(result, sprintf("%s/resultsrenormalizationmultibeta%f.csv", opt$respath, opt$beta),
+write.table(result, sprintf("%s/resultsrenormalizationmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%f.RData", opt$respath, opt$beta))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationmultibeta%f.RData", opt$respath, opt$beta))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
 }
 
 if (type == "sideways") {
@@ -468,10 +469,10 @@ saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysmultibe
 }
 
 if (type == "slope") {
-write.table(result, sprintf("%s/resultsrenormalizationslopemultibeta%f.csv", opt$respath, opt$beta),
+write.table(result, sprintf("%s/resultsrenormalizationslopemultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopemultibeta%f.RData", opt$respath, opt$beta))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopemultibeta%f.RData", opt$respath, opt$beta))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopemultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopemultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
 }
 # move all plots into subfolder
 system(sprintf("mv -v tikz* %s", opt$respath))
