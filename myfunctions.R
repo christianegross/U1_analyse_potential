@@ -966,10 +966,10 @@ summary.multifit <- function(object, ..., digits = 2, title="") {
     npar <- object$N_par
     values <- object$par$val
     errors <- object$par$dval
-    tmp <- apply(X=array(c(values, errors), dim=c(length(values), 2)), MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
     cat(title)
     cat("\nresult of multifit with bootstrap\n\n")
     if (object$boot) {
+        tmp <- apply(X=array(c(values, errors), dim=c(length(values), 2)), MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
         bias <- values-apply(X=object$par$bts, MARGIN=2, FUN=mean, na.rm=TRUE)
         dim(bias) <- c(length(bias), 1)
         bias <- apply(X=bias, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
@@ -982,7 +982,8 @@ summary.multifit <- function(object, ..., digits = 2, title="") {
         cat("    best fit parameters with errors, bootstrap bias and 68% confidence interval\n\n")
         print(data.frame(par=tmp[1:npar], bias=bias[1:npar], ci16=ci16[1:npar], ci84=ci84[1:npar]))
     } else {
-        cat("best fit parameters with error\n\n")
+        tmp <- sprintf("%.4f", values)
+        cat("best fit parameters\n\n")
         print(data.frame(par=tmp[1:npar]))
     }
     cat("\n   chi^2 and fit quality\n")

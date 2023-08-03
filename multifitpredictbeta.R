@@ -243,6 +243,9 @@ result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
                     p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T))
 print(result)
 
+resultslist <- list(resultp = resultp, plaqren = plaqren, resultxi = resultxi,
+                    xiphys = xiphys, resultrzero = resultrzero, intercepts = intercepts)
+
 
 ## contlimit: like in predictbeta
 
@@ -303,7 +306,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
                 x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit)))
 
     if (!inherits(fitplaq, "try-error")) {
-    fitspolynomial[[10 + i]] <- fitplaq
+    fitspolynomial[[i]] <- fitplaq
     plot(fitplaq, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitplaq$t0[1], fitplaq$se[1],
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
@@ -320,7 +323,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = result$xiphys^2, y = result$beta, bsamples = na.omit(bsamplescontlimitbeta)))
-    fitspolynomial[[15 + i]] <- fitbeta
+    fitspolynomial[[5 + i]] <- fitbeta
     try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitbeta$t0[1], fitbeta$se[1],
             fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
@@ -344,13 +347,6 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 }
 # plotwitherror(x = result$xiphys^2, y = result$beta, dy = apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx = apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2 * length(xis))], 2, sd))
 # plotwitherror(x = result$xiphys^2, y = result$p, dy = result$dp, dx = apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2 * length(xis))], 2, sd))
-
-resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%f.csv", opt$respath, opt$beta)
-if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%f.csv", opt$respath, opt$beta)
-if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%f.csv", opt$respath, opt$beta)
-# write out result
-write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
 }
@@ -358,6 +354,7 @@ print(resultspolynomial)
 
 ## plot
 supports <- 1000
+cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
 
 xlim <- c(0.95 * min(data$beta[mask]), 1.05 * max(data$beta[mask]))
 ylim <- c(0.95 * min(data$r0[mask]), 1.05 * max(data$r0[mask]))
@@ -365,26 +362,27 @@ ylim <- c(0.95 * min(data$r0[mask]), 1.05 * max(data$r0[mask]))
 plot(NA, xlim = xlim * c(1.05, 0.95), ylim = ylim * c(1.05, 0.95), xlab = "beta", ylab = "r_0/a_s", main = "r_0/a_s(beta, xi) with multifit")
 legendtext <- c()
 
-if (start !=  1) {
-    plotwitherror(x = data$beta[mask & data$xi == 1], y = data$r0[mask & data$xi == 1], dy = data$dr0[mask & data$xi == 1], col = 1, pch = 1, rep = TRUE)
-    append(legendtext, "1.00")
-}
+# if (start !=  1) {
+#     plotwitherror(x = data$beta[mask & data$xi == 1], y = data$r0[mask & data$xi == 1],
+#         dy = data$dr0[mask & data$xi == 1], col = cols[1], pch = cols[1], rep = TRUE)
+#     append(legendtext, "1.00")
+# }
 
 drzerozero <- data$dr0[data$beta == opt$beta & data$xi == 1]
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero, 100), lty = 1)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero + drzerozero, 100), lty = 2)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero - drzerozero, 100), lty = 2)
 
-for (i in seq(start, length(xis))) {
+for (i in seq(1, length(xis))) {
     print("xi")
     print(xis[i])
     xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
-    errorpolygonmultifit(X = xplot, fitresult = resultrzero, col.p = i, pch = i,
+    errorpolygonmultifit(X = xplot, fitresult = resultrzero, col.p = cols[i], pch = cols[i],
         mask = abs(resultrzero$x[2, ] - xis[i]) < 1e-3, ylim = ylim)
     legendtext[i] <-  sprintf("%.2f", xis[i])
 }
 
-legend(x = "topleft", legend = legendtext, col = seq(1, length(xis)), pch = seq(1, length(xis)))
+legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
 
 
 
@@ -394,22 +392,22 @@ ylim <- c(0.95 * min(data$xicalc[mask]), 1.05 * max(data$xicalc[mask]))
 plot(NA, xlim = xlim * c(1.05, 0.95), ylim = ylim * c(1.05, 0.95), xlab = "beta", ylab = "xicalc", main = "xicalc(beta, xi) with multifit")
 legendtext <- c()
 
-if (start !=  1) {
-    plotwitherror(x = data$beta[mask & data$xi == 1], y = data$xicalc[mask & data$xi == 1],
-        dy = data$dxicalc[mask & data$xi == 1], col = 1, pch = 1, rep = TRUE)
-    append(legendtext, "1.00")
-}
+# if (start !=  1) {
+#     plotwitherror(x = data$beta[mask & data$xi == 1], y = data$xicalc[mask & data$xi == 1],
+#         dy = data$dxicalc[mask & data$xi == 1], col = cols[1], pch = cols[1], rep = TRUE)
+#     append(legendtext, "1.00")
+# }
 
-for (i in seq(start, length(xis))) {
+for (i in seq(1, length(xis))) {
     print("xi")
     print(xis[i])
     xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
-    errorpolygonmultifit(X = xplot, fitresult = resultxi, col.p = i, pch = i,
+    errorpolygonmultifit(X = xplot, fitresult = resultxi, col.p = cols[i], pch = cols[i],
         mask = abs(resultrzero$x[2, ] - xis[i]) < 1e-3, ylim = ylim)
     legendtext[i] <-  sprintf("%.2f", xis[i])
 }
 
-legend(x = "topleft", legend = legendtext, col = seq(1, length(xis)), pch = seq(1, length(xis)))
+legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
 
 
 
@@ -419,19 +417,61 @@ ylim <- c(0.95 * min(data$p[mask]), 1.05 * max(data$p[mask]))
 plot(NA, xlim = xlim * c(1.05, 0.95), ylim = ylim * c(1.05, 0.95), xlab = "beta", ylab = "p", main = "p(beta, xi) with multifit")
 legendtext <- c()
 
-if (start !=  1) {
-    plotwitherror(x = data$beta[mask & data$xi == 1], y = data$p[mask & data$xi == 1], dy = data$dp[mask & data$xi == 1], col = 1, pch = 1, rep = TRUE)
-    append(legendtext, "1.00")
-}
+# if (start !=  1) {
+#     plotwitherror(x = data$beta[mask & data$xi == 1], y = data$p[mask & data$xi == 1],
+#         dy = data$dp[mask & data$xi == 1], col = cols[1], pch = cols[1], rep = TRUE)
+#     append(legendtext, "1.00")
+# }
 
-for (i in seq(start, length(xis))) {
+for (i in seq(1, length(xis))) {
     print("xi")
     print(xis[i])
     xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
-    errorpolygonmultifit(X = xplot, fitresult = resultp, col.p = i, pch = i,
+    errorpolygonmultifit(X = xplot, fitresult = resultp, col.p = cols[i], pch = cols[i],
         mask = abs(resultrzero$x[2, ] - xis[i]) < 1e-3, ylim = ylim)
     legendtext[i] <-  sprintf("%.2f", xis[i])
 }
 
-legend(x = "topleft", legend = legendtext, col = seq(1, length(xis)), pch = seq(1, length(xis)))
+legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
 
+
+# write out results like in predictbeta
+# contains:
+# result: data frame with xiin, beta, dbeta(renormalized), xiphys, dxiphys, p, dp, betasimple (renormed beta from intercept from mean values)
+# resultspolynomial: dataframe with degree of polynomial, result of cont. lim. with catwitherror, chi and p of lim, type of lim, result of lim as two doubles
+# resultlist: intercepts = beta_ren, xiphys, plaqren , fitsrzero, fitsxi, fitsp (results of linear interpolations), fitplaq, fitplaqnaive, fitplaqnaivexiren(cubic polynomial cont limits)
+# fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
+# print(fitresults)
+# print(result)
+
+
+resultspolynomial <- resultspolynomial[-1, ]
+if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%f.csv", opt$respath, opt$beta)
+if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%f.csv", opt$respath, opt$beta)
+if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%f.csv", opt$respath, opt$beta)
+# write out result
+write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+
+
+if (type == "normal") {
+write.table(result, sprintf("%s/resultsrenormalizationmultibeta%f.csv", opt$respath, opt$beta),
+            col.names = TRUE, row.names = FALSE, append = FALSE)
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%f.RData", opt$respath, opt$beta))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationmultibeta%f.RData", opt$respath, opt$beta))
+}
+
+if (type == "sideways") {
+write.table(result, sprintf("%s/resultsrenormalizationsidewaysmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit),
+            col.names = TRUE, row.names = FALSE, append = FALSE)
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+}
+
+if (type == "slope") {
+write.table(result, sprintf("%s/resultsrenormalizationslopemultibeta%f.csv", opt$respath, opt$beta),
+            col.names = TRUE, row.names = FALSE, append = FALSE)
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopemultibeta%f.RData", opt$respath, opt$beta))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopemultibeta%f.RData", opt$respath, opt$beta))
+}
+# move all plots into subfolder
+system(sprintf("mv -v tikz* %s", opt$respath))
