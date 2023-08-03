@@ -808,8 +808,8 @@ if (!file.exists(filename)) {
 }
 write.table(resultlist, filename,
         append = TRUE, row.names = FALSE, col.names = columnnames)
-nameresults <- sprintf("%sresultsrotatedNs%dNt%dbeta%fxi%fbs%d.RData",
-        opt$plotpath, Ns, Nt, beta, xi, bootsamples)
+nameresults <- sprintf("%sresultsrotatedNs%dNt%dbeta%fxi%fbs%domit%d.RData",
+        opt$plotpath, Ns, Nt, beta, xi, bootsamples, opt$omit)
 saveRDS(resultssummary, file = nameresults)
 
 }

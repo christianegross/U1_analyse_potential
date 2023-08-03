@@ -61,16 +61,19 @@ if (type == "sideways") {
 dataname <- sprintf("%s/resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
 filenameres <- sprintf("%s/resultsrotated", opt$datapath)
 side <- 2
+end <- sprintf("omit%d", opt$omit)
 }
 if (type == "normal") {
 dataname <- sprintf("%s/resultsummary2p1dnormalb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
 filenameres <- sprintf("%s/resultssubtracted", opt$datapath)
 side <- 2
+end <- sprintf("omit%d", opt$omit)
 }
 if (type == "slope") {
 dataname <- sprintf("%s/summarysmallbetaone%fL%d.csv", opt$datapath, opt$beta, opt$length)
 filenameres <- sprintf("%s/resultsmallscaled", opt$datapath)
 side <- 2
+end <- ""
 }
 
 ## also possibility to give a custom name for the summaryfile
@@ -114,12 +117,12 @@ for (i in seq(1, nom)) {
     if (type == "normal" || type == "sideways") {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
-                    names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres)
+                    names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end=end)
     }
     if (type == "slope") {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
-                    names = c("bsslopescaled", "bsp", "bsxiren"), filename = filenameres)
+                    names = c("bsslopescaled", "bsp", "bsxiren"), filename = filenameres, end=end)
     }
     # print(head(result))
     arrayrzero[, i] <- result[, 1]

@@ -661,7 +661,7 @@ fitplotfunctions <- function (fun1, fun2, x1, y1, dy1, x2, y2, dy2,
 }
 
 readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
-                            path = "", names, columns, filename = "resultspot") {
+                            path = "", names, columns, filename = "resultspot", end="") {
     # reads in bootstrapsamples that were saved in a list to use
     # them for further analysis
     # the filename is constructed from the base filename and the parameters
@@ -675,8 +675,8 @@ readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
     if (length(columns) != length(names)) {
         stop("The columns per name and names do not have the same length! check input")
     }
-    filename <- sprintf("%s%sNs%dNt%dbeta%fxi%fbs%d.RData",
-                path, filename, Ns, Nt, beta, xi, bootsamples)
+    filename <- sprintf("%s%sNs%dNt%dbeta%fxi%fbs%d%s.RData",
+                path, filename, Ns, Nt, beta, xi, bootsamples, end)
     listres <- readRDS(filename)
     bsamples <- array(c(rep(NA, sum(columns) * bootsamples)),
                 dim = c(bootsamples, sum(columns)))
