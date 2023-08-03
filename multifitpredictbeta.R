@@ -174,14 +174,18 @@ intercepts <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, l
 plaqren <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 xiphys <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 intercepts[, 1] <- rep(opt$beta, bootsamples)
-plaqren[, 1] <- arrayp[, data$beta == opt$beta & data$xi == 1]
-xiphys[, 1] <- arrayxi[, data$beta == opt$beta & data$xi == 1]
+
+maskomit <- data$beta == opt$beta & data$xi == 1
+if (opt$omit == -1) maskomit <- maskomit & data$omit == 0
+plaqren[, 1] <- arrayp[, maskomit]
+xiphys[, 1] <- arrayxi[, maskomit]
 
 
 ## do fit - similar to predictbeta, but hopefully less messy
 ## for r0, P, xi
 
 rzerozero <- data$r0[data$beta == opt$beta & data$xi == 1]
+if(opt$omit == -1) rzerozero <- data$r0[data$beta == opt$beta & data$xi == 1 & data$omit == 0]
 mask <- abs(data$r0 - rzerozero) < opt$fitlim
 x <- matrix(data = c(data$beta[mask], data$xi[mask]), byrow = TRUE, nrow = 2)
 
@@ -251,7 +255,7 @@ resultslist <- list(resultp = resultp, plaqren = plaqren, resultxi = resultxi,
 ## contlimit: like in predictbeta
 
 
-pdf(paste("multifit", opt$type", b", opt$beta,, "omit", opt$omit, ".pdf", sep = ""), title = "")
+pdf(paste("multifit", opt$type, "b", opt$beta, "omit", opt$omit, ".pdf", sep = ""), title = "")
 
 if (TRUE) {
 
@@ -369,7 +373,12 @@ legendtext <- c()
 #     append(legendtext, "1.00")
 # }
 
-drzerozero <- data$dr0[data$beta == opt$beta & data$xi == 1]
+
+maskomit <- data$beta == opt$beta & data$xi == 1
+if (opt$omit == -1) maskomit <- maskomit & data$omit == 0
+drzerozero <- data$dr0[maskomit]
+print(rzerozero)
+print(drzerozero)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero, 100), lty = 1)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero + drzerozero, 100), lty = 2)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero - drzerozero, 100), lty = 2)
@@ -474,5 +483,3 @@ write.table(result, sprintf("%s/resultsrenormalizationslopemultibeta%fomit%d.csv
 saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopemultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
 saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopemultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
 }
-# move all plots into subfolder
-system(sprintf("mv -v tikz* %s", opt$respath))
