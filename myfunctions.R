@@ -724,7 +724,10 @@ getinterceptfromparams <- function(bsa, bsb, rzeroone, bootsamples = 500) {
     return(intercepts)
 }
 
-# polynomials of first to fifth order, of a form that can be used by bootstrap.nlsfit
+# polynomials of zero to fifth order, of a form that can be used by bootstrap.nlsfit
+fncon <- function(par, x, boot.r, ...){
+    return (par[1])
+}
 fnlin <- function (par, x, boot.r, ...) {
     return (par[1]  +  par[2] * x)
 }

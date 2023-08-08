@@ -30,11 +30,15 @@ option_list <- list(
     help = "type of ensembles that shoule be analysed, one of normal, sideways and slope [default %default]"),
     make_option(c("-o", "--omit"), type = "integer", default = -1,
     help = "omission of highest points from the potential, -1 = any [default %default]"),
+    make_option(c("--indexfitcontlim"), type = "integer", default = 1,
+    help = "for the fit to the contlim, only xi with index larger than this are used [default %default]"),
     make_option(c("--fitlim"), type = "double", default = 0.3,
     help = "how much may the value of r0 deviate from the xi = 1 value to still be considered? [default %default]"),
 
     make_option(c("--naive"), action = "store_true", default = FALSE,
-    help = "if true, continuum limit with beta and xi unrenormalized is calculated [default %default]")
+    help = "if true, continuum limit with beta and xi unrenormalized is calculated [default %default]"),
+    make_option(c("--xiconst"), action = "store_true", default = FALSE,
+    help = "if true, xi(beta) is assumed to be constant [default %default]")
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
@@ -48,6 +52,13 @@ type <- opt$type
 if (! (type == "normal" || type == "sideways" || type == "slope")) {
     stop(paste("type", type, "not allowed"))
 }
+
+## sanity check for fit mask:
+if (opt$indexfitcontlim < 1) {
+    print("indexfitcontlim has to be larger than zero, setting it to 1")
+    opt$indexfitcontlim <- 1
+}
+
 }
 
 # This script is used to determine the renormalised beta and
@@ -167,6 +178,32 @@ ansatzmulti <- function(x, par) {
   return (a * beta + b)
 }
 
+## ansatz for multifit
+## goal: fit obs(beta, xi) with one single fit.
+## x is a matrix containing all x-values x_1, x_2, ...
+ansatzmulticonst <- function(x, par) {
+  xi <- x[2]
+  if (abs(xi-1.0) < 1e-3) {
+    b <- par[1]
+  } else if (abs(xi - 0.8) < 1e-3) {
+    b <- par[2]
+  } else if (abs(xi - 2./3.) < 1e-3) {
+    b <- par[3]
+  } else if (abs(xi - 0.5) < 1e-3) {
+    b <- par[4]
+  } else if (abs(xi - 0.4) < 1e-3) {
+    b <- par[5]
+  } else if (abs(xi - 1./3.) < 1e-3) {
+    b <- par[6]
+  } else if (abs(xi - 0.25) < 1e-3) {
+    b <- par[7]
+  } else {
+    stop(paste("invalid xi in fit ansatz, you gave", xi))
+  }
+  return (b)
+}
+
+
 
 
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
@@ -211,6 +248,7 @@ dy <- data$dxicalc[mask]
 y_bts <- arrayxi[, mask]
 
 print("xiphys")
+if(!opt$xiconst) {
 resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
 summary.multifit(resultxi)
 for (i in seq(start, length(xis))) {
@@ -218,6 +256,12 @@ for (i in seq(start, length(xis))) {
     for (bs in seq(1, opt$bootsamples)) {
         xiphys[bs, i] <- ansatzmulti(x = xren[, bs], par = resultxi$par$bts[bs, ])
     }
+}
+}
+if(opt$xiconst) {
+resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulticonst, x = x, y = y, ey = dy, y_bts = y_bts, guess = xis, N_bts = opt$bootsamples)
+summary.multifit(resultxi)
+xiphys <- resultxi$par$bts
 }
 
 
@@ -254,8 +298,9 @@ resultslist <- list(resultp = resultp, plaqren = plaqren, resultxi = resultxi,
 
 ## contlimit: like in predictbeta
 
-
-pdf(paste("multifit", opt$type, "b", opt$beta, "omit", opt$omit, ".pdf", sep = ""), title = "")
+title <- paste("multifit", opt$type, "b", opt$beta, "omit", opt$omit, "cont", opt$indexfitcontlim, sep = "")
+if(opt$xiconst) title <- paste(title, "xiconst", sep="")
+pdf(paste(title, ".pdf", sep=""), title = "")
 
 if (TRUE) {
 
@@ -302,13 +347,15 @@ if (length(data$xi[data$xi == 1 & mask] < 3)) {
 fitspolynomial <- list()
 resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
                     p = NA, type = NA, limplot = NA, dlimplot = NA)
+maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
 i <- 1
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     print(paste("Doing fits of polynomial degree", i))
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit)))
+                x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit),
+                mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
     fitspolynomial[[i]] <- fitplaq
@@ -327,7 +374,8 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = result$xiphys^2, y = result$beta, bsamples = na.omit(bsamplescontlimitbeta)))
+                x = result$xiphys^2, y = result$beta, bsamples = na.omit(bsamplescontlimitbeta),
+                mask = maskfitcontlim))
     fitspolynomial[[5 + i]] <- fitbeta
     try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitbeta$t0[1], fitbeta$se[1],
@@ -456,30 +504,36 @@ legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
 
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit)
-if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit)
-if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit)
+if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%fomit%dcont%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim)
+if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%fomit%dcont%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim)
+if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%fomit%dcont%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim)
+if(opt$xiconst) namepol <- paste(namepol, "xiconst", sep="")
 # write out result
-write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+write.table(resultspolynomial, paste(namepol, ".csv", sep=""), col.names = TRUE, row.names = FALSE)
 
+xiconststr <- ""
+if(opt$xiconst) xiconststr <- "xiconst"
 
 if (type == "normal") {
-write.table(result, sprintf("%s/resultsrenormalizationmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit),
+write.table(result, sprintf("%s/resultsrenormalizationmultibeta%fomit%d%s.csv", opt$respath, opt$beta, opt$omit, xiconststr),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%fomit%d%s.RData", opt$respath, opt$beta, opt$omit, xiconststr))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationmultibeta%fomit%dcont%d%s.RData",
+opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr))
 }
 
 if (type == "sideways") {
-write.table(result, sprintf("%s/resultsrenormalizationsidewaysmultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit),
+write.table(result, sprintf("%s/resultsrenormalizationsidewaysmultibeta%fomit%d%s.csv", opt$respath, opt$beta, opt$omit, xiconststr),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysmultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysmultibeta%fomit%d%s.RData", opt$respath, opt$beta, opt$omit, xiconststr))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysmultibeta%fomit%dcont%d%s.RData",
+opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr))
 }
 
 if (type == "slope") {
-write.table(result, sprintf("%s/resultsrenormalizationslopemultibeta%fomit%d.csv", opt$respath, opt$beta, opt$omit),
+write.table(result, sprintf("%s/resultsrenormalizationslopemultibeta%fomit%d%s.csv", opt$respath, opt$beta, opt$omit, xiconststr),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopemultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopemultibeta%fomit%d.RData", opt$respath, opt$beta, opt$omit))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopemultibeta%fomit%d%s.RData", opt$respath, opt$beta, opt$omit, xiconststr))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopemultibeta%fomit%dcont%d%s.RData",
+opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr))
 }
