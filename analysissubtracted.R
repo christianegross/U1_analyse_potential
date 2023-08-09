@@ -209,11 +209,12 @@ for (x in seq(1, Ns / 2, 1)) {
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == x]
     WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
-        potential = potential, isspatial = 1, type = opt$effmasstype)
+        isspatial = 1, type = opt$effmasstype)
     #plot results, save results off meff in
     #short and long form (with and without bootstrapsamples)
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], x, TRUE)
+        potential <- rbind(potential, WL.effmasslist[[3]])
     }
     names(listresults) <- c("effmass", "x", "spacial")
 
@@ -251,11 +252,12 @@ for (x in seq(1, Ns / 2, 1)) {
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == x]
     WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
-    potential = potential, isspatial = 0, type = opt$effmasstype)
+        isspatial = 0, type = opt$effmasstype)
     #plot results, save results off meff in
     #short and long form (with and without bootstrapsamples)
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], x, TRUE)
+        potential <- rbind(potential, WL.effmasslist[[3]])
     }
     names(listresults) <- c("effmass", "x", "spacial")
 

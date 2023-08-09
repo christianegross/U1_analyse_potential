@@ -280,7 +280,7 @@ calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
 # the estimator for the effective masses, and then use the
 # provided boundaries t1 and t2 to fit the effective mass.
 
-deteffmass <- function (WL, yt, potential, t1, t2, isspatial, type = "log") {
+deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log") {
     # effective masses for the integer potentials
     # WL: bootstrapped data for the Wilson loops
     # yt: the effective mass is V(yt)
@@ -298,14 +298,13 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial, type = "log") {
     WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
-                t2 = t2, useCov = FALSE), silent = FALSE)
+                t2 = t2, useCov = TRUE), silent = FALSE)
         ## usecov=FALSE
         if (!inherits(WL.effmass, "try-error")) {
             newline <- data.frame(R = yt, m = WL.effmass$effmassfit$t0[1],
                     dm = WL.effmass$effmassfit$se[1], space = isspatial,
                     p = WL.effmass$effmassfit$Qval,
                     chi = WL.effmass$effmassfit$chisqr / WL.effmass$effmassfit$dof)
-            potential <- rbind(potential, newline)
             regionplotzoom <- seq(ceiling(0.4 * length(WL.effmass$effMass)) + 1,
                     length(WL.effmass$effMass) - 1)
             if (length(regionplotzoom) > 0) {
@@ -318,9 +317,11 @@ deteffmass <- function (WL, yt, potential, t1, t2, isspatial, type = "log") {
             }
         } else {
             WL.effmass <- bootstrap.effectivemass(WL, type = type)
+            newline <- data.frame(R = yt, m = NA,
+                    dm = NA, space = isspatial, p = NA, chi = NA)
         }
     }
-    return(list(WL.effmass, ylim))
+    return(list(WL.effmass, ylim, newline))
 }
 
 deteffmasssmall <- function (WL, x, y, t1, t2, type = "log") {

@@ -205,12 +205,13 @@ for (y in seq(1, Ns / 2, 1)) {
     cat("t1 ", t1, " t2 ", t2, "\n")
 
     WL.effmasslist <- deteffmass(WL = WL, yt = y,
-            potential = potential, t1 = t1, t2 = t2, isspatial = 1, type = opt$effmasstype)
+            t1 = t1, t2 = t2, isspatial = 1, type = opt$effmasstype)
 print(potential)
     # plot results, save results off meff in
     # short and long form (with and without bootstrapsamples
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], y, FALSE, uwerrresults)
+        potential <- rbind(potential, WL.effmasslist[[3]])
     }
     # coarse distance = spatial potential
     names(listresults) <- c("effmass", "yt", "coarse", "uwerr")
@@ -263,9 +264,10 @@ for (t in seq(1, Nt / 2, 1)) {
     cat("t1 ", t1, " t2 ", t2, "\n")
 
     WL.effmasslist <- deteffmass(WL = WL, yt = t,
-            potential = potential, t1 = t1, t2 = t2, isspatial = 0, type = opt$effmasstype)
+            t1 = t1, t2 = t2, isspatial = 0, type = opt$effmasstype)
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], t, TRUE, uwerrresults)
+        potential <- rbind(potential, WL.effmasslist[[3]])
     }
     names(listresults) <- c("effmass", "yt", "fine", "uwerr")
 
