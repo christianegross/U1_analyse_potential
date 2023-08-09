@@ -36,7 +36,7 @@ option_list <- list(
     make_option(c("-o", "--omit"), type = "integer", default = 0,
     help = "how many points should be omitted
             in calculating the potentials? [default %default]"),
-    make_option(c("--lowlimitfit"), type = "integer", default = 0,
+    make_option(c("--lowlim"), type = "integer", default = 0,
     help = "points lower than this are not used
             for determining xi [default %default]"),
     make_option(c("-a", "--alpha"), type = "double", default = 1.0,
@@ -515,7 +515,7 @@ for (bs in seq(1, bootsamples, 1)) {
     bsamplesmatch[bs, (Ns / 2 + 1):Ns] <- bsamples[bs, 1:(Ns / 2)]
 }
 
-maskc <- maskc & c(rep(FALSE, opt$lowlimitfit), rep(TRUE, Ns / 2 - opt$lowlimitfit))
+maskc <- maskc & c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim))
 
 fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
             y = yc, x = yf, bsamples[, 1:Ns], mask = maskc)
