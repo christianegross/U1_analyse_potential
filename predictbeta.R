@@ -257,6 +257,7 @@ if (opt$xiconst) {
 start <- 1
 maskfitlim <- abs(data$r0 - data$r0[maskone]) < opt$fitlim
 if (length(data$xi[data$xi == 1 & maskfitlim] < 3)) start <- 2
+start <- max(start, opt$indexcontlim)
 
 if (start != 1) {
     intercepts[, 1] <- rep(opt$beta, bootsamples)
@@ -476,7 +477,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     if (opt$naive) {
     # naive xi and beta
     fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = xis^2, y = pnaive, bsamples = na.omit(bsamplescontlimitnaive),
+                x = xis^2, y = pnaive, bsamples = bsamplescontlimitnaive,
                 mask = maskfitcontlim))
     fitspolynomial[[i]] <- fitplaqnaive
 
@@ -496,7 +497,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # naive beta, xi renorm
     fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
             x = xirennaive^2, y = pnaive,
-            bsamples = na.omit(bsamplescontlimitnaivexiren),
+            bsamples = bsamplescontlimitnaivexiren,
             mask = maskfitcontlim))
     fitspolynomial[[5 + i]] <- fitplaqnaivexiren
 
@@ -525,7 +526,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit),
+                x = result$xiphys^2, y = result$p, bsamples = bsamplescontlimit,
                 mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -547,7 +548,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = result$xiphys^2, y = result$beta, bsamples = na.omit(bsamplescontlimitbeta),
+                x = result$xiphys^2, y = result$beta, bsamples = bsamplescontlimitbeta,
                 mask = maskfitcontlim))
     fitspolynomial[[15 + i]] <- fitbeta
 

@@ -112,6 +112,14 @@ if (opt$omit >=  0) {
 data <- data[data$omit == opt$omit, ]
 }
 
+
+xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
+if (opt$indexfitcontlim > 1){
+  for(i in seq(2, opt$indexfitcontlim - 1)){
+    data <- data[ - (abs(data$xi - xis[i]) < 1e-3), ]
+  }
+}
+
 nom <- length(data$beta)
 
 # read in bootstrapsamples
@@ -157,24 +165,27 @@ if (type == "slope") {
 ## define ansatz for multifit
 ## goal: fit obs(beta, xi) with one single fit.
 ## x is a matrix containing all x-values x_1, x_2, ...
+## if not all xi are needed, this gives another degree of freedom.
+## This has to be refelected in the fit function.
 ansatzmulti <- function(x, par) {
   beta <- x[1]
   xi <- x[2]
   a <- par[1]
-  if (abs(xi-1.0) < 1e-3) {
-    b <- par[2]
-  } else if (abs(xi - 0.8) < 1e-3) {
-    b <- par[3]
-  } else if (abs(xi - 2./3.) < 1e-3) {
-    b <- par[4]
-  } else if (abs(xi - 0.5) < 1e-3) {
-    b <- par[5]
-  } else if (abs(xi - 0.4) < 1e-3) {
-    b <- par[6]
-  } else if (abs(xi - 1./3.) < 1e-3) {
-    b <- par[7]
-  } else if (abs(xi - 0.25) < 1e-3) {
-    b <- par[8]
+  offsetpar <- 8 - length(par)
+  if (abs(xi-1.0) < 1e-3 && length(par) == 8) {
+    b <- par[2 - offsetpar]
+  } else if (abs(xi - 0.8) < 1e-3 && length(par) >= 7) {
+    b <- par[3 - offsetpar]
+  } else if (abs(xi - 2./3.) < 1e-3 && length(par) >= 6) {
+    b <- par[4 - offsetpar]
+  } else if (abs(xi - 0.5) < 1e-3 && length(par) >= 5) {
+    b <- par[5 - offsetpar]
+  } else if (abs(xi - 0.4) < 1e-3 && length(par) >= 4) {
+    b <- par[6 - offsetpar]
+  } else if (abs(xi - 1./3.) < 1e-3 && length(par) >= 3) {
+    b <- par[7 - offsetpar]
+  } else if (abs(xi - 0.25) < 1e-3 && length(par) >= 2) {
+    b <- par[8 - offsetpar]
   } else {
     stop(paste("invalid xi in fit ansatz, you gave", xi))
   }
@@ -186,20 +197,21 @@ ansatzmulti <- function(x, par) {
 ## x is a matrix containing all x-values x_1, x_2, ...
 ansatzmulticonst <- function(x, par) {
   xi <- x[2]
-  if (abs(xi-1.0) < 1e-3) {
-    b <- par[1]
-  } else if (abs(xi - 0.8) < 1e-3) {
-    b <- par[2]
-  } else if (abs(xi - 2./3.) < 1e-3) {
-    b <- par[3]
-  } else if (abs(xi - 0.5) < 1e-3) {
-    b <- par[4]
-  } else if (abs(xi - 0.4) < 1e-3) {
-    b <- par[5]
-  } else if (abs(xi - 1./3.) < 1e-3) {
-    b <- par[6]
-  } else if (abs(xi - 0.25) < 1e-3) {
-    b <- par[7]
+  offsetpar <- 7 - length(par)
+  if (abs(xi-1.0) < 1e-3 && length(par) == 7) {
+    b <- par[1 - offsetpar]
+  } else if (abs(xi - 0.8) < 1e-3 && length(par) >= 6) {
+    b <- par[2 - offsetpar]
+  } else if (abs(xi - 2./3.) < 1e-3 && length(par) >= 5) {
+    b <- par[3 - offsetpar]
+  } else if (abs(xi - 0.5) < 1e-3 && length(par) >= 4) {
+    b <- par[4 - offsetpar]
+  } else if (abs(xi - 0.4) < 1e-3 && length(par) >= 3) {
+    b <- par[5 - offsetpar]
+  } else if (abs(xi - 1./3.) < 1e-3 && length(par) >= 2) {
+    b <- par[6 - offsetpar]
+  } else if (abs(xi - 0.25) < 1e-3 && length(par) >= 1) {
+    b <- par[7 - offsetpar]
   } else {
     stop(paste("invalid xi in fit ansatz, you gave", xi))
   }
@@ -209,7 +221,6 @@ ansatzmulticonst <- function(x, par) {
 
 
 
-xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
 intercepts <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 plaqren <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 xiphys <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
@@ -231,13 +242,14 @@ x <- matrix(data = c(data$beta[mask], data$xi[mask]), byrow = TRUE, nrow = 2)
 
 start <- 1
 if (length(data$xi[data$xi == 1 & mask] < 3)) start <- 2
+start <- max(start, opt$indexfitcontlim)
 
 ## r0
 
 y <- data$r0[mask]
 dy <- data$dr0[mask]
 y_bts <- arrayrzero[, mask]
-resultrzero <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
+resultrzero <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 8 - opt$indexfitcontlim)), N_bts = opt$bootsamples)
 summary.multifit(resultrzero)
 
 for (i in seq(start, length(xis))) {
@@ -252,7 +264,7 @@ y_bts <- arrayxi[, mask]
 
 print("xiphys")
 if(!opt$xiconst) {
-resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
+resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 8 - opt$indexfitcontlim)), N_bts = opt$bootsamples)
 summary.multifit(resultxi)
 for (i in seq(start, length(xis))) {
     xren <- matrix(data = c(intercepts[, i], rep(xis[i], opt$bootsamples)), byrow = TRUE, nrow = 2)
@@ -262,7 +274,7 @@ for (i in seq(start, length(xis))) {
 }
 }
 if(opt$xiconst) {
-resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulticonst, x = x, y = y, ey = dy, y_bts = y_bts, guess = xis, N_bts = opt$bootsamples)
+resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulticonst, x = x, y = y, ey = dy, y_bts = y_bts, guess = xis[opt$indexfitcontlim:length(xis)], N_bts = opt$bootsamples)
 summary.multifit(resultxi)
 xiphys <- resultxi$par$bts
 }
@@ -277,7 +289,7 @@ dy <- data$dp[mask]
 y_bts <- arrayp[, mask]
 
 print("plaq")
-resultp <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 7)), N_bts = opt$bootsamples)
+resultp <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = dy, y_bts = y_bts, guess = c(5, rep(-6, 8 - opt$indexfitcontlim)), N_bts = opt$bootsamples)
 summary.multifit(resultp)
 
 for (i in seq(start, length(xis))) {
@@ -344,7 +356,7 @@ if (length(data$xi[data$xi == 1 & mask] < 3)) {
 # for each polynomial:
 # fitplaq: xi = xi_ren, p = p_interpolated -> xi and beta renormalized
 # for each: do fit to continuum limit, plot, add results to list and table
-# list: region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq, region 16-20 beta
+# list: region 1-5 fitplaq, region 6-10 beta
 # na.omit removes entire row containing na
 
 fitspolynomial <- list()
@@ -357,7 +369,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = result$xiphys^2, y = result$p, bsamples = na.omit(bsamplescontlimit),
+                x = result$xiphys^2, y = result$p, bsamples = bsamplescontlimit,
                 mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -377,7 +389,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = result$xiphys^2, y = result$beta, bsamples = na.omit(bsamplescontlimitbeta),
+                x = result$xiphys^2, y = result$beta, bsamples = bsamplescontlimitbeta,
                 mask = maskfitcontlim))
     fitspolynomial[[5 + i]] <- fitbeta
     try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
