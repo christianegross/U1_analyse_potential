@@ -157,7 +157,8 @@ readloopfilecfonecolumn <- function (file, path = "",
 
 calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
                                  title, path = "", nsave = 100,
-                                 zerooffset = 0, every = 1, l = 2, fraction = 0.5, maxrows = -1) {
+                                 zerooffset = 0, every = 1, l = 2,
+                                 fraction = 0.5, maxrows = -1, sim="geom") {
     # plots loops for the sideways potential
     # x is changed, yt is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -167,7 +168,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
             Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
-    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
+    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l, sim=sim)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
     plot(WL, log = "y", xlab = "x/a_s", ylab = "C(x)",
@@ -280,7 +281,7 @@ calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
 # the estimator for the effective masses, and then use the
 # provided boundaries t1 and t2 to fit the effective mass.
 
-deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log") {
+deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", useCov = FALSE) {
     # effective masses for the integer potentials
     # WL: bootstrapped data for the Wilson loops
     # yt: the effective mass is V(yt)
@@ -298,7 +299,7 @@ deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log") {
     WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
-                t2 = t2, useCov = TRUE), silent = FALSE)
+                t2 = t2, useCov = useCov), silent = FALSE)
         ## usecov=FALSE
         if (!inherits(WL.effmass, "try-error")) {
             newline <- data.frame(R = yt, m = WL.effmass$effmassfit$t0[1],

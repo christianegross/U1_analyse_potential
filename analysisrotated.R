@@ -75,6 +75,8 @@ option_list <- list(
 
     make_option(c("--xidiff"), action = "store_true", default = FALSE,
     help = "Is xi different to L/T? [default %default]"),
+    make_option(c("--usecov"), action = "store_true", default = FALSE,
+    help = "Use covariance for determining effective mass [default %default]"),
     make_option(c("--plotonlymeff"), action = "store_true", default = FALSE,
     help = "The plots of the fitted meff are
             plotted seperately [default %default]"),
@@ -130,12 +132,12 @@ if (opt$t2offset != 0) t1t2str <- paste(t1t2str, "t2", opt$t2offset, sep = "")
 if (analyse) {
 # set names for plot, tables, open, lists for saving results
 filenameforplots <- sprintf(
-            "%splotseffectivemass2p1dmeffchosenNt%dNs%dbeta%fxi%f%s.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, t1t2str)
+            "%splotseffectivemass2p1dmeffchosenNt%dNs%dbeta%fxi%f%sbootl%dusecov%d.pdf",
+            opt$plotpath, Nt, Ns, beta, xi, t1t2str, opt$bootl, opt$usecov)
 if (opt$smearing) {
     filenameforplots <- sprintf(
-            "%splotseffectivemass2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%f%s.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, t1t2str)
+            "%splotseffectivemass2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%f%sbootl%dusecov%d.pdf",
+            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, t1t2str, opt$bootl, opt$usecov)
 }
 pdf(file = filenameforplots, title = "")
 listfits <- list()
@@ -202,10 +204,9 @@ for (y in seq(1, Ns / 2, 1)) {
     ## change t1, t2 by offset to investigate systematic effects
     t1 <- max(0, (t1 + opt$t1offset))
     t2 <- min(t2 + opt$t2offset, (floor(opt$fraction*Ns)-2))
-    cat("t1 ", t1, " t2 ", t2, "\n")
 
     WL.effmasslist <- deteffmass(WL = WL, yt = y,
-            t1 = t1, t2 = t2, isspatial = 1, type = opt$effmasstype)
+            t1 = t1, t2 = t2, isspatial = 1, type = opt$effmasstype, useCov=opt$usecov)
 print(potential)
     # plot results, save results off meff in
     # short and long form (with and without bootstrapsamples
@@ -261,10 +262,9 @@ for (t in seq(1, Nt / 2, 1)) {
     ## change t1, t2 by offset to investigate systematic effects
     t1 <- max(0, (t1 + opt$t1offset))
     t2 <- min(t2 + opt$t2offset, (floor(opt$fraction*Ns)-2))
-    cat("t1 ", t1, " t2 ", t2, "\n")
 
     WL.effmasslist <- deteffmass(WL = WL, yt = t,
-            t1 = t1, t2 = t2, isspatial = 0, type = opt$effmasstype)
+            t1 = t1, t2 = t2, isspatial = 0, type = opt$effmasstype, useCov=opt$usecov)
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], t, TRUE, uwerrresults)
         potential <- rbind(potential, WL.effmasslist[[3]])
@@ -290,34 +290,35 @@ listfits[[Ns/2 + Nt/2 + 1]] <- githash
 #write out results
 potential <- na.omit(potential)
 filenamepotential <- sprintf(
-            "%spotentialmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fbsamples%d%s.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str)
+            "%spotentialmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fbsamples%dbootl%d%susecov%d.csv",
+            opt$plotpath, Nt, Ns, beta, xi, bootsamples, opt$bootl, t1t2str, opt$usecov)
 filenamelist <- sprintf(
-            "%slistmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fbsamples%d%s.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str)
+            "%slistmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fbsamples%d%sbootl%dusecov%d.RData",
+            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str, opt$bootl, opt$usecov)
 filenameuwerr <- sprintf(
-            "%slistuwerrtauintmeffchosenNt%dNs%dbeta%fxi%fbsamples%d%s.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str)
+            "%slistuwerrtauintmeffchosenNt%dNs%dbeta%fxi%fbsamples%d%sbootl%dusecov%d.RData",
+            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str, opt$bootl, opt$usecov)
 filenamenegatives <- sprintf(
-            "%snegativessidewaysNt%dNs%dbeta%fxi%fbsamples%d%s.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str)
+            "%snegativessidewaysNt%dNs%dbeta%fxi%fbsamples%d%sbootl%dusecov%d.csv",
+            opt$plotpath, Nt, Ns, beta, xi, bootsamples, t1t2str, opt$bootl, opt$usecov)
 
 if (opt$smearing) {
     filenamepotential <- sprintf(
-            "%spotentialmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%s.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str)
+            "%spotentialmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%dbootl%d%susecov%d.csv",
+            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, opt$bootl, t1t2str, opt$usecov)
     filenamelist <- sprintf(
-            "%slistmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%s.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str)
+            "%slistmeff2p1dmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%sbootl%dusecov%d.RData",
+            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str, opt$bootl, opt$usecov)
     filenameuwerr <- sprintf(
-            "%slistuwerrtauintmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%s.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str)
+            "%slistuwerrtauintmeffchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%sbootl%dusecov%d.RData",
+            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str, opt$bootl, opt$usecov)
     filenamenegatives <- sprintf(
-            "%snegativessisewaysNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%s.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str)
+            "%snegativessisewaysNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d%sbootl%dusecov%d.csv",
+            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples, t1t2str, opt$bootl, opt$usecov)
 }
 
 write.table(potential, filenamepotential, row.names = FALSE)
+print(filenamelist)
 saveRDS(listfits, file = filenamelist)
 saveRDS(listtauint, file = filenameuwerr)
 write.table(data.frame(x = c(seq(1, Ns / 2), seq(1, Nt / 2)), neg = negatives),
