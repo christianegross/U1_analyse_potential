@@ -30,7 +30,7 @@ option_list <- list(
     help = "type of ensembles that shoule be analysed, one of normal, sideways and slope [default %default]"),
     make_option(c("-o", "--omit"), type = "integer", default = -1,
     help = "omission of highest points from the potential, -1 = any [default %default]"),
-    make_option(c("--lowlimfitsub"), type = "integer", default = 0,
+    make_option(c("--lowlimfitpot"), type = "integer", default = 0,
     help = "points lower than this are not used to determine xi with the normal potential [default %default]"),
     make_option(c("--indexfitcontlim"), type = "integer", default = 1,
     help = "for the fit to the contlim, only xi with index larger than this are used [default %default]"),
@@ -105,11 +105,12 @@ data <- data[data$c == opt$crzero, ]
 
 if (type == "normal") {
 data <- data[data$c == opt$crzero, ]
-data <- data[data$lowlim == opt$lowlimfitsub, ]
+data <- data[data$lowlim == opt$lowlimfitpot, ]
 }
 
 if (opt$omit >=  0) {
 data <- data[data$omit == opt$omit, ]
+data <- data[data$lowlim == opt$lowlimfitpot, ]
 }
 
 
@@ -135,7 +136,7 @@ for (i in seq(1, nom)) {
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
     if (type == "normal" || type == "sideways") {
-    end <- sprintf("omit%d", data$omit[i])
+    end <- sprintf("omit%dlowlim%d", data$omit[i], data$lowlim[i])
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
@@ -313,7 +314,7 @@ resultslist <- list(resultp = resultp, plaqren = plaqren, resultxi = resultxi,
 
 ## contlimit: like in predictbeta
 
-title <- paste("multifit", opt$type, "b", opt$beta, "omit", opt$omit, "cont", opt$indexfitcontlim, "lowlim", opt$lowlimfitsub, sep = "")
+title <- paste("multifit", opt$type, "b", opt$beta, "omit", opt$omit, "cont", opt$indexfitcontlim, "lowlim", opt$lowlimfitpot, sep = "")
 if(opt$xiconst) title <- paste(title, "xiconst", sep="")
 pdf(paste(title, ".pdf", sep=""), title = "")
 
@@ -519,8 +520,8 @@ legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
 
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%fomit%dcont%dlowlim%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, opt$lowlimfitsub)
-if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%fomit%dcont%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim)
+if (type == "normal") namepol <- sprintf("%s/polynomialnormalmultibeta%fomit%dcont%dlowlim%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, opt$lowlimfitpot)
+if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysmultibeta%fomit%dcont%dlowlim%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, opt$lowlimfitpot)
 if (type == "slope") namepol <- sprintf("%s/polynomialslopemultibeta%fomit%dcont%d", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim)
 if(opt$xiconst) namepol <- paste(namepol, "xiconst", sep="")
 # write out result
@@ -530,19 +531,19 @@ xiconststr <- ""
 if(opt$xiconst) xiconststr <- "xiconst"
 
 if (type == "normal") {
-write.table(result, sprintf("%s/resultsrenormalizationmultibeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitsub),
+write.table(result, sprintf("%s/resultsrenormalizationmultibeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%fomit%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitsub))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationmultibeta%fomit%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot))
 saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationmultibeta%fomit%dcont%d%slowlim%d.RData",
-opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitsub))
+opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot))
 }
 
 if (type == "sideways") {
-write.table(result, sprintf("%s/resultsrenormalizationsidewaysmultibeta%fomit%d%s.csv", opt$respath, opt$beta, opt$omit, xiconststr),
+write.table(result, sprintf("%s/resultsrenormalizationsidewaysmultibeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot),
             col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysmultibeta%fomit%d%s.RData", opt$respath, opt$beta, opt$omit, xiconststr))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysmultibeta%fomit%dcont%d%s.RData",
-opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr))
+saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysmultibeta%fomit%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot))
+saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysmultibeta%fomit%dcont%d%slowlim%d.RData",
+opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot))
 }
 
 if (type == "slope") {
