@@ -128,8 +128,8 @@ rmax <- opt$rmax
 endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d", Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
 
-endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fomit%dlowlim%d",Nt, Ns, beta, xi, opt$omit, opt$lowlim)
-if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fomit%dlowlim%d",Nt, Ns, beta, xi, nape, alpha, opt$omit, opt$lowlim)
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dlowlim%d",Nt, Ns, beta, xi, opt$bootsamples, opt$omit, opt$lowlim)
+if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dlowlim%d",Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim)
 }
 
 
