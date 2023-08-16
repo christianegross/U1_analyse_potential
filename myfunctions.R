@@ -281,7 +281,7 @@ calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
 # the estimator for the effective masses, and then use the
 # provided boundaries t1 and t2 to fit the effective mass.
 
-deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", useCov = FALSE) {
+deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", usecov = FALSE) {
     # effective masses for the integer potentials
     # WL: bootstrapped data for the Wilson loops
     # yt: the effective mass is V(yt)
@@ -299,7 +299,7 @@ deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", useCov = FALSE)
     WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
-                t2 = t2, useCov = useCov), silent = FALSE)
+                t2 = t2, useCov = usecov), silent = FALSE)
         ## usecov=FALSE
         if (!inherits(WL.effmass, "try-error")) {
             newline <- data.frame(R = yt, m = WL.effmass$effmassfit$t0[1],
