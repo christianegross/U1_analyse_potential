@@ -76,6 +76,8 @@ option_list <- list(
     make_option(c("--plotonlymeff"), action = "store_true", default = FALSE,
     help = "The plots of the fitted meff are plotted
             seperately [default %default]"),
+    make_option(c("--usecov"), action = "store_true", default = FALSE,
+    help = "use covariance when fitting effective masses"),
     make_option(c("--respath"), type = "character", default = "",
     help = "path to where the resultfiles are stored [default %default]"),
 
@@ -123,20 +125,19 @@ t2 <- Ns / 2 - 2
 t1 <- opt$lowerboundmeff
 rmin <- opt$rmin
 rmax <- opt$rmax
+endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d.pdf", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
+if (opt$smearing) endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d", Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
+
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fomit%dlowlim%d.pdf",Nt, Ns, beta, xi, opt$omit, opt$lowlim)
+if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fomit%dlowlim%d.pdf",Nt, Ns, beta, xi, nape, alpha, opt$omit, opt$lowlim)
 }
 
 
 if (analyse) {
 # set names for plot, tables, open, lists for saving results
 
-filenameforplots <- sprintf(
-            "%splotseffectivemass2p1dsubtractedchosenNt%dNs%dbeta%fxi%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi)
-if (opt$smearing) {
-    filenameforplots <- sprintf(
-            "%splotseffectivemass2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%f.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha)
-}
+filenameforplots <- sprintf("%splotsmeffnormal%s.pdf", opt$plotpath, endinganalysis)
+
 pdf(file = filenameforplots, title = "")
 listfits <- list()
 listtauint <- list()
@@ -209,7 +210,7 @@ for (x in seq(1, Ns / 2, 1)) {
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == x]
     WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
-        isspatial = 1, type = opt$effmasstype)
+        isspatial = 1, type = opt$effmasstype, usecov = opt$usecov)
     #plot results, save results off meff in
     #short and long form (with and without bootstrapsamples)
     if (WL.effmasslist[[2]][[2]] != 0) {
@@ -252,7 +253,7 @@ for (x in seq(1, Ns / 2, 1)) {
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == x]
     WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
-        isspatial = 0, type = opt$effmasstype)
+        isspatial = 0, type = opt$effmasstype, usecov = opt$usecov)
     #plot results, save results off meff in
     #short and long form (with and without bootstrapsamples)
     if (WL.effmasslist[[2]][[2]] != 0) {
@@ -277,33 +278,11 @@ listfits[[Ns + 1]] <- githash
 
 #write out results
 t1 <- -1 #opt$lowerboundmeff
-filenamepotential <- sprintf(
-            "%spotentialmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
-filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
-filenameuwerr <- sprintf(
-            "%slistuwerrtauintsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
-filenamenegatives <- sprintf(
-            "%snegativessubtractedNt%dNs%dbeta%fxi%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
+filenamepotential <- sprintf("%spotmeffnormal%s.csv",  opt$plotpath, endinganalysis)
+filenamelist <- sprintf("%slistmeffnormal%s.RData", opt$plotpath, endinganalysis)
+filenameuwerr <- sprintf("%slistuwerrtauintnormal%s.RData", opt$plotpath, endinganalysis)
+filenamenegatives <- sprintf("%snegativesnormal%s.csv", opt$plotpath, endinganalysis)
 
-if (opt$smearing) {
-    filenamepotential <- sprintf(
-            "%spotentialmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
-    filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
-    filenameuwerr <- sprintf(
-            "%slistuwerrtauintsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
-    filenamenegatives <- sprintf(
-            "%snegativessubtractedNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.csv",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
-}
 write.table(potential, filenamepotential, row.names = FALSE)
 saveRDS(listfits, file = filenamelist)
 saveRDS(listtauint, file = filenameuwerr)
@@ -334,28 +313,14 @@ fnforceerr <- function (parerr, x, boot.r, correlation, ...) {
 }
 
 t1 <- opt$lowerboundmeff
-filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, bootsamples)
-
-if (opt$smearing) {
-    filenamelist <- sprintf(
-            "%slistmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%fbsamples%d.RData",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, bootsamples)
-}
+filenamelist <- sprintf("%slistmeffnormal%s.RData", opt$plotpath, endinganalysis)
 
 
 listmeff <- readRDS(file = filenamelist)
 bootsamples <- length(listmeff[[1]][[1]]$massfit.tsboot[, 1])
 
-filenameforplots <- sprintf(
-            "%spotentialmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fomit%dlowlim%d.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, opt$omit, opt$lowlim)
-if (opt$smearing) {
-filenameforplots <- sprintf(
-            "%spotentialmeff2p1dsubtractedchosenNt%dNs%dbeta%fxi%fnape%dalpha%flowlim%d.pdf",
-            opt$plotpath, Nt, Ns, beta, xi, nape, alpha, opt$lowlim)
-}
+filenameforplots <- sprintf("%spotentialnormal%s.pdf", opt$plotpath, endingdofit)
+
 pdf(file = filenameforplots, title = "")
 
 # calculate plaquette as W(x = 1, y = 1, t = 0)
@@ -444,26 +409,12 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 #determine parameters of potential by bootstrap, save results
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
                     yc, xc, bsamplesc, mask = maskc)
-filenamecoarse <- sprintf(
-        "%sfitresultcoarsesubtractedb%fxi%fNt%dNs%dbsamples%domit%dl%d.RData",
-        opt$plotpath, beta, xi, Nt, Ns, bootsamples, opt$omit, t1)
-if (opt$smearing) {
-filenamecoarse <- sprintf(
-        "%sfitresultcoarsesubtractedb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
-        opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1)
-}
+filenamecoarse <- sprintf("%sfitresultcoarsenormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
                     yf, xf, bsamplesf, mask = maskf)
-filenamefine <- sprintf(
-        "%sfitresultfinesubtractedb%fxi%fNt%dNs%dbsamples%domit%dl%d.RData",
-        opt$plotpath, beta, xi, Nt, Ns, bootsamples, opt$omit, t1)
-if (opt$smearing) {
-filenamefine <- sprintf(
-        "%sfitresultfinesubtractedb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%d.RData",
-        opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1)
-}
+filenamefine <- sprintf("%sfitresultfinenormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultfine, file = filenamefine)
 
 # plot potentials
@@ -524,14 +475,7 @@ fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
             main = "matching potentials to determine xi")
 # print(fit.match)
-filenamematch <- sprintf(
-            "%sfitresultmatchsubtractedb%fxi%fNt%dNs%dbsamples%domit%dl%dlowlim%d.RData",
-            opt$plotpath, beta, xi, Nt, Ns, bootsamples, opt$omit, t1, opt$lowlim)
-if (opt$smearing) {
-filenamematch <- sprintf(
-            "%sfitresultmatchsubtractedb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%dlowlim%d.RData",
-            opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1, opt$lowlim)
-}
+filenamematch <- sprintf("%sfitresultmatchnormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.match, file = filenamematch)
 
 # rescale temporal potential
@@ -548,14 +492,7 @@ for (i in seq(1, bootsamples, 1)) {
 # fit to overall potential
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.1, 0.1),
                     y, x, bsamples, mask = mask)
-filenamescaled <- sprintf(
-        "%sfitresultscaledsubtractedb%fxi%fNt%dNs%dbsamples%domit%dl%dlowlim%d.RData",
-        opt$plotpath, beta, xi, Nt, Ns, bootsamples, opt$omit, t1, opt$lowlim)
-if (opt$smearing) {
-filenamescaled <- sprintf(
-        "%sfitresultscaledsubtractedb%fxi%fNt%dNs%dnape%dalpha%fbsamples%domit%dl%dlowlim%d.RData",
-        opt$plotpath, beta, xi, Nt, Ns, nape, alpha, bootsamples, opt$omit, t1, opt$lowlim)
-}
+filenamescaled <- sprintf("%sfitresultscalednormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultscaled, file = filenamescaled)
 
 #if wanted determine correlation matrix seperately, as determined by the summary.bootstrapfit function
@@ -623,19 +560,6 @@ pointsyerr(x = fit.resultscaled$x[!finemask], y = fit.resultscaled$y[!finemask],
             dy = fit.resultscaled$dy[!finemask], col = 2, pch = 2)
 legend(legend = c("spatial", "temporal"), col = c(2, 1),
             pch = c(2, 1), x = "topleft")
-
-
-#force with error
-plot(xx, fnforce(fit.resultscaled$t0, xx, 0), type = "l", xlab = "r/a_s",
-        ylab = "-r^2 d/dr V(r)", main  =  title, xlim = c(0, 8))
-#make outline of errors, code from bootstrap.nlsfit
-polyval <- c(fnforce(fit.resultscaled$t0, xx, 0) + forceerrs,
-            rev(fnforce(fit.resultscaled$t0, xx, 0) - forceerrs))
-    pcol <- col2rgb("gray", alpha = TRUE) / 255
-    pcol[4] <- 0.65
-    pcol <- rgb(red = pcol[1], green = pcol[2], blue = pcol[3], alpha = pcol[4])
-polygon(x = c(xx, rev(xx)), y = polyval, col = pcol,
-            lty = 0, lwd = 0.001, border = pcol)
 
 #force with error and r0, zoomed in
 
@@ -724,9 +648,7 @@ if (!file.exists(filename)) {
 
 write.table(resultlist, filename, append = TRUE,
         row.names = FALSE, col.names = columnnames)
-nameresults <- sprintf(
-        "%sresultssubtractedNs%dNt%dbeta%fxi%fbs%domit%d.RData",
-        opt$plotpath, Ns, Nt, beta, xi, bootsamples, opt$omit)
+nameresults <- sprintf("%sresultsnormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(resultssummary, file = nameresults)
 }
 
