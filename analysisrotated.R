@@ -606,6 +606,7 @@ title <- sprintf("beta = %.3f, xi = %.3f +/- %.3f, (2+ 1)D, Ns = %d\n
 try(plot(fit.resultscaled, main = title, ylab = "V(r)", xlab = "r / a_s"))
 
 #force with error and r0, zoomed in
+## values for force +/- errors
 polyval <- c(fnforce(fit.resultscaled$t0, xx, 0) + forceerrs,
             rev(fnforce(fit.resultscaled$t0, xx, 0) - forceerrs))
 xlim <- c(0.6 * min(rzeroofc$r0), 1.4 * max(rzeroofc$r0))
