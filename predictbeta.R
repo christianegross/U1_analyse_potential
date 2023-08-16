@@ -101,6 +101,7 @@ data <- read.table(dataname, header = TRUE, sep = " ")
 # data <- na.omit(data)
 if (type == "sideways") {
 data <- data[data$c == opt$crzero, ]
+data <- data[data$lowlim == opt$lowlimfitpot, ]
 }
 
 if (type == "normal") {
@@ -110,7 +111,6 @@ data <- data[data$lowlim == opt$lowlimfitpot, ]
 
 if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
-data <- data[data$lowlim == opt$lowlimfitpot, ]
 }
 
 nom <- length(data$beta)
@@ -146,10 +146,10 @@ for (i in seq(1, nom)) {
 }
 
 if (type == "slope") {
-    data$xicalc <- apply(arrayxi, 2, mean, na.rm = T)
-    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = T)
-    data$r0 <- apply(arrayrzero, 2, mean, na.rm = T)
-    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = T)
+    data$xicalc <- apply(arrayxi, 2, mean, na.rm = F)
+    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = F)
+    data$r0 <- apply(arrayrzero, 2, mean, na.rm = F)
+    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = F)
     data$xi <- data$xiin
     try(data[c("xiin", "ratio", "dratio", "st", "dst", "chipot", "icslope", "dicslope", "icpot", "dicpot", "logpot", "dlogpot", "ratioslope", "dratioslope", "ratiopot", "dratiopot", "rzero", "drzero", "puw", "dpuw", "job")] <- NULL)
     # print(data)
@@ -209,6 +209,8 @@ if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
+if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
+
 cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
 fitsrzero <- list(NULL)
 fitsplaquette <- list(NULL)
@@ -258,7 +260,10 @@ if (opt$xiconst) {
 start <- 1
 maskfitlim <- abs(data$r0 - data$r0[maskone]) < opt$fitlim
 if (length(data$xi[data$xi == 1 & maskfitlim] < 3)) start <- 2
-start <- max(start, opt$indexcontlim)
+
+## for the independent fits, it is not necessary to reomve the unneeded anisotropied from the fit,
+## because they do not influence the degrees of freedom or the results for the other fits.
+# start <- max(start, opt$indexfitcontlim)
 
 if (start != 1) {
     intercepts[, 1] <- rep(opt$beta, bootsamples)
@@ -378,11 +383,11 @@ box(bty = "o")
 tikz.finalize(tikzfile)
 
 # make a dataframe of results
-result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
-                    dbeta = apply(intercepts, 2, sd, na.rm = T),
-                    xiphys = apply(xiphys, 2, mean, na.rm = T),
-                    dxiphys = apply(xiphys, 2, sd, na.rm = T),
-                    p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T))
+result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = F),
+                    dbeta = apply(intercepts, 2, sd, na.rm = F),
+                    xiphys = apply(xiphys, 2, mean, na.rm = F),
+                    dxiphys = apply(xiphys, 2, sd, na.rm = F),
+                    p = apply(plaqren, 2, mean, na.rm = F), dp = apply(plaqren, 2, sd, na.rm = F))
 # result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
 # result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
 result <- cbind(result, data.frame(betasimple = interceptsimple))
@@ -391,14 +396,14 @@ print(result)
 }
 
 ## add more data to results for easy printing
-newframe <- data.frame(xiopt = tex.catwitherror(result$xiphys[seq(2, length(xis))], result$dxiphys[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
-betaopt = tex.catwitherror(result$beta[seq(2, length(xis))], result$dbeta[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
-popt = tex.catwitherror(result$p[seq(2, length(xis))], result$dp[seq(2, length(xis))], digits = 2, with.dollar = FALSE))
+# newframe <- data.frame(xiopt = tex.catwitherror(result$xiphys[seq(start, length(xis))], result$dxiphys[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
+# betaopt = tex.catwitherror(result$beta[seq(start, length(xis))], result$dbeta[seq(2, length(xis))], digits = 2, with.dollar = FALSE),
+# popt = tex.catwitherror(result$p[seq(start, length(xis))], result$dp[seq(2, length(xis))], digits = 2, with.dollar = FALSE))
 
 
 # plot results to pdf
 xiconststr <- ""
-if(opt$xiconst) xiconststr <- "xiconst"
+if (opt$xiconst) xiconststr <- "xiconst"
 if (type == "sideways") pdf(sprintf("tikzplotallfitssidewaysbeta%fomit%dcont%d%slowlim%d.pdf", opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot), title = "")
 if (type == "normal") pdf(sprintf("tikzplotallfitsbeta%fomit%dcont%d%slowlim%d.pdf", opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot), title = "")
 if (type == "slope") pdf(sprintf("tikzplotallfitsslopebeta%fomit%dcont%d%s.pdf", opt$beta, opt$omit, opt$indexfitcontlim, xiconststr), title = "")
@@ -486,7 +491,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaqnaive$t0[1], fitplaqnaive$se[1],
             fitplaqnaive$chi / fitplaqnaive$dof, fitplaqnaive$Qval, i),
             plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
-            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(result$p)), xlab = "xi_in^2", ylab = "P"))
+            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(na.omit(result$p))), xlab = "xi_in^2", ylab = "P"))
 
     try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaive$t0[1],
@@ -506,7 +511,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
             fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i),
             plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
-            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(result$p)), xlab = "xi_ren^2", ylab = "P"))
+            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(na.omit(result$p))), xlab = "xi_ren^2", ylab = "P"))
 
     try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaqnaivexiren$t0[1],
@@ -537,7 +542,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaq$t0[1], fitplaq$se[1],
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
             plot.range = c(-0.2, 1.2),
-            ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(result$p)),
+            ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
             xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P")
 
     resultspolynomial <- rbind(resultspolynomial,

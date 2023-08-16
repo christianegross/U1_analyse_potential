@@ -677,8 +677,8 @@ readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
     if (length(columns) != length(names)) {
         stop("The columns per name and names do not have the same length! check input")
     }
-    filename <- sprintf("%s%sNs%dNt%dbeta%fxi%fbs%d%s.RData",
-                path, filename, Ns, Nt, beta, xi, bootsamples, end)
+    filename <- sprintf("%s%sNt%dNs%dbeta%fxi%fbs%d%s.RData",
+                path, filename, Nt, Ns, beta, xi, bootsamples, end)
     listres <- readRDS(filename)
     bsamples <- array(c(rep(NA, sum(columns) * bootsamples)),
                 dim = c(bootsamples, sum(columns)))

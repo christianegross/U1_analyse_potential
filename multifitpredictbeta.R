@@ -98,9 +98,11 @@ if (!file.exists(dataname)) {
     stop(paste("file for results does not exist, check for", dataname))
 }
 data <- read.table(dataname, header = TRUE, sep = " ")
+# print(data)
 # data <- na.omit(data)
 if (type == "sideways") {
 data <- data[data$c == opt$crzero, ]
+data <- data[data$lowlim == opt$lowlimfitpot, ]
 }
 
 if (type == "normal") {
@@ -110,14 +112,21 @@ data <- data[data$lowlim == opt$lowlimfitpot, ]
 
 if (opt$omit >=  0) {
 data <- data[data$omit == opt$omit, ]
-data <- data[data$lowlim == opt$lowlimfitpot, ]
 }
+
+# print(data)
 
 
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
+
+if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
+
+## for subsetting, - mask does not seem to work, so in this case,
+## only select all the rows where xi does not match the xi we want to remove
+## we do not remove xi=1, because it is needed for the comparison
 if (opt$indexfitcontlim > 1){
   for(i in seq(2, opt$indexfitcontlim - 1)){
-    data <- data[ - (abs(data$xi - xis[i]) < 1e-3), ]
+    data <- data[(abs(data$xi - xis[i]) > 1e-3), ]
   }
 }
 
@@ -154,10 +163,10 @@ for (i in seq(1, nom)) {
 }
 
 if (type == "slope") {
-    data$xicalc <- apply(arrayxi, 2, mean, na.rm = T)
-    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = T)
-    data$r0 <- apply(arrayrzero, 2, mean, na.rm = T)
-    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = T)
+    data$xicalc <- apply(arrayxi, 2, mean, na.rm = F)
+    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = F)
+    data$r0 <- apply(arrayrzero, 2, mean, na.rm = F)
+    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = F)
     data$xi <- data$xiin
     try(data[c("xiin", "ratio", "dratio", "st", "dst", "chipot", "icslope", "dicslope", "icpot", "dicpot", "logpot", "dlogpot", "ratioslope", "dratioslope", "ratiopot", "dratiopot", "rzero", "drzero", "puw", "dpuw", "job")] <- NULL)
     # print(data)
@@ -227,6 +236,7 @@ plaqren <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, leng
 xiphys <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 intercepts[, 1] <- rep(opt$beta, bootsamples)
 
+
 maskomit <- data$beta == opt$beta & data$xi == 1
 if (opt$omit == -1) maskomit <- maskomit & data$omit == 0
 plaqren[, 1] <- arrayp[, maskomit]
@@ -237,8 +247,11 @@ xiphys[, 1] <- arrayxi[, maskomit]
 ## for r0, P, xi
 
 rzerozero <- data$r0[data$beta == opt$beta & data$xi == 1]
-if(opt$omit == -1) rzerozero <- data$r0[data$beta == opt$beta & data$xi == 1 & data$omit == 0]
+if (opt$omit == -1) rzerozero <- data$r0[data$beta == opt$beta & data$xi == 1 & data$omit == 0]
 mask <- abs(data$r0 - rzerozero) < opt$fitlim
+if (opt$indexfitcontlim > 1){
+  mask <- mask & abs(data$xi - 1) > 1e-3
+}
 x <- matrix(data = c(data$beta[mask], data$xi[mask]), byrow = TRUE, nrow = 2)
 
 start <- 1
@@ -254,7 +267,7 @@ resultrzero <- usebootstrap.fit_xiyey(ansatz = ansatzmulti, x = x, y = y, ey = d
 summary.multifit(resultrzero)
 
 for (i in seq(start, length(xis))) {
-    intercepts[, i] <- getinterceptfromparams(bsa = resultrzero$par$bts[, 1], bsb = resultrzero$par$bts[, 1 + i], rzeroone = arrayrzero[, data$beta == opt$beta & data$xi == 1], bootsamples = opt$bootsamples)
+    intercepts[, i] <- getinterceptfromparams(bsa = resultrzero$par$bts[, 1], bsb = resultrzero$par$bts[, 2 + i - opt$indexfitcontlim], rzeroone = arrayrzero[, data$beta == opt$beta & data$xi == 1], bootsamples = opt$bootsamples)
 }
 
 ## xi
@@ -277,7 +290,7 @@ for (i in seq(start, length(xis))) {
 if(opt$xiconst) {
 resultxi <- usebootstrap.fit_xiyey(ansatz = ansatzmulticonst, x = x, y = y, ey = dy, y_bts = y_bts, guess = xis[opt$indexfitcontlim:length(xis)], N_bts = opt$bootsamples)
 summary.multifit(resultxi)
-xiphys <- resultxi$par$bts
+xiphys[, opt$indexfitcontlim:length(xis)] <- resultxi$par$bts
 }
 
 
@@ -301,11 +314,11 @@ for (i in seq(start, length(xis))) {
 }
 
 # make a dataframe of results
-result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
-                    dbeta = apply(intercepts, 2, sd, na.rm = T),
-                    xiphys = apply(xiphys, 2, mean, na.rm = T),
-                    dxiphys = apply(xiphys, 2, sd, na.rm = T),
-                    p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T))
+result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = F),
+                    dbeta = apply(intercepts, 2, sd, na.rm = F),
+                    xiphys = apply(xiphys, 2, mean, na.rm = F),
+                    dxiphys = apply(xiphys, 2, sd, na.rm = F),
+                    p = apply(plaqren, 2, mean, na.rm = F), dp = apply(plaqren, 2, sd, na.rm = F))
 print(result)
 
 resultslist <- list(resultp = resultp, plaqren = plaqren, resultxi = resultxi,
@@ -379,7 +392,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaq$t0[1], fitplaq$se[1],
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
             plot.range = c(-0.2, 1.2),
-            ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(result$p)),
+            ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
             xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P")
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
@@ -422,6 +435,8 @@ print(resultspolynomial)
 
 
 ## plot
+
+plotpoint <- opt$indexfitcontlim:length(xis)
 supports <- 1000
 cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
 
@@ -447,7 +462,7 @@ lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero, 100), lty = 1)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero + drzerozero, 100), lty = 2)
 lines(x = seq(xlim[1], xlim[2], len = 100), y = rep(rzerozero - drzerozero, 100), lty = 2)
 
-for (i in seq(1, length(xis))) {
+for (i in seq(start, length(xis))) {
     print("xi")
     print(xis[i])
     xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
@@ -456,7 +471,7 @@ for (i in seq(1, length(xis))) {
     legendtext[i] <-  sprintf("%.2f", xis[i])
 }
 
-legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
+legend(x = "topleft", legend = legendtext[plotpoint], col = cols[plotpoint], pch = cols[plotpoint])
 
 
 
@@ -472,7 +487,8 @@ legendtext <- c()
 #     append(legendtext, "1.00")
 # }
 
-for (i in seq(1, length(xis))) {
+
+for (i in seq(start, length(xis))) {
     print("xi")
     print(xis[i])
     xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
@@ -481,7 +497,7 @@ for (i in seq(1, length(xis))) {
     legendtext[i] <-  sprintf("%.2f", xis[i])
 }
 
-legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
+legend(x = "topleft", legend = legendtext[plotpoint], col = cols[plotpoint], pch = cols[plotpoint])
 
 
 
@@ -497,7 +513,7 @@ legendtext <- c()
 #     append(legendtext, "1.00")
 # }
 
-for (i in seq(1, length(xis))) {
+for (i in seq(start, length(xis))) {
     print("xi")
     print(xis[i])
     xplot <- matrix(c(seq(xlim[1], xlim[2], len = supports), rep(xis[i], supports)), byrow = TRUE, nrow = 2)
@@ -506,7 +522,7 @@ for (i in seq(1, length(xis))) {
     legendtext[i] <-  sprintf("%.2f", xis[i])
 }
 
-legend(x = "topleft", legend = legendtext, col = cols, pch = cols)
+legend(x = "topleft", legend = legendtext[plotpoint], col = cols[plotpoint], pch = cols[plotpoint])
 
 
 # write out results like in predictbeta
