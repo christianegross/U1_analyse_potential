@@ -73,12 +73,12 @@ if (opt$indexfitcontlim < 1) {
 # set filenames, read in results, set up containers for bootstrapsamples
 if (type == "sideways") {
 dataname <- sprintf("%s/resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
-filenameres <- sprintf("%s/resultsrotated", opt$datapath)
+filenameres <- sprintf("%s/resultssideways", opt$datapath)
 side <- 2
 }
 if (type == "normal") {
 dataname <- sprintf("%s/resultsummary2p1dnormalb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
-filenameres <- sprintf("%s/resultssubtracted", opt$datapath)
+filenameres <- sprintf("%s/resultsnormal", opt$datapath)
 side <- 2
 }
 if (type == "slope") {

@@ -117,10 +117,10 @@ alpha <- opt$alpha
 analyse <- opt$analyse
 dofit <- opt$dofit
 
-endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d.pdf", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
+endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d", Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
 
-endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fomit%dlowlim%d.pdf",Nt, Ns, beta, xi, opt$omit, opt$lowlim)
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fomit%dlowlim%d",Nt, Ns, beta, xi, opt$omit, opt$lowlim)
 if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fomit%dlowlim%d.pdf",Nt, Ns, beta, xi, nape, alpha, opt$omit, opt$lowlim)
 
 }
@@ -309,7 +309,7 @@ listmeff <- readRDS(file = filenamelist)
 
 
 
-filenameforplots <- sprintf("%spotentialmeff2p1dmeffchosen%s.pdf", opt$plotpath, endingdofit)
+filenameforplots <- sprintf("%spotentialsideways%s.pdf", opt$plotpath, endingdofit)
 pdf(file = filenameforplots, title = "")
 
 
@@ -609,6 +609,9 @@ try(plot(fit.resultscaled, main = title, ylab = "V(r)", xlab = "r / a_s"))
 ## values for force +/- errors
 polyval <- c(fnforce(fit.resultscaled$t0, xx, 0) + forceerrs,
             rev(fnforce(fit.resultscaled$t0, xx, 0) - forceerrs))
+pcol <- col2rgb("gray", alpha = TRUE) / 255
+pcol[4] <- 0.65
+pcol <- rgb(red = pcol[1], green = pcol[2], blue = pcol[3], alpha = pcol[4])
 xlim <- c(0.6 * min(rzeroofc$r0), 1.4 * max(rzeroofc$r0))
 ylim <- c(0.6 * min(abs(rzeroofc$c)), 1.4 * max(abs(rzeroofc$c)))
 ylim <- rev(-ylim)

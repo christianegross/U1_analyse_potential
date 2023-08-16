@@ -36,7 +36,7 @@ option_list <- list(
     make_option(c("-o", "--omit"), type = "integer", default = 0,
     help = "how many points should be omitted
             in calculating the potentials? [default %default]"),
-    make_option(c("--lowlim"), type = "integer", default = 0,
+    make_option(c("--lowlim"), type = "integer", default = 1,
     help = "points lower than this are not used
             for determining xi [default %default]"),
     make_option(c("-a", "--alpha"), type = "double", default = 1.0,
@@ -125,10 +125,10 @@ t2 <- Ns / 2 - 2
 t1 <- opt$lowerboundmeff
 rmin <- opt$rmin
 rmax <- opt$rmax
-endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d.pdf", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
+endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d", Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
 
-endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fomit%dlowlim%d.pdf",Nt, Ns, beta, xi, opt$omit, opt$lowlim)
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fomit%dlowlim%d",Nt, Ns, beta, xi, opt$omit, opt$lowlim)
 if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fomit%dlowlim%d.pdf",Nt, Ns, beta, xi, nape, alpha, opt$omit, opt$lowlim)
 }
 
@@ -565,6 +565,9 @@ legend(legend = c("spatial", "temporal"), col = c(2, 1),
 
 polyval <- c(fnforce(fit.resultscaled$t0, xx, 0) + forceerrs,
             rev(fnforce(fit.resultscaled$t0, xx, 0) - forceerrs))
+pcol <- col2rgb("gray", alpha = TRUE) / 255
+pcol[4] <- 0.65
+pcol <- rgb(red = pcol[1], green = pcol[2], blue = pcol[3], alpha = pcol[4])
 xlim <- c(0.6 * min(rzeroofc$r0), 1.4 * max(rzeroofc$r0))
 ylim <- c(0.6 * min(abs(rzeroofc$c)), 1.4 * max(abs(rzeroofc$c)))
 ylim <- rev(-ylim)
