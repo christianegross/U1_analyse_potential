@@ -1,5 +1,7 @@
 library(optparse)
 
+# TODO. implement possibility for differnt lower/upper for temporal/spatial
+
 # makes tables in the right format for the boundaries of the effective masses.
 # options are rotated for the sideways potential,
 # subtracted for the normal potential and small for the non-integer potential.
@@ -15,8 +17,16 @@ option_list <- list(
     help = "Nt of lattice [default %default]"),
     make_option(c("-n", "--nape"), type = "integer", default = 0,
     help = "Number of APE-smears that were done [default %default]"),
-     make_option(c("--t1"), type = "integer", default = 2,
-    help = "boundaries for determining meff [default %default]"),
+     make_option(c("--lower"), type = "integer", default = 2,
+    help = "lower boundary for determining meff [default %default]"),
+     make_option(c("--upper"), type = "integer", default = 0,
+    help = "upper boundary for determining meff,
+            if 0, choose maximum extent [default %default]"),
+     make_option(c("--lowertemporal"), type = "integer", default = 2,
+    help = "lower boundary for determining meff [default %default]"),
+     make_option(c("--uppertemporal"), type = "integer", default = 0,
+    help = "upper boundary for determining meff,
+            if 0, choose maximum extent [default %default]"),
 
     make_option(c("-a", "--alpha"), type = "double", default = 1.0,
     help = "alpha used in APE-smearing [default %default]"),
@@ -51,6 +61,10 @@ if (opt$xidiff) {
 }
 nape <- opt$nape
 alpha <- opt$alpha
+upper <- opt$upper
+if(opt$upper==0) upper <- opt$Ns / 2 - 2
+uppertemporal <- opt$temporal
+if(opt$uppertemporal==0) uppertemporal <- opt$Nt / 2 - 2
 }
 
 if (opt$rotated) {
@@ -69,9 +83,9 @@ if (opt$rotated) {
         spacial <- data.frame(spacial =
                 c(rep(TRUE, opt$Ns / 2), rep(FALSE, opt$Nt / 2)))
         yt <- data.frame(yt = c(seq(1, opt$Ns / 2), seq(1, opt$Nt / 2)))
-        lower <- data.frame(lower = rep(opt$t1, length(spacial)))
-        upper <- data.frame(upper = rep(opt$Ns / 2, length(spacial)))
-        table <- cbind(spacial, yt, lower, upper)
+        lowerdf <- data.frame(lower = rep(opt$lower, length(spacial)))
+        upperdf <- data.frame(upper = rep(upper, length(spacial)))
+        table <- cbind(spacial, yt, lowerdf, upperdf)
         write.table(table, filename, append = TRUE,
                 row.names = FALSE, col.names = TRUE, sep=",")
     }
@@ -94,9 +108,9 @@ if (opt$subtracted) {
         yt <- data.frame(yt = rep(NA, opt$Ns))
         yt$yt[seq(1, opt$Ns - 1, by = 2)] <- seq(1, opt$Ns / 2)
         yt$yt[seq(2, opt$Ns, by = 2)] <- seq(1, opt$Ns / 2)
-        lower <- data.frame(lower = rep(c(opt$t1, floor(opt$t1 / xi)), opt$Ns / 2))
-        upper <- data.frame(upper = rep(c(opt$Ns / 2 - 2, opt$Nt / 2 - 2), opt$Ns / 2))
-        table <- cbind(spacial, yt, lower, upper)
+        lowerdf <- data.frame(lower = rep(c(opt$lower, opt$lowertemporal), opt$Ns / 2))
+        upperdf <- data.frame(upper = rep(c(upper, uppertemporal), opt$Ns / 2))
+        table <- cbind(spacial, yt, lowerdf, upperdf)
         write.table(table, filename,
         append = TRUE, row.names = FALSE, col.names = TRUE, sep=",")
     }
@@ -117,8 +131,8 @@ if (opt$small) {
     } else {
         x <- data.frame(x = c(rep(0, 4), rep(1, 4), rep(2, 4), rep(3, 4)))
         y <- data.frame(y = rep(c(0, 1, 2, 3), 4))
-        lower <- data.frame(lower = rep(opt$t1, 16))
-        upper <- data.frame(upper = rep(ceiling(opt$Nt / 2 - opt$t1 - 2), 16))
+        lower <- data.frame(lower = rep(opt$lower, 16))
+        upper <- data.frame(upper = rep(upper, 16))
         table <- cbind(x, y, lower, upper)
 
         write.table(table, filename,
