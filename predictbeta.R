@@ -155,6 +155,7 @@ if (type == "slope") {
     # print(data)
 }
 
+
 # set up parameters for plotting, initialize output file
 fontsize <- 2.6
 distance <- 3.5
@@ -166,18 +167,13 @@ packages <- c("\\usepackage{tikz}",
                 "\\setlength\\PreviewBorder{0pt}",
                 "\\usepackage{amsmath}")
 
+xiconststr <- ""
+if (opt$xiconst) xiconststr <- "xiconst"
+endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+
 for (size in c(0.65)) {
 
-
-if (type == "normal") {
-    nameplot <- sprintf("%srenormr0beta%fratio%.2fomit%dlowlim%d", path, opt$beta, size, opt$omit, opt$lowlimfitpot)
-}
-if (type == "sideways") {
-    nameplot <- sprintf("%srenormr0sidewaysbeta%fratio%.2fomit%dlowlim%d", path, opt$beta, size, opt$omit, opt$lowlimfitpot)
-}
-if (type == "slope") {
-    nameplot <- sprintf("%srenormslopebeta%fratio%.2fomit%d", path, opt$beta, size, opt$omit)
-}
+nameplot <- sprintf("%srenorm%s", path, endname)
 
 if (size <= 1) {
     tikzfile <- tikz.init(nameplot, width = mmtoinches(400),
@@ -352,6 +348,7 @@ for (i in seq(start, length(xis))) {
     legendtext[i] <- sprintf("%.3f", xis[i])
 }
 
+
 # arrows(x0=1.42, x1=1.42, y0=0, y1=10)
 # make legend for plot
 legendtext[length(xis) + 1] <- "bounds fit"
@@ -402,11 +399,7 @@ print(result)
 
 
 # plot results to pdf
-xiconststr <- ""
-if (opt$xiconst) xiconststr <- "xiconst"
-if (type == "sideways") pdf(sprintf("tikzplotallfitssidewaysbeta%fomit%dcont%d%slowlim%d.pdf", opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot), title = "")
-if (type == "normal") pdf(sprintf("tikzplotallfitsbeta%fomit%dcont%d%slowlim%d.pdf", opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot), title = "")
-if (type == "slope") pdf(sprintf("tikzplotallfitsslopebeta%fomit%dcont%d%s.pdf", opt$beta, opt$omit, opt$indexfitcontlim, xiconststr), title = "")
+pdf(sprintf("tikzplotallfits%scont%d.pdf", endname, opt$indexfitcontlim), title="")
 
 # result of all linear fits
 for (i in seq(start, length(xis))){
@@ -419,7 +412,6 @@ for (i in seq(start, length(xis))){
    }
 
 
-# if (type == "slope") pdf("tikzplotallfitsslopecontlimit.pdf", title = "")
 # save and plot results for naive limits
 resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
@@ -584,10 +576,8 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
 
 resultspolynomial <- resultspolynomial[-1, ]
-if (type == "normal") namepol <- sprintf("%s/polynomialnormalbeta%fomit%dcont%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot)
-if (type == "sideways") namepol <- sprintf("%s/polynomialsidewaysbeta%fomit%dcont%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot)
-if (type == "slope") namepol <- sprintf("%s/polynomialslopebeta%fomit%dcont$d%s.csv", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr)
 # write out result
+namepol <- sprintf("%s/polynomial%scont%d.csv", opt$respath, endname, opt$indexfitcontlim)
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
@@ -606,31 +596,17 @@ print(resultspolynomial)
 # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
 # print(fitresults)
 # print(result)
-if (type == "normal") {
-write.table(result, sprintf("%s/resultsrenormalizationbeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot),
-            col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("%s/fitresultsrenormalizationbeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot),
-            col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationbeta%fomit%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationbeta%fomit%dcont%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot))
-}
 
-if (type == "sideways") {
-write.table(result, sprintf("%s/resultsrenormalizationsidewaysbeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot),
-            col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("%s/fitresultsrenormalizationsidewaysbeta%fomit%d%slowlim%d.csv", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot),
-            col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationsidewaysbeta%fomit%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationsidewaysbeta%fomit%dcont%d%slowlim%d.RData", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr, opt$lowlimfitpot))
-}
+namesave <- sprintf("%s/resultsrenormalization%s.csv", opt$respath, endname)
+write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
 
-if (type == "slope") {
-write.table(result, sprintf("%s/resultsrenormalizationslopebeta%fomit%d%s.csv", opt$respath, opt$beta, opt$omit, xiconststr),
-            col.names = TRUE, row.names = FALSE, append = FALSE)
-write.table(fitresults, sprintf("%s/fitresultsrenormalizationslopebeta%fomit%d%s.csv", opt$respath, opt$beta, opt$omit, xiconststr),
-            col.names = TRUE, row.names = FALSE, append = FALSE)
-saveRDS(resultslist, sprintf("%s/listresultsrenormalizationslopebeta%fomit%d%s.RData", opt$respath, opt$beta, opt$omit, xiconststr))
-saveRDS(fitspolynomial, sprintf("%s/listpolynomialrenormalizationslopebeta%fomit%dcont%d%s.RData", opt$respath, opt$beta, opt$omit, opt$indexfitcontlim, xiconststr))
-}
+namesave <- sprintf("%s/fitresultsrenormalization%s.csv", opt$respath, endname)
+write.table(fitresults, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
+
+namesave <- sprintf("%s/listresultsrenormalization%s.RData", opt$respath, endname)
+saveRDS(resultslist, file=namesave)
+
+namesave <- sprintf("%s/listpolynomialrenormalization%scont%d.RData", opt$respath, endname, opt$indexfitcontlim)
+saveRDS(fitspolynomial, file=namesave)
 # move all plots into subfolder
 # system(sprintf("mv -v tikz* %s", opt$respath))
