@@ -1049,7 +1049,7 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
             index <- index + 1
         }
     }
-    interval <- c(0.01*min(WL$cf0), 100*max(WL$cf0))
+    interval <- c(0, 100*max(WL$cf0))
     cat("min = ", cdf(interval[1], means = masses, sds = sds, weights = weights),
         " max = ", cdf(interval[2], means = masses, sds = sds, weights = weights), "\n")
 

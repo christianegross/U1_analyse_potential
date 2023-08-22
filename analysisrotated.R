@@ -160,6 +160,9 @@ pdf(file = filenameforplots, title = "")
 listfits <- list()
 listtauint <- list()
 potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
+if (opt$aic) {
+    potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, sysmean = NA, sysboot = NA, meancf0 = NA, bias = NA)
+}
 
 namelistbounds <- sprintf(
             "%stableanalysisrotatedNs%dNt%dbeta%fxi%f.csv",
@@ -214,13 +217,26 @@ for (y in seq(1, Ns / 2, 1)) {
 
     uwerrresults <- uwerr.cf(WL)
 
-#     print(names(uwerrresults))
+#     print(names(uwerrresults$uwcf))
+#     "value"   "dvalue"  "ddvalue" "tauint"  "dtauint" "t"
 
+    if (opt$scaletauint) {
     ## multiply errors by 2*tauint
+        WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
     ## if bootstrap below mean, subtract (2*tauint-1)*difference
     ## if bootstrap above mean, add (2*tauint-1)*difference
+        ## add/subtract ist automatically done by sign of difference
     ## before multiplication: difference a
     ## after mutliplication: difference 2*tauint*a
+        ## How to deal with dtauint?
+            print(WL$cf0)
+            print(uwerrresults$uwcf$tauint)
+        WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
+            tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+    }
+
+    plot(WL, log = "y", xlab = "x/a_s", ylab = "C(x)",
+            main = sprintf("%s, logscale", title))
 
     if(!opt$aic) {
     # m_eff
@@ -251,7 +267,6 @@ print(potential)
     }
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
-        print(effmass$boot)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
         plot(effmass$effmass, ylim=c(effmass$syserr$t0 - 5*effmass$syserr$se, effmass$syserr$t0 + 5*effmass$syserr$se), xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0, 2))
@@ -261,6 +276,12 @@ print(potential)
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
+        listresults <- list(list(massfit.tsboot = array(effmass$boot$mass, dim=c(bootsamples, 1)),
+                effmassfit = list(t0=effmass$syserr$t0)), y, FALSE, uwerrresults)
+        potentialnew <- data.frame(R = y, m = effmass$boot$mean, dm = effmass$boot$err,
+            space = TRUE, sysmean = effmass$syserr$se, sysboot = effmass$boot$syserr,
+            meancf0 = effmass$syserr$t0, bias = effmass$syserr$t0 - effmass$boot$mean)
+        potential <- rbind(potential, potentialnew)
 
         ## TODO_: make list with results
         ## TODO : rescale bootstraps by autocorrelation time
@@ -294,6 +315,22 @@ for (t in seq(1, Nt / 2, 1)) {
 
     uwerrresults <- uwerr.cf(WL)
 
+    if (opt$scaletauint) {
+            ## multiply errors by 2*tauint
+        WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
+        ## if bootstrap below mean, subtract (2*tauint-1)*difference
+        ## if bootstrap above mean, add (2*tauint-1)*difference
+        ## add/subtract ist automatically done by sign of difference
+        ## before multiplication: difference a
+        ## after mutliplication: difference 2*tauint*a
+        ## How to deal with dtauint?
+            print(WL$cf0)
+            print(uwerrresults$uwcf$tauint)
+        WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
+            tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+    }
+
+
     if(!opt$aic) {
     # m_eff
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == t]
@@ -319,7 +356,6 @@ for (t in seq(1, Nt / 2, 1)) {
     }
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
-        print(effmass$syserr)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
         plot(effmass$effmass, ylim=c(effmass$syserr$t0 - 5*effmass$syserr$se, effmass$syserr$t0 + 5*effmass$syserr$se), xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0, 2))
@@ -329,6 +365,12 @@ for (t in seq(1, Nt / 2, 1)) {
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
+        listresults <- list(list(massfit.tsboot = array(effmass$boot$mass, dim=c(bootsamples, 1)),
+                effmassfit = list(t0=effmass$syserr$t0)), t, TRUE, uwerrresults)
+        potentialnew <- data.frame(R = t, m = effmass$boot$mean, dm = effmass$boot$err,
+            space = FALSE, sysmean = effmass$syserr$se, sysboot = effmass$boot$syserr,
+            meancf0 = effmass$syserr$t0, bias = effmass$syserr$t0 - effmass$boot$mean)
+        potential <- rbind(potential, potentialnew)
     }
 }
     listfits[[Ns / 2 + t]] <- listresults
@@ -769,7 +811,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         Nt = NA, nape = NA, alpha = NA, omit = NA, nom = NA, skip = NA,
         xi2 = NA, dxi2 = NA, xisingle = NA, dxisingle = NA,
         job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
-        xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA)
+        xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, aic=NA, scaletauint=NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -786,7 +828,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint[1],
         bootl = opt$bootl, xirzero = differentxiresults[1], dxirzero = differentxiresults[2],
         xist = differentxiresults[3], dxist = differentxiresults[4],
-        lowlim = opt$lowlim)
+        lowlim = opt$lowlim, aic=opt$aic, scaletauint=opt$scaletauint)
 
 resultlist <- rbind(resultlist, newline)
 }
