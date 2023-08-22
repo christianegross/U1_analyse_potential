@@ -58,6 +58,12 @@ option_list <- list(
     help = "points lower than this are not used
             for determining xi [default %default]"),
 
+    make_option(c("--aic"), action = "store_true", default = FALSE,
+    help = "if true, effective masses are determined with weighting
+        according to the akaike information criterion [default %default]"),
+    make_option(c("--scaletauint"), action = "store_true", default = FALSE,
+    help = "if true, errors and bootstrapsamples for the correlator are rescaled
+    such that the effects of autocorrelation are taken into account [default %default]"),
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, correlators and effective masses
             are determined from provided table [default %default]"),
@@ -117,6 +123,11 @@ alpha <- opt$alpha
 analyse <- opt$analyse
 dofit <- opt$dofit
 
+if (opt$scaletauint) {
+        opt$usecov <- TRUE
+        opt$bootl <- 1
+}
+
 endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) {
         endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d",
@@ -128,6 +139,16 @@ endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dlowlim%d",
 if (opt$smearing) {
         endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dlowlim%d",
         Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim)
+}
+
+if(opt$aic){
+        endinganalysis <- sprintf("%saic", endinganalysis)
+        endingdofit <- sprintf("%saic", endingdofit)
+}
+
+if(opt$scaletauint){
+        endinganalysis <- sprintf("%sscaletauint", endinganalysis)
+        endingdofit <- sprintf("%sscaletauint", endingdofit)
 }
 
 }
@@ -193,6 +214,15 @@ for (y in seq(1, Ns / 2, 1)) {
 
     uwerrresults <- uwerr.cf(WL)
 
+#     print(names(uwerrresults))
+
+    ## multiply errors by 2*tauint
+    ## if bootstrap below mean, subtract (2*tauint-1)*difference
+    ## if bootstrap above mean, add (2*tauint-1)*difference
+    ## before multiplication: difference a
+    ## after mutliplication: difference 2*tauint*a
+
+    if(!opt$aic) {
     # m_eff
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == y]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == y]
@@ -218,6 +248,23 @@ print(potential)
             main = sprintf("%s, t1 = %d, t2 = %d, p = %f, zoomed",
             title, t1, t2, WL.effmasslist[[1]]$effmassfit$Qval),
             ylim = WL.effmasslist[[2]]))
+    }
+    if (opt$aic) {
+        effmass <- deteffmassaic(WL)
+        print(effmass$boot)
+        plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
+        plot(effmass$effmass, ylim=c(effmass$syserr$t0 - 5*effmass$syserr$se, effmass$syserr$t0 + 5*effmass$syserr$se), xlab="x/a_s", ylab="meff", main=title)
+        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 + effmass$syserr$se, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 - effmass$syserr$se, 2))
+        plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$err, effmass$boot$mean + 5*effmass$boot$err), xlab="x/a_s", ylab="meff", main=title)
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
+
+        ## TODO_: make list with results
+        ## TODO : rescale bootstraps by autocorrelation time
+    }
 }
     listfits[[y]] <- listresults
     listtauint[[y]] <- uwerrresults
@@ -247,6 +294,7 @@ for (t in seq(1, Nt / 2, 1)) {
 
     uwerrresults <- uwerr.cf(WL)
 
+    if(!opt$aic) {
     # m_eff
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == t]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == t]
@@ -268,6 +316,20 @@ for (t in seq(1, Nt / 2, 1)) {
             main = sprintf("%s, t1 = %d, t2 = %d, p = %f",
             title, t1, t2, WL.effmasslist[[1]]$effmassfit$Qval),
             ylim = WL.effmasslist[[2]]))
+    }
+    if (opt$aic) {
+        effmass <- deteffmassaic(WL)
+        print(effmass$syserr)
+        plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
+        plot(effmass$effmass, ylim=c(effmass$syserr$t0 - 5*effmass$syserr$se, effmass$syserr$t0 + 5*effmass$syserr$se), xlab="x/a_s", ylab="meff", main=title)
+        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 + effmass$syserr$se, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 - effmass$syserr$se, 2))
+        plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$err, effmass$boot$mean + 5*effmass$boot$err), xlab="x/a_s", ylab="meff", main=title)
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
+    }
 }
     listfits[[Ns / 2 + t]] <- listresults
     listtauint[[Ns / 2 + t]] <- uwerrresults

@@ -993,6 +993,77 @@ summary.multifit <- function(object, ..., digits = 2, title="") {
     }
     cat("\n   chi^2 and fit quality\n")
     cat("chisqr / dof =", object$ch2, "/", object$N_dof, "=", object$ch2 / object$N_dof, "\n\n\n")
+}
+
+## cdf needed for determining mean, intervals with AIC
+cdf <- function(y, means, sds, weights){
+  num <- sum(weights*pnorm(y, means, sds))
+  den <- sum(weights)
+  return(num/den)
+}
+
+## cdf - quantile, needed for uniroot
+
+AICquantile <- function(y, means, sds, weights, quantile) cdf(y, means, sds, weights) - quantile
+
+## apply requires the argument to be iterated over in first place
+getquantile <- function(means, sds, weights, quantile, interval) {
+    root <- try(uniroot(f=AICquantile, quantile=quantile, means=means, sds=sds,
+        weights=weights, interval=interval, tol=1e-12))
+    if(inherits(root, "try-error")){
+        res <- NA
+    } else {
+        res <- root$root
+    }
+    return(res)
+}
+
+
+## determine effective mass with the Akaike Information Criterion
+deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
+    ## additional parameters for saving, plotting
+    effmass <- bootstrap.effectivemass(WL, type = type)
+    ntimeslices <- length(WL$cf0)
+    ncombs <- 0.5 * (ntimeslices - mindistance - start - 1) * (ntimeslices - mindistance - start)
+    weights <- rep(NA, ncombs)
+    masses <- rep(NA, ncombs)
+    sds <- rep(NA, ncombs)
+    bootstraps <- array(NA, dim=c(WL$boot.R, ncombs))
+    index <- 1
+    for (t1 in seq(start, ntimeslices - mindistance - 2)) {
+        for(t2 in seq(t1 + mindistance, ntimeslices - 2)) {
+            cat("i=", index, " t1=", t1, " t2=", t2, "\n")
+            tmp <- fit.effectivemass(effmass, t1 = t1, t2 = t2, useCov = TRUE)
+            weights[index] <- exp(-0.5 * (tmp$chisqr + 2 - (t2 - t1)))
+            masses[index] <- tmp$effmassfit$t0[1]
+            sds[index] <- tmp$effmassfit$se[1]
+            bootstraps[, index] <- tmp$effmassfit$t[, 1]
+            index <- index + 1
+        }
+    }
+    interval <- c(0.01*min(WL$cf0), 100*max(WL$cf0))
+    cat("min=", cdf(interval[1], means=masses, sds=sds, weights=weights),
+        " max=", cdf(interval[2], means=masses, sds=sds, weights=weights), "\n")
+
+    resmass <- uniroot(f=AICquantile, quantile=0.5, means=masses, sds=sds,
+        weights=weights, interval=interval, tol=1e-12)
+    res16 <- uniroot(f=AICquantile, quantile=0.16, means=masses, sds=sds,
+        weights=weights, interval=interval, tol=1e-12)
+    res84 <- uniroot(f=AICquantile, quantile=0.84, means=masses, sds=sds,
+        weights=weights, interval=interval, tol=1e-12)
+    resmasserr <- abs(0.5*(res16$root+res84$root) - resmass$root)
+
+    bootmass <- apply(X=bootstraps, MARGIN=1, FUN=getquantile, sds=sds,
+        weights=weights, quantile=0.5, interval=interval)
+    boot16 <- apply(X=bootstraps, MARGIN=1, FUN=getquantile, sds=sds,
+        weights=weights, quantile=0.16, interval=interval)
+    boot84 <- apply(X=bootstraps, MARGIN=1, FUN=getquantile, sds=sds,
+        weights=weights, quantile=0.84, interval=interval)
+    bootmean <- mean(bootmass, na.rm=T)
+    booterr <- sd(bootmass, na.rm=T)
+    bootsyserr <- abs(0.5*(mean(boot16, na.rm=T)+mean(boot84, na.rm=T)) - bootmean)
+    return(list(effmass = effmass, syserr = list(t0 = resmass$root, se = resmasserr),
+        boot = list(mass=bootmass, m16=boot16, m84=boot84, mean=bootmean, err=booterr, syserr=bootsyserr)))
 
 
 }
