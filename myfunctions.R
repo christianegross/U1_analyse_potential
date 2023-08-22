@@ -1049,7 +1049,7 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
             index <- index + 1
         }
     }
-    interval <- c(0, 100*max(WL$cf0))
+    interval <- c(-2, 3)
     cat("min = ", cdf(interval[1], means = masses, sds = sds, weights = weights),
         " max = ", cdf(interval[2], means = masses, sds = sds, weights = weights), "\n")
 
@@ -1071,8 +1071,9 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
     booterr <- sd(bootmass, na.rm = T)
     bootsyserr <- abs(0.5*(mean(boot16, na.rm = T)+mean(boot84, na.rm = T)) - bootmean)
     print(list(t0 = resmass$root, se = resmasserr, mean = bootmean, err = booterr, syserr = bootsyserr, bias = resmass$root - bootmean))
-    return(list(effmass = effmass, syserr = list(t0 = resmass$root, se = resmasserr),
-        boot = list(mass = bootmass, m16 = boot16, m84 = boot84, mean = bootmean, err = booterr, syserr = bootsyserr)))
+    return(list(effmass = effmass, effmassfit = list(t0 = resmass$root, se = resmasserr),
+        massfit.tsboot = array(bootmass, dim=c(bootsamples, 1)),
+        boot = list(m16 = boot16, m84 = boot84, mean = bootmean, err = booterr, syserr = bootsyserr)))
 
 
 }

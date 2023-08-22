@@ -268,23 +268,19 @@ print(potential)
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
-        plot(effmass$effmass, ylim=c(effmass$syserr$t0 - 5*effmass$syserr$se, effmass$syserr$t0 + 5*effmass$syserr$se), xlab="x/a_s", ylab="meff", main=title)
-        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 + effmass$syserr$se, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 - effmass$syserr$se, 2))
+        plot(effmass$effmass, ylim=c(effmass$effmassfit$t0 - 5*effmass$effmassfit$se, effmass$effmassfit$t0 + 5*effmass$effmassfit$se), xlab="x/a_s", ylab="meff", main=title)
+        lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 + effmass$effmassfit$se, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 - effmass$effmassfit$se, 2))
         plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$err, effmass$boot$mean + 5*effmass$boot$err), xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
-        listresults <- list(list(massfit.tsboot = array(effmass$boot$mass, dim=c(bootsamples, 1)),
-                effmassfit = list(t0=effmass$syserr$t0)), y, FALSE, uwerrresults)
+        listresults <- list(effmass, y, FALSE, uwerrresults)
         potentialnew <- data.frame(R = y, m = effmass$boot$mean, dm = effmass$boot$err,
-            space = TRUE, sysmean = effmass$syserr$se, sysboot = effmass$boot$syserr,
-            meancf0 = effmass$syserr$t0, bias = effmass$syserr$t0 - effmass$boot$mean)
+            space = TRUE, sysmean = effmass$effmassfit$se, sysboot = effmass$boot$syserr,
+            meancf0 = effmass$effmassfit$t0, bias = effmass$effmassfit$t0 - effmass$boot$mean)
         potential <- rbind(potential, potentialnew)
-
-        ## TODO_: make list with results
-        ## TODO : rescale bootstraps by autocorrelation time
     }
 }
     listfits[[y]] <- listresults
@@ -357,19 +353,18 @@ for (t in seq(1, Nt / 2, 1)) {
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
-        plot(effmass$effmass, ylim=c(effmass$syserr$t0 - 5*effmass$syserr$se, effmass$syserr$t0 + 5*effmass$syserr$se), xlab="x/a_s", ylab="meff", main=title)
-        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 + effmass$syserr$se, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$syserr$t0 - effmass$syserr$se, 2))
+        plot(effmass$effmass, ylim=c(effmass$effmassfit$t0 - 5*effmass$effmassfit$se, effmass$effmassfit$t0 + 5*effmass$effmassfit$se), xlab="x/a_s", ylab="meff", main=title)
+        lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 + effmass$effmassfit$se, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 - effmass$effmassfit$se, 2))
         plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$err, effmass$boot$mean + 5*effmass$boot$err), xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
-        listresults <- list(list(massfit.tsboot = array(effmass$boot$mass, dim=c(bootsamples, 1)),
-                effmassfit = list(t0=effmass$syserr$t0)), t, TRUE, uwerrresults)
+        listresults <- list(effmass, t, TRUE, uwerrresults)
         potentialnew <- data.frame(R = t, m = effmass$boot$mean, dm = effmass$boot$err,
-            space = FALSE, sysmean = effmass$syserr$se, sysboot = effmass$boot$syserr,
-            meancf0 = effmass$syserr$t0, bias = effmass$syserr$t0 - effmass$boot$mean)
+            space = FALSE, sysmean = effmass$effmassfit$se, sysboot = effmass$boot$syserr,
+            meancf0 = effmass$effmassfit$t0, bias = effmass$effmassfit$t0 - effmass$boot$mean)
         potential <- rbind(potential, potentialnew)
     }
 }
@@ -463,6 +458,9 @@ mask <- rep(FALSE, Ns / 2 + Nt / 2)
 finemask <- rep(FALSE, Ns / 2 + Nt / 2)
 bsamples <- array(c(rep(NA, 2 * (Ns / 2 + Nt / 2) * bootsamples)), dim = c(bootsamples, 2 * (Ns / 2 + Nt / 2)))
 #~ message("defined empty arrays")
+
+print(names(listmeff[[1]][[1]]))
+print(names(listmeff[[1]][[2]]))
 
 for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
