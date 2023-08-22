@@ -1008,9 +1008,9 @@ AICquantile <- function(y, means, sds, weights, quantile) cdf(y, means, sds, wei
 
 ## apply requires the argument to be iterated over in first place
 getquantile <- function(means, sds, weights, quantile, interval) {
-    root <- try(uniroot(f=AICquantile, quantile=quantile, means=means, sds=sds,
-        weights=weights, interval=interval, tol=1e-12))
-    if(inherits(root, "try-error")){
+    root <- try(uniroot(f = AICquantile, quantile = quantile, means = means, sds = sds,
+        weights = weights, interval = interval, tol = 1e-12))
+    if (inherits(root, "try-error")) {
         res <- NA
     } else {
         res <- root$root
@@ -1028,42 +1028,51 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
     weights <- rep(NA, ncombs)
     masses <- rep(NA, ncombs)
     sds <- rep(NA, ncombs)
-    bootstraps <- array(NA, dim=c(WL$boot.R, ncombs))
+    bootstraps <- array(NA, dim = c(WL$boot.R, ncombs))
     index <- 1
     for (t1 in seq(start, ntimeslices - mindistance - 2)) {
         for(t2 in seq(t1 + mindistance, ntimeslices - 2)) {
-            cat("i=", index, " t1=", t1, " t2=", t2, "\n")
-            tmp <- fit.effectivemass(effmass, t1 = t1, t2 = t2, useCov = TRUE)
-            weights[index] <- exp(-0.5 * (tmp$chisqr + 2 - (t2 - t1)))
-            masses[index] <- tmp$effmassfit$t0[1]
-            sds[index] <- tmp$effmassfit$se[1]
-            bootstraps[, index] <- tmp$effmassfit$t[, 1]
+            # cat("i = ", index, " t1 = ", t1, " t2 = ", t2, "\n")
+            tmp <- try(fit.effectivemass(effmass, t1 = t1, t2 = t2, useCov = TRUE))
+            if (!inherits(tmp, "try-error")) {
+                weights[index] <- exp(-0.5 * (tmp$chisqr + 2 - (t2 - t1)))
+                masses[index] <- tmp$effmassfit$t0[1]
+                sds[index] <- tmp$effmassfit$se[1]
+                bootstraps[, index] <- tmp$effmassfit$t[, 1]
+            } else {
+                weights[index] <- 0
+                masses[index] <- 0
+                sds[index] <- 0
+                bootstraps[, index] <- rep(0, WL$boot.R)
+                cat("there was a problem with t1 = ", t1, ", t2 = ", t2, "\n")
+            }
             index <- index + 1
         }
     }
     interval <- c(0.01*min(WL$cf0), 100*max(WL$cf0))
-    cat("min=", cdf(interval[1], means=masses, sds=sds, weights=weights),
-        " max=", cdf(interval[2], means=masses, sds=sds, weights=weights), "\n")
+    cat("min = ", cdf(interval[1], means = masses, sds = sds, weights = weights),
+        " max = ", cdf(interval[2], means = masses, sds = sds, weights = weights), "\n")
 
-    resmass <- uniroot(f=AICquantile, quantile=0.5, means=masses, sds=sds,
-        weights=weights, interval=interval, tol=1e-12)
-    res16 <- uniroot(f=AICquantile, quantile=0.16, means=masses, sds=sds,
-        weights=weights, interval=interval, tol=1e-12)
-    res84 <- uniroot(f=AICquantile, quantile=0.84, means=masses, sds=sds,
-        weights=weights, interval=interval, tol=1e-12)
+    resmass <- uniroot(f = AICquantile, quantile = 0.5, means = masses, sds = sds,
+        weights = weights, interval = interval, tol = 1e-12)
+    res16 <- uniroot(f = AICquantile, quantile = 0.16, means = masses, sds = sds,
+        weights = weights, interval = interval, tol = 1e-12)
+    res84 <- uniroot(f = AICquantile, quantile = 0.84, means = masses, sds = sds,
+        weights = weights, interval = interval, tol = 1e-12)
     resmasserr <- abs(0.5*(res16$root+res84$root) - resmass$root)
 
-    bootmass <- apply(X=bootstraps, MARGIN=1, FUN=getquantile, sds=sds,
-        weights=weights, quantile=0.5, interval=interval)
-    boot16 <- apply(X=bootstraps, MARGIN=1, FUN=getquantile, sds=sds,
-        weights=weights, quantile=0.16, interval=interval)
-    boot84 <- apply(X=bootstraps, MARGIN=1, FUN=getquantile, sds=sds,
-        weights=weights, quantile=0.84, interval=interval)
-    bootmean <- mean(bootmass, na.rm=T)
-    booterr <- sd(bootmass, na.rm=T)
-    bootsyserr <- abs(0.5*(mean(boot16, na.rm=T)+mean(boot84, na.rm=T)) - bootmean)
+    bootmass <- apply(X = bootstraps, MARGIN = 1, FUN = getquantile, sds = sds,
+        weights = weights, quantile = 0.5, interval = interval)
+    boot16 <- apply(X = bootstraps, MARGIN = 1, FUN = getquantile, sds = sds,
+        weights = weights, quantile = 0.16, interval = interval)
+    boot84 <- apply(X = bootstraps, MARGIN = 1, FUN = getquantile, sds = sds,
+        weights = weights, quantile = 0.84, interval = interval)
+    bootmean <- mean(bootmass, na.rm = T)
+    booterr <- sd(bootmass, na.rm = T)
+    bootsyserr <- abs(0.5*(mean(boot16, na.rm = T)+mean(boot84, na.rm = T)) - bootmean)
+    print(list(t0 = resmass$root, se = resmasserr, mean = bootmean, err = booterr, syserr = bootsyserr, bias = resmass$root - bootmean))
     return(list(effmass = effmass, syserr = list(t0 = resmass$root, se = resmasserr),
-        boot = list(mass=bootmass, m16=boot16, m84=boot84, mean=bootmean, err=booterr, syserr=bootsyserr)))
+        boot = list(mass = bootmass, m16 = boot16, m84 = boot84, mean = bootmean, err = booterr, syserr = bootsyserr)))
 
 
 }
