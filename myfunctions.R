@@ -59,7 +59,7 @@ readloopfilecfsub <- function (file, path = "", skip = 0,
     # read in data, select columns that are needed, give columns
     # and additional info to cf object
 
-  if(missing(maxt))  maxt <- Nytmax
+  if (missing(maxt))  maxt <- Nytmax
   tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
@@ -158,7 +158,7 @@ readloopfilecfonecolumn <- function (file, path = "",
 calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
                                  title, path = "", nsave = 100,
                                  zerooffset = 0, every = 1, l = 2,
-                                 fraction = 0.5, maxrows = -1, sim="geom") {
+                                 fraction = 0.5, maxrows = -1, sim = "geom") {
     # plots loops for the sideways potential
     # x is changed, yt is kept constant
     # nsave: number of steps MC-sweeps between saving configurations
@@ -168,7 +168,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
             Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
-    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l, sim=sim)
+    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l, sim = sim)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
     plot(WL, log = "y", xlab = "x/a_s", ylab = "C(x)",
@@ -996,10 +996,10 @@ summary.multifit <- function(object, ..., digits = 2, title="") {
 }
 
 ## cdf needed for determining mean, intervals with AIC
-cdf <- function(y, means, sds, weights){
-  num <- sum(weights*pnorm(y, means, sds))
+cdf <- function(y, means, sds, weights) {
+  num <- sum(weights * pnorm(y, means, sds))
   den <- sum(weights)
-  return(num/den)
+  return(num / den)
 }
 
 ## cdf - quantile, needed for uniroot
@@ -1020,7 +1020,7 @@ getquantile <- function(means, sds, weights, quantile, interval) {
 
 
 ## determine effective mass with the Akaike Information Criterion
-deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
+deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose = TRUE) {
     ## additional parameters for saving, plotting
     effmass <- bootstrap.effectivemass(WL, type = type)
     ntimeslices <- length(WL$cf0)
@@ -1029,6 +1029,8 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
     masses <- rep(NA, ncombs)
     sds <- rep(NA, ncombs)
     bootstraps <- array(NA, dim = c(WL$boot.R, ncombs))
+    savefits <- data.frame(index = NA, t1 = NA, t2 = NA,
+                            m = NA, dm = NA, chisqr = NA, p = NA, weight = NA)
     index <- 1
     for (t1 in seq(start, ntimeslices - mindistance - 2)) {
         for(t2 in seq(t1 + mindistance, ntimeslices - 2)) {
@@ -1039,6 +1041,10 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
                 masses[index] <- tmp$effmassfit$t0[1]
                 sds[index] <- tmp$effmassfit$se[1]
                 bootstraps[, index] <- tmp$effmassfit$t[, 1]
+                newline <- data.frame(index = index, t1 = t1, t2 = t2,
+                            m = tmp$effmassfit$t0[1], dm = tmp$effmassfit$se[1],
+                            chisqr = tmp$chisqr, p = tmp$Qval, weight = weights[index])
+                savefits <- rbind(savefits, newline)
             } else {
                 weights[index] <- 0
                 masses[index] <- 0
@@ -1049,9 +1055,10 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
             index <- index + 1
         }
     }
+
+    savefits <- savefits[-1, ]
+    savefits$weight <- savefits$weight / sum(savefits$weight)
     interval <- c(-2, 3)
-    cat("min = ", cdf(interval[1], means = masses, sds = sds, weights = weights),
-        " max = ", cdf(interval[2], means = masses, sds = sds, weights = weights), "\n")
 
     resmass <- uniroot(f = AICquantile, quantile = 0.5, means = masses, sds = sds,
         weights = weights, interval = interval, tol = 1e-12)
@@ -1059,7 +1066,8 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
         weights = weights, interval = interval, tol = 1e-12)
     res84 <- uniroot(f = AICquantile, quantile = 0.84, means = masses, sds = sds,
         weights = weights, interval = interval, tol = 1e-12)
-    resmasserr <- abs(0.5*(res16$root+res84$root) - resmass$root)
+
+    resmasserr <- abs(0.5 * (res84$root - res16$root))
 
     bootmass <- apply(X = bootstraps, MARGIN = 1, FUN = getquantile, sds = sds,
         weights = weights, quantile = 0.5, interval = interval)
@@ -1067,13 +1075,23 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2) {
         weights = weights, quantile = 0.16, interval = interval)
     boot84 <- apply(X = bootstraps, MARGIN = 1, FUN = getquantile, sds = sds,
         weights = weights, quantile = 0.84, interval = interval)
+
     bootmean <- mean(bootmass, na.rm = T)
-    booterr <- sd(bootmass, na.rm = T)
-    bootsyserr <- abs(0.5*(mean(boot16, na.rm = T)+mean(boot84, na.rm = T)) - bootmean)
-    print(list(t0 = resmass$root, se = resmasserr, mean = bootmean, err = booterr, syserr = bootsyserr, bias = resmass$root - bootmean))
-    return(list(effmass = effmass, effmassfit = list(t0 = resmass$root, se = resmasserr),
-        massfit.tsboot = array(bootmass, dim=c(bootsamples, 1)),
-        boot = list(m16 = boot16, m84 = boot84, mean = bootmean, err = booterr, syserr = bootsyserr)))
+    booterrstat <- sd(bootmass, na.rm = T)
+    booterrtot <- abs(0.5 * (mean(boot84, na.rm = T) - mean(boot16, na.rm = T)))
+
+    if (verbose) {
+        print(savefits)
+        print(paste("min = ", cdf(interval[1], means = masses, sds = sds, weights = weights),
+        " max = ", cdf(interval[2], means = masses, sds = sds, weights = weights)))
+        print(data.frame(t0 = resmass$root, setot = resmasserr, mean = bootmean, errstat = booterrstat,
+                booterrtot = booterrtot, booterrsys = sqrt(booterrtot^2 - booterrstat^2),
+                bias = resmass$root - bootmean, m16 = mean(boot16), m84 = mean(boot84)))
+    }
+
+    return(list(effmass = effmass, savefits = savefits,
+        effmassfit = list(t0 = resmass$root, se = resmasserr, m16 = res16$root, m84 = res84$root),
+        boot = list(m50 = bootmass, m16 = boot16, m84 = boot84, mean = bootmean, errstat = booterrstat, errtot = booterrtot)))
 
 
 }

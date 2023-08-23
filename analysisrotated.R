@@ -161,7 +161,9 @@ listfits <- list()
 listtauint <- list()
 potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, p = NA, chi = NA)
 if (opt$aic) {
-    potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, sysmean = NA, sysboot = NA, meancf0 = NA, bias = NA)
+#     potential <- data.frame(R = NA, m = NA, dm = NA, space = NA, setot = NA, bootstat = NA, meanboot = NA, bias = NA, m16 = NA, m84 = NA, bootsys = NA)
+    potential <- data.frame(R = NA, space = NA, median = NA, errtotmean = NA, m16 = NA, m84 = NA,
+                        bootmedian = NA, booterrtot = NA, bootstat = NA, bootsys = NA, bias = NA)
 }
 
 namelistbounds <- sprintf(
@@ -268,18 +270,23 @@ print(potential)
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
-        plot(effmass$effmass, ylim=c(effmass$effmassfit$t0 - 5*effmass$effmassfit$se, effmass$effmassfit$t0 + 5*effmass$effmassfit$se), xlab="x/a_s", ylab="meff", main=title)
+        plot(effmass$effmass, ylim=c(effmass$effmassfit$t0 - 5*effmass$effmassfit$se, effmass$effmassfit$t0 + 5*effmass$effmassfit$se),
+                xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 + effmass$effmassfit$se, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 - effmass$effmassfit$se, 2))
-        plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$err, effmass$boot$mean + 5*effmass$boot$err), xlab="x/a_s", ylab="meff", main=title)
+        plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$errtot, effmass$boot$mean + 5*effmass$boot$errtot),
+                xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$errtot, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$errtot, 2))
         listresults <- list(effmass, y, FALSE, uwerrresults)
-        potentialnew <- data.frame(R = y, m = effmass$boot$mean, dm = effmass$boot$err,
-            space = TRUE, sysmean = effmass$effmassfit$se, sysboot = effmass$boot$syserr,
-            meancf0 = effmass$effmassfit$t0, bias = effmass$effmassfit$t0 - effmass$boot$mean)
+
+        potentialnew <- data.frame(R = y, space = TRUE, median = effmass$effmassfit$t0, errtotmean = effmass$effmassfit$se,
+                m16 = effmass$effmassfit$m16, m84 = effmass$effmassfit$m84,
+                bootmedian = effmass$boot$mean, booterrtot = effmass$boot$errtot, bootstat = effmass$boot$errstat,
+                bootsys = sqrt(effmass$boot$errtot^2 - effmass$boot$errstat^2),
+                bias = effmass$effmassfit$t0 - effmass$boot$mean)
         potential <- rbind(potential, potentialnew)
     }
 }
@@ -353,18 +360,22 @@ for (t in seq(1, Nt / 2, 1)) {
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
-        plot(effmass$effmass, ylim=c(effmass$effmassfit$t0 - 5*effmass$effmassfit$se, effmass$effmassfit$t0 + 5*effmass$effmassfit$se), xlab="x/a_s", ylab="meff", main=title)
+        plot(effmass$effmass, ylim=c(effmass$effmassfit$t0 - 5*effmass$effmassfit$se, effmass$effmassfit$t0 + 5*effmass$effmassfit$se),
+                xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 + effmass$effmassfit$se, 2))
         lines(x=c(-10, 2*Nt), y=rep(effmass$effmassfit$t0 - effmass$effmassfit$se, 2))
-        plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$err, effmass$boot$mean + 5*effmass$boot$err), xlab="x/a_s", ylab="meff", main=title)
+        plot(effmass$effmass, ylim=c(effmass$boot$mean - 5*effmass$boot$errtot, effmass$boot$mean + 5*effmass$boot$errtot),
+                xlab="x/a_s", ylab="meff", main=title)
         lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$err, 2))
-        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$err, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean + effmass$boot$errtot, 2))
+        lines(x=c(-10, 2*Nt), y=rep(effmass$boot$mean - effmass$boot$errtot, 2))
         listresults <- list(effmass, t, TRUE, uwerrresults)
-        potentialnew <- data.frame(R = t, m = effmass$boot$mean, dm = effmass$boot$err,
-            space = FALSE, sysmean = effmass$effmassfit$se, sysboot = effmass$boot$syserr,
-            meancf0 = effmass$effmassfit$t0, bias = effmass$effmassfit$t0 - effmass$boot$mean)
+        potentialnew <- data.frame(R = t, space = FALSE, median = effmass$effmassfit$t0, errtotmean = effmass$effmassfit$se,
+                m16 = effmass$effmassfit$m16, m84 = effmass$effmassfit$m84,
+                bootmedian = effmass$boot$mean, booterrtot = effmass$boot$errtot, bootstat = effmass$boot$errstat,
+                bootsys = sqrt(effmass$boot$errtot^2 - effmass$boot$errstat^2),
+                bias = effmass$effmassfit$t0 - effmass$boot$mean)
         potential <- rbind(potential, potentialnew)
     }
 }
