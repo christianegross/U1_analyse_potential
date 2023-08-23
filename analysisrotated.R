@@ -477,12 +477,18 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       maskc[i] <- TRUE
+      if(!opt$aic) {
+        bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
+        bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
+      }
+      else if (opt$aic) {
+        bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50
+        bsamples[, i] <- listmeff[[i]][[1]]$boot$m50
+      }
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       mask[i] <- TRUE
       finemask[i] <- FALSE
   }
@@ -506,12 +512,18 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   if (listmeff[[Ns / 2 + i]][[2]]) {
       xf[i]     <- listmeff[[Ns / 2 + i]][[2]]
       yf[i]     <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      bsamplesf[, i]        <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       maskf[i]      <- TRUE
+      if (!opt$aic) {
+        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
+        bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
+      }
+      else if (opt$aic) {
+        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
+        bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
+      }
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      bsamples[, Ns / 2 + i]    <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       mask[Ns / 2 + i]  <- TRUE
       finemask[Ns / 2 + i] <- TRUE
 
@@ -570,8 +582,10 @@ interpolation <- data.frame(lower = NA, upper = NA,
             a = NA, b = NA, lowerx = NA)
 for (i in seq(1, Nt / 2 - 1 - opt$omit / xi, 1)) {
     if (listmeff[[Ns / 2 + i + 1]][[2]]) {
-    lower     <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[bs, 1]
-    upper     <- listmeff[[Ns / 2 + i + 1]][[1]]$massfit.tsboot[bs, 1]
+#     lower     <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[bs, 1]
+#     upper     <- listmeff[[Ns / 2 + i + 1]][[1]]$massfit.tsboot[bs, 1]
+    lower <- bsamples[bs, Ns / 2 + i]
+    upper <- bsamples[bs, Ns / 2 + i + 1]
     a <- upper - lower
     b <- lower - i * a
     newline <- data.frame(lower = lower, upper = upper,
@@ -589,7 +603,8 @@ interpolation <- interpolation[-1, ]
 xiboots <- c()
 for (i in seq(1 + opt$lowlim, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
-    Vs <- listmeff[[i]][[1]]$massfit.tsboot[bs, 1]
+#     Vs <- listmeff[[i]][[1]]$massfit.tsboot[bs, 1]
+    Vs <- bsamples[bs, i]
     index <- NA
 # determine in which interval of the V_t V_s is sitting by selecting
 # lowest possible interval for which the upper limit is bigger than V_s

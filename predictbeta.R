@@ -40,7 +40,15 @@ option_list <- list(
     make_option(c("--naive"), action = "store_true", default = FALSE,
     help = "if true, continuum limit with beta and xi unrenormalized is calculated [default %default]"),
     make_option(c("--xiconst"), action = "store_true", default = FALSE,
-    help = "if true, xi(beta) is assumed to be constant [default %default]")
+    help = "if true, xi(beta) is assumed to be constant [default %default]"),
+
+    make_option(c("--aic"), action = "store_true", default = FALSE,
+    help = "if true, effective masses are determined with weighting
+        according to the akaike information criterion [default %default]"),
+    make_option(c("--scaletauint"), action = "store_true", default = FALSE,
+    help = "if true, errors and bootstrapsamples for the correlator are rescaled
+    such that the effects of autocorrelation are taken into account [default %default]")
+
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
@@ -113,6 +121,23 @@ if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
 }
 
+print(data)
+end2 <- ""
+
+if (opt$aic) {
+data <- data[data$aic == TRUE, ]
+end2 <- sprintf("%saic", end2)
+} else {
+data <- data[data$aic == FALSE, ]
+}
+
+if (opt$scaletauint) {
+data <- data[data$scaletauint == TRUE, ]
+end2 <- sprintf("%sscaletauint", end2)
+} else {
+data <- data[data$scaletauint == FALSE, ]
+}
+
 nom <- length(data$beta)
 
 # read in bootstrapsamples
@@ -122,13 +147,14 @@ arrayp <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 arrayxi <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 intercepts <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 
+print(data)
 
 for (i in seq(1, nom)) {
     string <- sprintf("i = %d, beta = %f, Ns = %d, Nt = %d, xi = %f",
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
     if (type == "normal" || type == "sideways") {
-    end <- sprintf("omit%dlowlim%d", data$omit[i], data$lowlim[i])
+    end <- sprintf("omit%dlowlim%d%s", data$omit[i], data$lowlim[i], end2)
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
@@ -170,6 +196,8 @@ packages <- c("\\usepackage{tikz}",
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
 endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+if (opt$aic) endname <- sprintf("%saic", endname)
+if (opt$scaletauint) endname <- sprintf("%sscaletauint", endname)
 
 for (size in c(0.65)) {
 

@@ -432,7 +432,8 @@ filenamelist <- sprintf("%slistmeffnormal%s.RData", opt$plotpath, endinganalysis
 
 
 listmeff <- readRDS(file = filenamelist)
-bootsamples <- length(listmeff[[1]][[1]]$massfit.tsboot[, 1])
+if (!opt$aic) bootsamples <- length(listmeff[[1]][[1]]$massfit.tsboot[, 1])
+if (opt$aic) bootsamples <- listmeff[[1]][[1]]$effmass$boot.R
 
 filenameforplots <- sprintf("%spotentialnormal%s.pdf", opt$plotpath, endingdofit)
 
@@ -482,12 +483,18 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
+      if(!opt$aic) {
+        bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
+        bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
+      }
+      else if (opt$aic) {
+        bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50
+        bsamples[, i] <- listmeff[[i]][[1]]$boot$m50
+      }
       maskc[i] <- TRUE
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       mask[i] <- TRUE
       finemask[i] <- FALSE
   }
@@ -510,12 +517,18 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
       xf[i] <- listmeff[[Ns / 2 + i]][[2]]
 #~       message("xc =  ",xc[i])
       yf[i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       maskf[i] <- TRUE
+      if (!opt$aic) {
+        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
+        bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
+      }
+      else if (opt$aic) {
+        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
+        bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
+      }
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       mask[Ns / 2 + i] <- TRUE
       finemask[Ns / 2 + i] <- TRUE
   }
@@ -735,7 +748,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     xicalcsub = NA, dxicalcsub = NA, xi2sub = NA, dxi2 = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
     omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash = NA,
-    every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA)
+    every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, aic=NA, scaletauint=NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -752,7 +765,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       omit = opt$omit, nom = nom, skip = skip,
                       t1 = t1, job = opt$job, hash = githash, every = opt$every,
                       tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint,
-                      bootl = opt$bootl, lowlim = opt$lowlim)
+                      bootl = opt$bootl, lowlim = opt$lowlim, aic=opt$aic, scaletauint=opt$scaletauint)
 resultlist <- rbind(resultlist, newline)
 }
 
