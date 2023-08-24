@@ -488,8 +488,8 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
         bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       }
       else if (opt$aic) {
-        bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50
-        bsamples[, i] <- listmeff[[i]][[1]]$boot$m50
+        bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50 - (listmeff[[i]][[1]]$effmassfit$t0 - listmeff[[i]][[1]]$boot$m50) * (listmeff[[i]][[1]]$effmassfit$se / listmeff[[i]][[1]]$boot$errstat - 1)
+        bsamples[, i] <- bsamplesc[, i]
       }
       maskc[i] <- TRUE
 
@@ -523,8 +523,8 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       }
       else if (opt$aic) {
-        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
-        bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
+        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50 - (listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0 - listmeff[[Ns / 2 + i]][[1]]$boot$m50) * (listmeff[[Ns / 2 + i]][[1]]$effmassfit$se / listmeff[[Ns / 2 + i]][[1]]$boot$errstat - 1)
+        bsamples[, Ns / 2 + i] <- bsamplesf[, i]
       }
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
