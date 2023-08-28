@@ -210,22 +210,14 @@ for (y in seq(1, Ns / 2, 1)) {
 
     title <- sprintf("beta = %.2f coarse y = %d skipped %d",
                 beta, y, skip * opt$nsave)
-starttime <- Sys.time()
     WL <- calcplotWloopsideways(file = filename,
             path = opt$respath, skip = skip, Ns = Ns, yt = y,
             title = title, bootsamples = bootsamples,
             zerooffset = opt$zerooffset, nsave = opt$nsave,
             every = opt$every, l = opt$bootl, fraction = opt$fraction,
             maxrows = opt$maxrows)
-endtime <- Sys.time()
-print(paste("read in correlators and draw bootstrapsamples"))# \nstart at", start, "\nend at", endtime, "\nduration", endtime - starttime))
-print(endtime - starttime)
 
-starttime <- Sys.time()
     uwerrresults <- uwerr.cf(WL)
-endtime <- Sys.time()
-print(paste("determine autocorrelation times"))# \nstart at", start, "\nend at", endtime, "\nduration", endtime - starttime))
-print(endtime - starttime)
 
 #     print(names(uwerrresults$uwcf))
 #     "value"   "dvalue"  "ddvalue" "tauint"  "dtauint" "t"
@@ -239,8 +231,8 @@ print(endtime - starttime)
     ## before multiplication: difference a
     ## after mutliplication: difference 2*tauint*a
         ## How to deal with dtauint?
-        #     print(WL$cf0)
-        #     print(uwerrresults$uwcf$tauint)
+            print(WL$cf0)
+            print(uwerrresults$uwcf$tauint)
         WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
             tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
     }
@@ -318,21 +310,13 @@ for (t in seq(1, Nt / 2, 1)) {
     # loops
     title <- sprintf("beta = %.2f fine t = %d skipped %d",
                 beta, t, skip * opt$nsave)
-                starttime <- Sys.time()
     WL <- calcplotWloopsideways(file = filename,
             path = opt$respath, skip = skip, Ns = Ns, yt = t, title = title,
             bootsamples = bootsamples, zerooffset = opt$zerooffset,
             nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction,
             maxrows = opt$maxrows)
-endtime <- Sys.time()
-print(paste("read in correlators and draw bootstrapsamples"))# \nstart at", start, "\nend at", endtime, "\nduration", endtime - starttime))
-print(endtime - starttime)
 
-starttime <- Sys.time()
     uwerrresults <- uwerr.cf(WL)
-endtime <- Sys.time()
-print(paste("determine autocorrelation times"))# \nstart at", start, "\nend at", endtime, "\nduration", endtime - starttime))
-print(endtime - starttime)
 
     if (opt$scaletauint) {
             ## multiply errors by 2*tauint
