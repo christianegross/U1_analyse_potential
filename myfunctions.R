@@ -168,6 +168,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     # l: median blocking size for bootstrap
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
             Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
+
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l, sim = sim)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
@@ -1020,9 +1021,21 @@ getquantile <- function(means, sds, weights, quantile, interval) {
 
 
 ## determine effective mass with the Akaike Information Criterion
-deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose = TRUE) {
+deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose = FALSE) {
     ## additional parameters for saving, plotting
     effmass <- bootstrap.effectivemass(WL, type = type)
+    # discard all points which are less than one sigma away from zero or have negative mass
+    for (time in seq(1, effmass$Time - 1)) {
+        if(is.na(effmass$effMass[time]) || abs(effmass$effMass[time] / effmass$deffMass[time]) < 1.0 || effmass$effMass[time] < 0) {
+            print(paste("removing timeslice ", time, "due to being too close to zero"))
+            effmass$effMass[time] <- NA
+            effmass$deffMass[time] <- NA
+            effmass$effMass.tsboot[, time] <- rep(NA, effmass$boot.R)
+            effmass$t0[time] <- NA
+            effmass$se[time] <- NA
+            effmass$t[, time] <- rep(NA, effmass$boot.R)
+        }
+    }
     ntimeslices <- length(WL$cf0)
     ncombs <- 0.5 * (ntimeslices - mindistance - start - 1) * (ntimeslices - mindistance - start)
     weights <- rep(NA, ncombs)
@@ -1055,7 +1068,6 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose 
             index <- index + 1
         }
     }
-
     savefits <- savefits[-1, ]
     savefits$weight <- savefits$weight / sum(savefits$weight)
     interval <- c(-2, 3)
