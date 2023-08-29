@@ -282,7 +282,7 @@ calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
 # the estimator for the effective masses, and then use the
 # provided boundaries t1 and t2 to fit the effective mass.
 
-deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", usecov = FALSE) {
+deteffmass <- function (WL.effmass, yt, t1, t2, isspatial, usecov = FALSE) {
     # effective masses for the integer potentials
     # WL: bootstrapped data for the Wilson loops
     # yt: the effective mass is V(yt)
@@ -297,7 +297,6 @@ deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", usecov = FALSE)
     # if fit was successful, summary and limits are made, else
     # effective masses are recalculated
     ylim <- c(0, 0)
-    WL.effmass <- bootstrap.effectivemass(WL, type = type)
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
                 t2 = t2, useCov = usecov), silent = FALSE)
@@ -318,7 +317,6 @@ deteffmass <- function (WL, yt, t1, t2, isspatial, type = "log", usecov = FALSE)
                 # print(ylim)
             }
         } else {
-            WL.effmass <- bootstrap.effectivemass(WL, type = type)
             newline <- data.frame(R = yt, m = NA,
                     dm = NA, space = isspatial, p = NA, chi = NA)
         }
@@ -1021,13 +1019,13 @@ getquantile <- function(means, sds, weights, quantile, interval) {
 
 
 ## determine effective mass with the Akaike Information Criterion
-deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose = FALSE) {
+deteffmassaic <- function(effmass, start = 1, mindistance = 2, verbose = FALSE) {
     ## additional parameters for saving, plotting
-    effmass <- bootstrap.effectivemass(WL, type = type)
     # discard all points which are less than one sigma away from zero or have negative mass
+    effmassall <- effmass
     for (time in seq(1, effmass$Time - 1)) {
         if(is.na(effmass$effMass[time]) || abs(effmass$effMass[time] / effmass$deffMass[time]) < 1.0 || effmass$effMass[time] < 0) {
-            print(paste("removing timeslice ", time, "due to being too close to zero"))
+            if(verbose) print(paste("removing timeslice ", time, "due to being too close to zero"))
             effmass$effMass[time] <- NA
             effmass$deffMass[time] <- NA
             effmass$effMass.tsboot[, time] <- rep(NA, effmass$boot.R)
@@ -1036,12 +1034,12 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose 
             effmass$t[, time] <- rep(NA, effmass$boot.R)
         }
     }
-    ntimeslices <- length(WL$cf0)
+    ntimeslices <- effmass$Time
     ncombs <- 0.5 * (ntimeslices - mindistance - start - 1) * (ntimeslices - mindistance - start)
     weights <- rep(NA, ncombs)
     masses <- rep(NA, ncombs)
     sds <- rep(NA, ncombs)
-    bootstraps <- array(NA, dim = c(WL$boot.R, ncombs))
+    bootstraps <- array(NA, dim = c(effmass$boot.R, ncombs))
     savefits <- data.frame(index = NA, t1 = NA, t2 = NA,
                             m = NA, dm = NA, chisqr = NA, p = NA, weight = NA)
     index <- 1
@@ -1062,7 +1060,7 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose 
                 weights[index] <- 0
                 masses[index] <- 0
                 sds[index] <- 0
-                bootstraps[, index] <- rep(0, WL$boot.R)
+                bootstraps[, index] <- rep(0, effmass$boot.R)
                 cat("there was a problem with t1 = ", t1, ", t2 = ", t2, "\n")
             }
             index <- index + 1
@@ -1101,7 +1099,7 @@ deteffmassaic <- function(WL, type = "log", start = 1, mindistance = 2, verbose 
                 bias = resmass$root - bootmean, m16 = mean(boot16), m84 = mean(boot84)))
     }
 
-    return(list(effmass = effmass, savefits = savefits,
+    return(list(effmass = effmassall, savefits = savefits,
         effmassfit = list(t0 = resmass$root, se = resmasserr, m16 = res16$root, m84 = res84$root),
         boot = list(m50 = bootmass, m16 = boot16, m84 = boot84, mean = bootmean, errstat = booterrstat, errtot = booterrtot)))
 

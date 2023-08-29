@@ -60,9 +60,9 @@ option_list <- list(
     help = "if true, correlators and effective masses
             are determined [default %default]"),
 
-    make_option(c("--determinemeff"), action = "store_true", default = FALSE,
-    help = "if true, correlators and effective masses are
-            determined for given t1 [default %default]"),
+    make_option(c("--drawbootstrap"), action = "store_true", default = FALSE,
+    help = "Draw bootstrap samples and determine effective mass
+            before doing effective mass fits [default %default]"),
     make_option(c("--dofit"), action = "store_true", default = FALSE,
     help = "if true, potentials and xi are calculated [default %default]"),
 
@@ -162,6 +162,7 @@ if (analyse) {
 # set names for plot, tables, open, lists for saving results
 
 filenameforplots <- sprintf("%splotsmeffnormal%s.pdf", opt$plotpath, endinganalysis)
+if (!opt$drawbootstrap) filenameforplots <- sprintf("%splotsmeffnormalnc%s.pdf", opt$plotpath, endinganalysis)
 
 pdf(file = filenameforplots, title = "")
 listfits <- list()
@@ -201,6 +202,11 @@ filename <- sprintf(
 alldata <- read.table(filename)
 nsave <- alldata[2, length(alldata[1, ])] - alldata[1, length(alldata[1, ])]
 
+## if the correlators and effective masses are not determined in-place, read in previous results
+if (!opt$drawbootstrap) {
+    readinres <- readRDS(sprintf("%slistmeffnormal%s.RData", opt$plotpath, endinganalysis))
+}
+
 # determine Wilson Loop correlators and effective masses
 # for all possible combinations Meff(y0) (use W(x0+1, t=0, y0)/W(x0, t=0, y0))
 # and Meff(t0) (use W(x0+1, t0, y=0)/W(x0, t0, y=0))
@@ -227,39 +233,40 @@ for (x in seq(1, Ns / 2, 1)) {
     title <- sprintf("beta = %.2f coarse x = %d skipped %d",
                     beta, x, skip * opt$nsave)
 
-    WL <- calcplotWloopnormalspatial(file = filename, skip = skip,
-            Ns = Ns, x = x, bootsamples = bootsamples,
-            title = title, path = opt$respath, zerooffset = opt$zerooffset,
-            every = opt$every, nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
-            maxrows = opt$maxrows)
-    uwerrresults <- uwerr.cf(WL)
-    negatives[x] <- sum(WL$cf0 < 0)
+    if (opt$drawbootstrap) {
+        WL <- calcplotWloopnormalspatial(file = filename, skip = skip,
+                Ns = Ns, x = x, bootsamples = bootsamples,
+                title = title, path = opt$respath, zerooffset = opt$zerooffset,
+                every = opt$every, nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
+                maxrows = opt$maxrows)
+        uwerrresults <- uwerr.cf(WL)
+        negatives[x] <- sum(WL$cf0 < 0)
 
-    if (opt$scaletauint) {
-    ## multiply errors by 2*tauint
-        WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
-    ## if bootstrap below mean, subtract (2*tauint-1)*difference
-    ## if bootstrap above mean, add (2*tauint-1)*difference
-        ## add/subtract ist automatically done by sign of difference
-    ## before multiplication: difference a
-    ## after mutliplication: difference 2*tauint*a
-        ## How to deal with dtauint?
-            print(WL$cf0)
-            print(uwerrresults$uwcf$tauint)
-        WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
-            tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        if (opt$scaletauint) {
+        ## multiply errors by 2*tauint
+            WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
+        ## if bootstrap below mean, subtract (2*tauint-1)*difference
+        ## if bootstrap above mean, add (2*tauint-1)*difference
+            ## add/subtract ist automatically done by sign of difference
+        ## before multiplication: difference a
+        ## after mutliplication: difference 2*tauint*a
+            ## How to deal with dtauint?
+            WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
+                tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        }
+        WL <- bootstrap.effectivemass(WL, type = opt$effmasstype)
+    } else {
+        WL <- readinres[[x]][[1]]
+        if(opt$aic) WL <- readinres[[x]][[1]]$effmass
     }
-
-    plot(WL, log = "y", xlab = "y/a_s", ylab = "C(y)",
-            main = sprintf("%s, logscale", title))
 
 
 # m_eff
     if (!opt$aic) {
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == x]
-    WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
-        isspatial = 1, type = opt$effmasstype, usecov = opt$usecov)
+    WL.effmasslist <- deteffmass(WL.effmass = WL, t1 = t1, t2 = t2, yt = x,
+        isspatial = 1, usecov = opt$usecov)
     #plot results, save results off meff in
     #short and long form (with and without bootstrapsamples)
     if (WL.effmasslist[[2]][[2]] != 0) {
@@ -300,7 +307,7 @@ for (x in seq(1, Ns / 2, 1)) {
     }
 }
     listfits[[x]] <- listresults
-    listtauint[[x]] <- uwerrresults
+    if (opt$drawbootstrap) listtauint[[x]] <- uwerrresults
 
 
     #calculate W(x, t + 1)/W(x, t)
@@ -313,39 +320,43 @@ for (x in seq(1, Ns / 2, 1)) {
 
     title <- sprintf("beta = %.2f fine x = %d skipped %d",
             beta, x, skip * opt$nsave)
-    WL <- calcplotWloopnormaltemporal(file = filename, skip = skip, Ns = Ns,
-            Nt = Nt, x = x, bootsamples = bootsamples, title = title,
-            path = opt$respath, zerooffset = opt$zerooffset, every = opt$every,
-            nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
-            maxrows = opt$maxrows)
-    uwerrresults <- uwerr.cf(WL)
-    negatives[x] <- negatives[x] + sum(WL$cf0 < 0)
+    if (opt$drawbootstrap) {
+        WL <- calcplotWloopnormaltemporal(file = filename, skip = skip, Ns = Ns,
+                Nt = Nt, x = x, bootsamples = bootsamples, title = title,
+                path = opt$respath, zerooffset = opt$zerooffset, every = opt$every,
+                nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
+                maxrows = opt$maxrows)
+        uwerrresults <- uwerr.cf(WL)
+        negatives[x] <- negatives[x] + sum(WL$cf0 < 0)
 
-    if (opt$scaletauint) {
-    ## multiply errors by 2*tauint
-        WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
-    ## if bootstrap below mean, subtract (2*tauint-1)*difference
-    ## if bootstrap above mean, add (2*tauint-1)*difference
-        ## add/subtract ist automatically done by sign of difference
-    ## before multiplication: difference a
-    ## after mutliplication: difference 2*tauint*a
-        ## How to deal with dtauint?
-            print(WL$cf0)
-            print(uwerrresults$uwcf$tauint)
-        WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
-            tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        if (opt$scaletauint) {
+        ## multiply errors by 2*tauint
+            WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
+        ## if bootstrap below mean, subtract (2*tauint-1)*difference
+        ## if bootstrap above mean, add (2*tauint-1)*difference
+            ## add/subtract ist automatically done by sign of difference
+        ## before multiplication: difference a
+        ## after mutliplication: difference 2*tauint*a
+            ## How to deal with dtauint?
+            WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
+                tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        }
+
+        plot(WL, log = "y", xlab = "t/a_t", ylab = "C(t)",
+                main = sprintf("%s, logscale", title))
+        WL <- bootstrap.effectivemass(WL, type = opt$effmasstype)
+    } else {
+        WL <- readinres[[Ns / 2 + x]][[1]]
+        if (opt$aic) WL <- readinres[[Ns / 2 + x]][[1]]$effmass
     }
-
-    plot(WL, log = "y", xlab = "t/a_t", ylab = "C(t)",
-            main = sprintf("%s, logscale", title))
 
 
 # m_eff
     if(!opt$aic) {
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == x]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == x]
-    WL.effmasslist <- deteffmass(WL = WL, t1 = t1, t2 = t2, yt = x,
-        isspatial = 0, type = opt$effmasstype, usecov = opt$usecov)
+    WL.effmasslist <- deteffmass(WL.effmass = WL, t1 = t1, t2 = t2, yt = x,
+        isspatial = 0, usecov = opt$usecov)
     #plot results, save results off meff in
     #short and long form (with and without bootstrapsamples)
     if (WL.effmasslist[[2]][[2]] != 0) {
@@ -386,8 +397,8 @@ for (x in seq(1, Ns / 2, 1)) {
     }
 }
     listfits[[Ns / 2 + x]] <- listresults
-    listtauint[[Ns / 2 + x]] <- uwerrresults
-    message(negatives[x], " correlators are negative for x = ", x)
+    if (opt$drawbootstrap) listtauint[[Ns / 2 + x]] <- uwerrresults
+    if (opt$drawbootstrap) message(negatives[x], " correlators are negative for x = ", x)
 }
 listfits[[Ns + 1]] <- githash
 
@@ -400,10 +411,12 @@ filenamenegatives <- sprintf("%snegativesnormal%s.csv", opt$plotpath, endinganal
 
 write.table(potential, filenamepotential, row.names = FALSE)
 saveRDS(listfits, file = filenamelist)
-saveRDS(listtauint, file = filenameuwerr)
-message(sum(negatives), " correlators are negative overall")
-write.table(data.frame(x = seq(1, Ns / 2), neg = negatives),
+if (opt$drawbootstrap) {
+    saveRDS(listtauint, file = filenameuwerr)
+    message(sum(negatives), " correlators are negative overall")
+    write.table(data.frame(x = seq(1, Ns / 2), neg = negatives),
         file = filenamenegatives, row.names = FALSE)
+}
 
 }
 

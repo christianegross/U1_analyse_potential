@@ -67,9 +67,9 @@ option_list <- list(
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, correlators and effective masses
             are determined from provided table [default %default]"),
-    make_option(c("--determinemeff"), action = "store_true", default = FALSE,
-    help = "if true, it is assumed the effective masses were determined
-            with a fixed lower boundary, which is written to the filenames [default %default]"),
+    make_option(c("--drawbootstrap"), action = "store_true", default = FALSE,
+    help = "Draw bootstrap samples and determine effective mass
+            before doing effective mass fits [default %default]"),
 
     make_option(c("--dofit"), action = "store_true", default = FALSE,
     help = "if true, potentials and xi are calculated [default %default]"),
@@ -156,6 +156,7 @@ if(opt$scaletauint){
 if (analyse) {
 # set names for plot, tables, open, lists for saving results
 filenameforplots <- sprintf("%splotsmeffsideways%s.pdf", opt$plotpath, endinganalysis)
+if (!opt$drawbootstrap) filenameforplots <- sprintf("%splotsmeffsidewaysnc%s.pdf", opt$plotpath, endinganalysis)
 pdf(file = filenameforplots, title = "")
 listfits <- list()
 listtauint <- list()
@@ -185,6 +186,12 @@ if (file.exists(namelistbounds)) {
 }
 print(listbounds)
 negatives <- c()
+
+## if the correlators and effective masses are not determined in-place, read in previous results
+if (!opt$drawbootstrap) {
+    readinres <- readRDS(sprintf("%slistmeffsideways%s.RData", opt$plotpath, endinganalysis))
+}
+
 # determine Wilson Loop correlators and effective masses
 # for all possible combinations Meff(x0/a_s) (use W(x0, t=0, y0+1)/W(x0, t=0, y0))
 # and Meff(x0/a_t) (use W(x0, t0+1, y=0)/W(x0, t0, y=0))
@@ -210,44 +217,45 @@ for (y in seq(1, Ns / 2, 1)) {
 
     title <- sprintf("beta = %.2f coarse y = %d skipped %d",
                 beta, y, skip * opt$nsave)
-    WL <- calcplotWloopsideways(file = filename,
-            path = opt$respath, skip = skip, Ns = Ns, yt = y,
-            title = title, bootsamples = bootsamples,
-            zerooffset = opt$zerooffset, nsave = opt$nsave,
-            every = opt$every, l = opt$bootl, fraction = opt$fraction,
-            maxrows = opt$maxrows)
+    if (opt$drawbootstrap) {
+        WL <- calcplotWloopsideways(file = filename,
+                path = opt$respath, skip = skip, Ns = Ns, yt = y,
+                title = title, bootsamples = bootsamples,
+                zerooffset = opt$zerooffset, nsave = opt$nsave,
+                every = opt$every, l = opt$bootl, fraction = opt$fraction,
+                maxrows = opt$maxrows)
 
-    uwerrresults <- uwerr.cf(WL)
+        uwerrresults <- uwerr.cf(WL)
 
-#     print(names(uwerrresults$uwcf))
-#     "value"   "dvalue"  "ddvalue" "tauint"  "dtauint" "t"
+#         print(names(uwerrresults$uwcf))
+#         "value"   "dvalue"  "ddvalue" "tauint"  "dtauint" "t"
 
-    if (opt$scaletauint) {
-    ## multiply errors by 2*tauint
-        WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
-    ## if bootstrap below mean, subtract (2*tauint-1)*difference
-    ## if bootstrap above mean, add (2*tauint-1)*difference
+        if (opt$scaletauint) {
+        ## multiply errors by 2*tauint
+            WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
+        ## if bootstrap below mean, subtract (2*tauint-1)*difference
+        ## if bootstrap above mean, add (2*tauint-1)*difference
         ## add/subtract ist automatically done by sign of difference
-    ## before multiplication: difference a
-    ## after mutliplication: difference 2*tauint*a
-        ## How to deal with dtauint?
-            print(WL$cf0)
-            print(uwerrresults$uwcf$tauint)
-        WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
-            tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        ## before multiplication: difference a
+        ## after mutliplication: difference 2*tauint*a
+            # ## How to deal with dtauint?
+            WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
+                tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        }
+
+        WL <- bootstrap.effectivemass(WL, type = opt$effmasstype)
+    } else {
+        WL <- readinres[[y]][[1]]
+        if(opt$aic) WL <- readinres[[y]][[1]]$effmass
     }
 
-    plot(WL, log = "y", xlab = "x/a_s", ylab = "C(x)",
-            main = sprintf("%s, logscale", title))
-
-    if(!opt$aic) {
     # m_eff
+    if(!opt$aic) {
     t1 <- listbounds$lower[listbounds$spacial == TRUE & listbounds$yt == y]
     t2 <- listbounds$upper[listbounds$spacial == TRUE & listbounds$yt == y]
 
-    WL.effmasslist <- deteffmass(WL = WL, yt = y,
-            t1 = t1, t2 = t2, isspatial = 1, type = opt$effmasstype, usecov=opt$usecov)
-print(potential)
+    WL.effmasslist <- deteffmass(WL.effmass = WL, yt = y,
+            t1 = t1, t2 = t2, isspatial = 1, usecov=opt$usecov)
     # plot results, save results off meff in
     # short and long form (with and without bootstrapsamples
     if (WL.effmasslist[[2]][[2]] != 0) {
@@ -258,7 +266,7 @@ print(potential)
     names(listresults) <- c("effmass", "yt", "coarse", "uwerr")
 
     title <- sprintf("%s, %d configs\n",
-            title, (length(WL$cf[, 1]) + skip) * opt$nsave)
+            title, (length(WL$cf$cf[, 1]) + skip) * opt$nsave)
     try(plot(WL.effmasslist[[1]], xlab = "x / a_s", ylab = "Meff",
             main = sprintf("%s, t1 = %d, t2 = %d, p = %f",
             title, t1, t2, WL.effmasslist[[1]]$effmassfit$Qval)))
@@ -267,6 +275,7 @@ print(potential)
             title, t1, t2, WL.effmasslist[[1]]$effmassfit$Qval),
             ylim = WL.effmasslist[[2]]))
     }
+
     if (opt$aic) {
         effmass <- deteffmassaic(WL)
         plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
@@ -291,8 +300,8 @@ print(potential)
     }
 }
     listfits[[y]] <- listresults
-    listtauint[[y]] <- uwerrresults
-    negatives[y] <- sum(WL$cf0 < 0)
+    if (opt$drawbootstrap) listtauint[[y]] <- uwerrresults
+    if (opt$drawbootstrap) negatives[y] <- sum(WL$cf0 < 0)
 }
 # same procedure as for y loop, here for temporal potential
 # measured a_s V(r/a_t)
@@ -310,37 +319,43 @@ for (t in seq(1, Nt / 2, 1)) {
     # loops
     title <- sprintf("beta = %.2f fine t = %d skipped %d",
                 beta, t, skip * opt$nsave)
-    WL <- calcplotWloopsideways(file = filename,
-            path = opt$respath, skip = skip, Ns = Ns, yt = t, title = title,
-            bootsamples = bootsamples, zerooffset = opt$zerooffset,
-            nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction,
-            maxrows = opt$maxrows)
 
-    uwerrresults <- uwerr.cf(WL)
+    if (opt$drawbootstrap) {
+        WL <- calcplotWloopsideways(file = filename,
+                path = opt$respath, skip = skip, Ns = Ns, yt = t, title = title,
+                bootsamples = bootsamples, zerooffset = opt$zerooffset,
+                nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction,
+                maxrows = opt$maxrows)
 
-    if (opt$scaletauint) {
-            ## multiply errors by 2*tauint
-        WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
-        ## if bootstrap below mean, subtract (2*tauint-1)*difference
-        ## if bootstrap above mean, add (2*tauint-1)*difference
-        ## add/subtract ist automatically done by sign of difference
-        ## before multiplication: difference a
-        ## after mutliplication: difference 2*tauint*a
-        ## How to deal with dtauint?
-            print(WL$cf0)
-            print(uwerrresults$uwcf$tauint)
-        WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
-            tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        uwerrresults <- uwerr.cf(WL)
+
+        if (opt$scaletauint) {
+                ## multiply errors by 2*tauint
+            WL$tsboot.se <- WL$tsboot.se * 2 * uwerrresults$uwcf$tauint
+            ## if bootstrap below mean, subtract (2*tauint-1)*difference
+            ## if bootstrap above mean, add (2*tauint-1)*difference
+            ## add/subtract ist automatically done by sign of difference
+            ## before multiplication: difference a
+            ## after mutliplication: difference 2*tauint*a
+            ## How to deal with dtauint?
+            WL$cf.tsboot$t <- t(apply(X=WL$cf.tsboot$t, MARGIN=1, FUN=function(x, tauint, mean) x + (x - mean) * (2 * tauint - 1),
+                tauint = uwerrresults$uwcf$tauint, mean = WL$cf0))
+        }
+
+        WL <- bootstrap.effectivemass(WL, type = opt$effmasstype)
+    } else {
+        WL <- readinres[[Ns / 2 + t]][[1]]
+        if (opt$aic) WL <- readinres[[Ns / 2 + t]][[1]]$effmass
     }
 
 
-    if(!opt$aic) {
     # m_eff
+    if(!opt$aic) {
     t1 <- listbounds$lower[listbounds$spacial == FALSE & listbounds$yt == t]
     t2 <- listbounds$upper[listbounds$spacial == FALSE & listbounds$yt == t]
 
-    WL.effmasslist <- deteffmass(WL = WL, yt = t,
-            t1 = t1, t2 = t2, isspatial = 0, type = opt$effmasstype, usecov=opt$usecov)
+    WL.effmasslist <- deteffmass(WL.effmass = WL, yt = t,
+            t1 = t1, t2 = t2, isspatial = 0, usecov=opt$usecov)
     if (WL.effmasslist[[2]][[2]] != 0) {
         listresults <- list(WL.effmasslist[[1]], t, TRUE, uwerrresults)
         potential <- rbind(potential, WL.effmasslist[[3]])
@@ -348,7 +363,7 @@ for (t in seq(1, Nt / 2, 1)) {
     names(listresults) <- c("effmass", "yt", "fine", "uwerr")
 
     title <- sprintf("%s, %d configs\n",
-            title, (length(WL$cf[, 1]) + skip) * opt$nsave)
+            title, (length(WL$cf$cf[, 1]) + skip) * opt$nsave)
     try(plot(WL.effmasslist[[1]], xlab = "x / a_s", ylab = "Meff",
             main = sprintf("%s, t1 = %d, t2 = %d, p = %f",
             title, t1, t2, WL.effmasslist[[1]]$effmassfit$Qval)))
@@ -380,8 +395,8 @@ for (t in seq(1, Nt / 2, 1)) {
     }
 }
     listfits[[Ns / 2 + t]] <- listresults
-    listtauint[[Ns / 2 + t]] <- uwerrresults
-    negatives[Ns / 2 + t] <- sum(WL$cf0 < 0)
+    if (opt$drawbootstrap) listtauint[[Ns / 2 + t]] <- uwerrresults
+    if (opt$drawbootstrap) negatives[Ns / 2 + t] <- sum(WL$cf0 < 0)
 }
 listfits[[Ns/2 + Nt/2 + 1]] <- githash
 
@@ -396,9 +411,11 @@ filenamenegatives <- sprintf("%snegativessideways%s.csv",  opt$plotpath, endinga
 write.table(potential, filenamepotential, row.names = FALSE)
 print(filenamelist)
 saveRDS(listfits, file = filenamelist)
-saveRDS(listtauint, file = filenameuwerr)
-write.table(data.frame(x = c(seq(1, Ns / 2), seq(1, Nt / 2)), neg = negatives),
+if (opt$drawbootstrap) {
+        saveRDS(listtauint, file = filenameuwerr)
+        write.table(data.frame(x = c(seq(1, Ns / 2), seq(1, Nt / 2)), neg = negatives),
         file = filenamenegatives, row.names = FALSE)
+}
 }
 
 if (dofit) {
