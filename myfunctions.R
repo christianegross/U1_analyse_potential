@@ -1068,7 +1068,7 @@ deteffmassaic <- function(effmass, start = 1, mindistance = 2, verbose = FALSE) 
     }
     savefits <- savefits[-1, ]
     savefits$weight <- savefits$weight / sum(savefits$weight)
-    interval <- c(-2, 3)
+    interval <- c(0.9 * min(bootstraps), 1.1 * max(bootstraps))
 
     resmass <- uniroot(f = AICquantile, quantile = 0.5, means = masses, sds = sds,
         weights = weights, interval = interval, tol = 1e-12)
