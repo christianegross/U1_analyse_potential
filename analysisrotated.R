@@ -63,7 +63,10 @@ option_list <- list(
         according to the akaike information criterion [default %default]"),
     make_option(c("--scaletauint"), action = "store_true", default = FALSE,
     help = "if true, errors and bootstrapsamples for the correlator are rescaled
-    such that the effects of autocorrelation are taken into account [default %default]"),
+        such that the effects of autocorrelation are taken into account [default %default]"),
+    make_option(c("--errortotpot"), action = "store_true", default = FALSE,
+    help = "if true, potential bootstrap samples are rescaled before analysis
+        to take total error into account [default %default]"),
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, correlators and effective masses
             are determined from provided table [default %default]"),
@@ -148,7 +151,7 @@ if(opt$aic){
 
 if(opt$scaletauint){
         endinganalysis <- sprintf("%sscaletauint", endinganalysis)
-        endingdofit <- sprintf("%sscaletauint", endingdofit)
+        endingdofit <- sprintf("%sscaletauint, etp%d", endingdofit, opt$errortotpot)
 }
 
 }
@@ -500,8 +503,11 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
         bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
       }
       else if (opt$aic) {
-# - bootsample = bootsample - (mean - bootsample) * (errtotmean / bootstat - 1)
-        bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50 - (listmeff[[i]][[1]]$effmassfit$t0 - listmeff[[i]][[1]]$boot$m50) * (listmeff[[i]][[1]]$effmassfit$se / listmeff[[i]][[1]]$boot$errstat - 1)
+        # include systematical errors
+        # bootsample = bootsample - (mean - bootsample) * (errtotmean / bootstat - 1)
+        if (opt$errortotpot)  bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50 - (listmeff[[i]][[1]]$effmassfit$t0 - listmeff[[i]][[1]]$boot$m50) * (listmeff[[i]][[1]]$effmassfit$se / listmeff[[i]][[1]]$boot$errstat - 1)
+        # only include statistical errors
+        if (!opt$errortotpot) bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50
         bsamples[, i] <- bsamplesc[, i]
       }
 
@@ -536,7 +542,11 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
       }
       else if (opt$aic) {
-        bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50 - (listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0 - listmeff[[Ns / 2 + i]][[1]]$boot$m50) * (listmeff[[Ns / 2 + i]][[1]]$effmassfit$se / listmeff[[Ns / 2 + i]][[1]]$boot$errstat - 1)
+        # include systematical errors
+        # bootsample = bootsample - (mean - bootsample) * (errtotmean / bootstat - 1)
+        if (opt$errortotpot) bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50 - (listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0 - listmeff[[Ns / 2 + i]][[1]]$boot$m50) * (listmeff[[Ns / 2 + i]][[1]]$effmassfit$se / listmeff[[Ns / 2 + i]][[1]]$boot$errstat - 1)
+        # only include statistical errors
+        if (!opt$errortotpot) bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$boot$m50
         bsamples[, Ns / 2 + i] <- bsamplesf[, i]
       }
 
@@ -862,7 +872,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         xi2 = NA, dxi2 = NA, xisingle = NA, dxisingle = NA,
         job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
         xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, aic = NA,
-        scaletauint = NA, puw = NA, dpuw = NA)
+        scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -880,7 +890,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         bootl = opt$bootl, xirzero = differentxiresults[1], dxirzero = differentxiresults[2],
         xist = differentxiresults[3], dxist = differentxiresults[4],
         lowlim = opt$lowlim, aic=opt$aic, scaletauint=opt$scaletauint,
-        puw = plaquettedata$value, dpuw = plaquettedata$dvalue)
+        puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot)
 
 resultlist <- rbind(resultlist, newline)
 }
