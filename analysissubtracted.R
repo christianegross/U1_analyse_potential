@@ -741,8 +741,14 @@ for (i in seq(1, length(rzeroofc$c))) {
 #plot thermalisation
 plot(plaquettecolumn, main = "Thermalisation",
         xlab = sprintf("MCMC-steps/%d", opt$nsave), ylab = "P")
-
 }
+
+# plot qqplots to see if xi and rzero are normally distributed
+try(qqnorm(xibootsamples, main = "qqplot of xi_ren"))
+try(qqline(xibootsamples))
+try(qqnorm(bsrzero, main = "qqplot of r_0"))
+try(qqline(bsrzero))
+
 
 if (dofit) {
     # save bootstrapsamples and summary of results

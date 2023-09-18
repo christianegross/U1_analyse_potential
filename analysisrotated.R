@@ -809,6 +809,13 @@ legend(legend = c("spatial", "temporal"), col = c(2, 1), pch = c(2, 1), x = "top
 plot(plaquettecolumn, main = "Thermalisation",
         xlab = sprintf("MCMC-steps / %d", opt$nsave), ylab = "P")
 
+# plot qqplots to see if xi and rzero are normally distributed
+try(qqnorm(xibootsamples, main = "qqplot of xi_ren"))
+try(qqline(xibootsamples))
+try(qqnorm(bsrzero, main = "qqplot of r_0"))
+try(qqline(bsrzero))
+
+
 #save values of force
 resultforce <- data.frame(R = NA, force = NA, forceerr = NA)
 for (i in seq (1, length(xx), 1)) {
