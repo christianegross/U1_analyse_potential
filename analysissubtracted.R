@@ -761,7 +761,8 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     xicalcsub = NA, dxicalcsub = NA, xi2sub = NA, dxi2 = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
     omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash = NA,
-    every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, aic=NA, scaletauint=NA)
+    every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, aic = NA,
+    scaletauint = NA, puw = NA, dpuw = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -778,7 +779,9 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       omit = opt$omit, nom = nom, skip = skip,
                       t1 = t1, job = opt$job, hash = githash, every = opt$every,
                       tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint,
-                      bootl = opt$bootl, lowlim = opt$lowlim, aic=opt$aic, scaletauint=opt$scaletauint)
+                      bootl = opt$bootl, lowlim = opt$lowlim, aic=opt$aic,
+                      scaletauint=opt$scaletauint,
+                      puw = plaquettedata$value, dpuw = plaquettedata$dvalue)
 resultlist <- rbind(resultlist, newline)
 }
 
