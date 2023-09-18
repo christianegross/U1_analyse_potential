@@ -155,7 +155,7 @@ if(opt$aic){
 
 if(opt$scaletauint){
         endinganalysis <- sprintf("%sscaletauint", endinganalysis)
-        endingdofit <- sprintf("%sscaletauint, etp%d", endingdofit, opt$errortotpot)
+        endingdofit <- sprintf("%sscaletauintetp%d", endingdofit, opt$errortotpot)
 }
 
 }
