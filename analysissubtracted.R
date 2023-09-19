@@ -755,8 +755,8 @@ plot(plaquettecolumn, main = "Thermalisation",
 }
 
 # plot qqplots to see if xi and rzero are normally distributed
-try(qqnorm(xibootsamples, main = "qqplot of xi_ren"))
-try(qqline(xibootsamples))
+try(qqnorm(fit.match$t[, 2], main = "qqplot of xi_ren"))
+try(qqline(fit.match$t[, 2]))
 try(qqnorm(bsrzero, main = "qqplot of r_0"))
 try(qqline(bsrzero))
 
