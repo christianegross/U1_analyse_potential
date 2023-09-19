@@ -47,7 +47,10 @@ option_list <- list(
         according to the akaike information criterion [default %default]"),
     make_option(c("--scaletauint"), action = "store_true", default = FALSE,
     help = "if true, errors and bootstrapsamples for the correlator are rescaled
-    such that the effects of autocorrelation are taken into account [default %default]")
+    such that the effects of autocorrelation are taken into account [default %default]"),
+    make_option(c("--errortotpot"), action = "store_true", default = FALSE,
+    help = "if true, potential bootstrap samples are rescaled before analysis
+        to take total error into account [default %default]")
 
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
@@ -126,6 +129,8 @@ data <- data[data$omit == opt$omit, ]
 # print(data)
 end2 <- ""
 
+
+## filter for AIC and scaled errors
 if (opt$aic) {
 data <- data[data$aic == TRUE, ]
 end2 <- sprintf("%saic", end2)
@@ -135,9 +140,17 @@ data <- data[data$aic == FALSE, ]
 
 if (opt$scaletauint) {
 data <- data[data$scaletauint == TRUE, ]
-end2 <- sprintf("%sscaletauint", end2)
+end2 <- sprintf("%sscaletauintetp%d", end2, opt$errortotpot)
 } else {
 data <- data[data$scaletauint == FALSE, ]
+}
+
+## filter if results with total or onyl statistical uncertainty should be used,
+## only aplicable if AIC was used
+if (opt$errortotpot && opt$aic) {
+    data <- data[data$errortotpot == TRUE, ]
+} else {
+    data <- data[data$errortotpot == FALSE, ]
 }
 
 data$r0 <- data$r0 * factorrzero
