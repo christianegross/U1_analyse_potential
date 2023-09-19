@@ -57,6 +57,8 @@ source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 
 githash <- printgitcommit(opt$myfunctions)
 
+factorrzero <- 1
+
 type <- opt$type
 if (! (type == "normal" || type == "sideways" || type == "slope")) {
     stop(paste("type", type, "not allowed"))
@@ -121,7 +123,7 @@ if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
 }
 
-print(data)
+# print(data)
 end2 <- ""
 
 if (opt$aic) {
@@ -137,6 +139,8 @@ end2 <- sprintf("%sscaletauint", end2)
 } else {
 data <- data[data$scaletauint == FALSE, ]
 }
+
+data$r0 <- data$r0 * factorrzero
 
 nom <- length(data$beta)
 
@@ -165,7 +169,7 @@ for (i in seq(1, nom)) {
                     names = c("bsslopescaled", "bsp", "bsxiren"), filename = filenameres)
     }
     # print(head(result))
-    arrayrzero[, i] <- result[, 1]
+    arrayrzero[, i] <- result[, 1] * factorrzero
     arrayp[, i] <- result[, 2]
     arrayxi[, i] <- result[, 3]
     if (sum(is.na(result)) > 0) print(sum(is.na(result)))
@@ -227,8 +231,8 @@ mask <- data$beta == opt$beta & data$xi == 1 #& data$c == -1.65
 if(opt$omit == -1) mask <- mask & data$omit == 0
 maskone <- mask
 rzeroone <- data$r0[mask]
-xlim <- c(min(data$beta), max(data$beta))
-ylim <- c(max(rzeroone - 2 * opt$fitlim, min(data$r0 - data$dr0)), min(rzeroone + 2 * opt$fitlim, max(data$r0 + data$dr0)))
+xlim <- c(min(data$beta, na.rm = T), max(data$beta, na.rm = T))
+ylim <- c(max(rzeroone - 2 * opt$fitlim, min(data$r0 - data$dr0, na.rm = T)), min(rzeroone + 2 * opt$fitlim, max(data$r0 + data$dr0, na.rm = T)))
 if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
