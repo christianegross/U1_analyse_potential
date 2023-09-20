@@ -48,6 +48,8 @@ if (! (opt$singlemulti == "single" || opt$singlemulti == "multi")) {
 if (!file.exists(opt$summaryname)) {
     stop(paste("file for results does not exist, check for", opt$summaryname))
 }
+
+if (opt$omit < 0) stop("omit must be non-negative!")
 data <- read.table(opt$summaryname, header = TRUE, sep = " ")
 # data <- na.omit(data)
 
@@ -74,6 +76,31 @@ if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
 }
 
+
+## filter for AIC and scaled errors
+if (opt$aic) {
+data <- data[data$aic == TRUE, ]
+end <- sprintf("%saic", end)
+} else {
+data <- data[data$aic == FALSE, ]
+}
+
+if (opt$scaletauint) {
+data <- data[data$scaletauint == TRUE, ]
+end <- sprintf("%sscaletauintetp%d", end, opt$errortotpot)
+} else {
+data <- data[data$scaletauint == FALSE, ]
+}
+
+## filter if results with total or onyl statistical uncertainty should be used,
+## only aplicable if AIC was used
+
+if (opt$errortotpot && opt$aic) {
+    data <- data[data$errortotpot == TRUE, ]
+} else {
+    data <- data[data$errortotpot == FALSE, ]
+}
+
 nom <- length(data$beta)
 
 
@@ -82,12 +109,14 @@ if (opt$xiconst) xiconststr <- "xiconst"
 print(opt$singlemulti)
 if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
 if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+if (opt$aic) endname <- sprintf("%saic", endname)
+if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 
 namesave <- sprintf("%s/resultsrenormalization%s.csv", as.character(opt$respath), endname)
-result <- read.table(file=namesave, header=TRUE)
+result <- read.table(file = namesave, header = TRUE)
 
 xis <- result$xiin
 result$betachosen <- rep(FALSE, length(xis))
@@ -101,7 +130,7 @@ for (i in seq(1, length(xis))){
     if (fix %in% names(opt)) {
         betafix <- paste("xi", i, "beta", sep="")
         if (as.logical(opt[[fix]])) {
-            j <- which(abs(data$xi - xis[i]) < 1e-3 & abs(data$beta - opt[[betafix]]) < 1e-3 )
+            j <- which(abs(data$xi - xis[i]) < 1e-3 & abs(data$beta - opt[[betafix]]) < 1e-3)
             readin <- readinbootstrapsamples(beta = data$beta[j], Ns = data$Ns[j],
                         Nt = data$Nt[j], xi = data$xi[j], columns = c(1, 1),
                         names = c("bsp", "bsxicalc"), filename = filenameres, end = end)

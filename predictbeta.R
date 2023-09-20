@@ -32,7 +32,7 @@ option_list <- list(
     help = "omission of highest points from the potential, -1=any [default %default]"),
     make_option(c("--indexfitcontlim"), type = "integer", default = 1,
     help = "for the fit to the contlim, only xi with index larger than this are used [default %default]"),
-    make_option(c("--lowlimfitpot"), type = "integer", default = 0,
+    make_option(c("--lowlimfitpot"), type = "integer", default = 1,
     help = "points lower than this are not used to determine xi with the normal potential [default %default]"),
     make_option(c("--fitlim"), type = "double", default = 0.3,
     help = "how much may the value of r0 deviate from the xi=1 value to still be considered? [default %default]"),
@@ -147,11 +147,13 @@ data <- data[data$scaletauint == FALSE, ]
 
 ## filter if results with total or onyl statistical uncertainty should be used,
 ## only aplicable if AIC was used
+
 if (opt$errortotpot && opt$aic) {
     data <- data[data$errortotpot == TRUE, ]
 } else {
     data <- data[data$errortotpot == FALSE, ]
 }
+
 
 data$r0 <- data$r0 * factorrzero
 
@@ -164,7 +166,6 @@ arrayp <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 arrayxi <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 intercepts <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 
-print(data)
 
 for (i in seq(1, nom)) {
     string <- sprintf("i = %d, beta = %f, Ns = %d, Nt = %d, xi = %f",
@@ -214,7 +215,7 @@ xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
 endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
 if (opt$aic) endname <- sprintf("%saic", endname)
-if (opt$scaletauint) endname <- sprintf("%sscaletauint", endname)
+if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 
 for (size in c(0.65)) {
 
