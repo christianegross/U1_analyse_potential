@@ -111,7 +111,7 @@ if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%slowlim%d", 
 if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
-endname <- paste0(endname, "xiinsteadofxisq")
+endnamewrite <- paste0(endname, "xiinsteadofxisq")
 
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
@@ -263,17 +263,17 @@ resultspolynomial <- resultspolynomial[-1, ]
 # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
 # print(fitresults)
 # print(result)
-namepol <- sprintf("%s/polynomialbetachosen%scont%d.csv", opt$respath, endname, opt$indexfitcontlim)
+namepol <- sprintf("%s/polynomialbetachosen%scont%d.csv", opt$respath, endnamewrite, opt$indexfitcontlim)
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
-namesave <- sprintf("%s/resultsrenormalizationbetachosen%s.csv", opt$respath, endname)
+namesave <- sprintf("%s/resultsrenormalizationbetachosen%s.csv", opt$respath, endnamewrite)
 write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
 
-namesave <- sprintf("%s/listresultsrenormalizationbetachosen%s.RData", opt$respath, endname)
+namesave <- sprintf("%s/listresultsrenormalizationbetachosen%s.RData", opt$respath, endnamewrite)
 saveRDS(resultslist, file=namesave)
 
-namesave <- sprintf("%s/listpolynomialrenormalizationbetachosen%scont%d.RData", opt$respath, endname, opt$indexfitcontlim)
+namesave <- sprintf("%s/listpolynomialrenormalizationbetachosen%scont%d.RData", opt$respath, endnamewrite, opt$indexfitcontlim)
 saveRDS(fitspolynomial, file=namesave)
 
 
