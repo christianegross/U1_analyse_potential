@@ -1,0 +1,79 @@
+---
+title: "Draw a confidence ellipse"
+author: "Christiane"
+date: "2023-08-25"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(hadron)
+```
+
+## Read in example data
+
+```{r}
+data <- readRDS("/home/gross/Documents/masterthesis/more_measurements/contlimitbeta/limittablesandplots/listpolynomialrenormalizationbeta1.650000omit1cont1xiconst.RData")
+y <- data[[13]]
+x <- data[[18]]
+plot(x, xlab="xi", ylab="beta")
+plot(y, xlab="xi", ylab="P")
+xsamples <- x$t[, 1]
+ysamples <- y$t[, 1]
+cor(xsamples, ysamples)
+```
+Draw confidence ellipse based on https://stackoverflow.com/a/41821484 and  https://matplotlib.org/stable/gallery/statistics/confidence_ellipse.html, which is based on https://carstenschelp.github.io/2018/09/14/Plot_Confidence_Ellipse_001.html. 
+
+```{r}
+draw_ellipse <- function(x, y, meanx=mean(x), meany=mean(y), points=1000, verbose=TRUE, nstd=1, ...) {
+  corcof <- cor(x, y) ## pearson correlation coefficient
+  ## set major axes of elippsis
+  ell_rad_x <- sqrt(1 + corcof)
+  ell_rad_y <- sqrt(1 - corcof)
+  # angle of major axis with x axis phi or tau - in correlation ellipses, this is always 45°
+  phi <- pi/4 
+  if (verbose) {
+  print(corcof)
+  }
+
+  ## ellipsis from parametric equation
+  ## rescale ellipsis by standard deviation, number of standard deviations that should be displayd
+  t <- seq(0, 2*pi, len=points) 
+  xpoints <- (ell_rad_x*cos(t)*cos(phi) - ell_rad_y*sin(t)*sin(phi)) * sd(x) * nstd
+  ypoints <- (ell_rad_x*cos(t)*sin(phi) + ell_rad_y*sin(t)*cos(phi)) * sd(y) * nstd
+  
+  ## plot shifted ellipsis, point with errors, rectangle made up of errors
+  plotwitherror(x=meanx + xpoints, meany + ypoints, ...)
+  plotwitherror(x=meanx, y=meany, dx=sd(x), dy=sd(y), rep=TRUE)
+  polygon(x=c(meanx - sd(x), meanx + sd(x), meanx + sd(x), meanx - sd(x)), 
+          y=c(meany - sd(y), meany - sd(y), meany + sd(y), meany + sd(y)))
+}
+```
+
+```{r}
+draw_ellipse(xsamples, ysamples, ylim=c(0.60, 0.63), xlim=c(1.36, 1.43), cex=0.01, 
+             main="contlimit beta 1.65, 3rd order polynomial, xiconst", xlab="beta", ylab="P")
+points(xsamples, ysamples, cex=0.1, col=2)
+xn=rnorm(1000)
+yn=rnorm(1000)
+draw_ellipse(x=xn, y=yn, col=2, points=1000, cex=0.1, xlim=c(-3, 3), ylim=c(-3, 3),
+             main="normal distributed points, 1 and 3 sigma")
+draw_ellipse(x=xn, y=yn, col=2, points=1000, cex=0.1, rep=TRUE, nstd=3)
+points(xn, yn, cex=0.2, col=4)
+
+```
+
+```{r, eval=FALSE, echo=FALSE}
+draw_ellipse(x=data[[13]]$t[, 1], y=data[[13]]$t[, 2], cex=0.1, xlim=c(0.6, 0.63), ylim=c(0.2, 0.28))
+points(x=data[[13]]$t[, 1], y=data[[13]]$t[, 2], cex=0.1)
+length(data[[13]]$t[, 1][abs(data[[13]]$t[, 1] - data[[13]]$t0[1]) < sd(data[[13]]$t[, 1])])
+length(data[[13]]$t[, 1][abs(data[[13]]$t[, 1] - data[[13]]$t0[1]) < sd(data[[13]]$t[, 1])]) / length(data[[13]]$t[, 1])
+draw_ellipse(x=data[[13]]$t[, 1], y=data[[13]]$t[, 3], cex=0.1, xlim=c(0.6, 0.63))
+points(x=data[[13]]$t[, 1], y=data[[13]]$t[, 3], cex=0.1)
+draw_ellipse(x=data[[13]]$t[, 1], y=data[[13]]$t[, 4], cex=0.1, xlim=c(0.58, 0.65))
+draw_ellipse(x=data[[13]]$t[, 1], y=data[[13]]$t[, 4], cex=0.1, nstd=2, rep=TRUE)
+points(x=data[[13]]$t[, 1], y=data[[13]]$t[, 4], cex=0.1)
+```
+
