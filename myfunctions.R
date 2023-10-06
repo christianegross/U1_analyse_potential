@@ -123,7 +123,7 @@ readloopfilecfplaquette <- function (file, path = "", skip = 0,
 }
 
 readloopfilecfonecolumn <- function (file, path = "",
-                                    skip = 0, column = 1, every = 1, maxrows = -1) {
+                                    skip = 0, column = 1, every = 1, maxrows = -1, memsafe = FALSE) {
     # reads column into a cf container
     # column has to be read twice so the expectation value can be
     # determined with bootstrap.cf
@@ -132,11 +132,20 @@ readloopfilecfonecolumn <- function (file, path = "",
     # every: step between read lines
     # used instead of uwerr to get the expectation value
     # to get bootstrap samples
-  tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
+    # if memsafe: first read in first line to determine how many colums there are, then only read in desired column
+  if (memsafe) {
+    tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = 1))
+    ncol <- length(tmp[1, ])
+    tmp <- read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows,
+        colClasses = c(rep("NULL", column-1), "numeric", rep("NULL", ncol-column)))
+    ii <- c(1, 1)
+  } else {
+    tmp <- as.matrix(read.table(paste(path, file, sep = ""), skip = skip, nrows = maxrows))
+    ii <- c(column, column)
+  }
   Dm <- dim(tmp)
   confno <- tmp[[Dm[2]]]
   Time <- 1
-  ii <- c(column, column)
   ret <- cf_meta(nrObs = 1, Time = Time, nrStypes = 1)
   ret <- cf_orig(ret, cf = tmp[, ii])
   ret$conf.index <- confno
