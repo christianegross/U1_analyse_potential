@@ -144,6 +144,8 @@ if (opt$smearing) {
         Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim)
 }
 
+if(opt$crzero != -1.65) endingdofit <- sprintf("%sc%.2f", endingdofit, opt$crzero)
+
 if(opt$aic){
         endinganalysis <- sprintf("%saic", endinganalysis)
         endingdofit <- sprintf("%saic", endingdofit)

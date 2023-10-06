@@ -172,7 +172,8 @@ for (i in seq(1, nom)) {
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
     if (type == "normal" || type == "sideways") {
-    end <- sprintf("omit%dlowlim%d%s", data$omit[i], data$lowlim[i], end2)
+    if (opt$crzero == -1.65) end <- sprintf("omit%dlowlim%d%s", data$omit[i], data$lowlim[i], end2)
+    if (opt$crzero != -1.65) end <- sprintf("omit%dlowlim%dc%.2f%s", data$omit[i], data$lowlim[i], opt$crzero, end2)
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
@@ -214,6 +215,7 @@ packages <- c("\\usepackage{tikz}",
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
 endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+if(opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 
@@ -349,7 +351,6 @@ for (i in seq(start, length(xis))) {
         interceptintermediate <- getintercept(fitsrzero[[i]], arrayrzero[, maskone], bootsamples = length(fitsrzero[[i]]$t[, 1]))
         intercepts[, i] <- fillexceptna(removed, interceptintermediate)
 
-        #do prediction for each bootstrapsample separately, can consider $val and not $boot
         # cannot use predict, because taking the sd of all means underestimates the error, for each intercept have to take the appropriate boot
         prediction <- predictwithxerror.bootstrapfit(fitsplaquette[[i]], interceptintermediate)
         plaqren[, i] <- fillexceptna(removed, prediction$boot)
@@ -360,6 +361,7 @@ for (i in seq(start, length(xis))) {
         } else {
             xiphys[, i] <- fillexceptna(removed, prediction$boot)
         }
+
         newline <- data.frame(xiin = xis[i],
             r0slope = tex.catwitherror(fitsrzero[[i]]$t0[2], fitsrzero[[i]]$se[2], with.dollar = FALSE, digits = 2),
             r0intercept = tex.catwitherror(fitsrzero[[i]]$t0[1], fitsrzero[[i]]$se[1], with.dollar = FALSE, digits = 2),
