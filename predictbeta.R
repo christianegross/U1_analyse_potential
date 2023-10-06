@@ -325,14 +325,14 @@ for (i in seq(start, length(xis))) {
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
                             data$beta[mask], na.omit(arrayrzero[, mask])))
-    cat("\n\nxi=", xis[i], "rzero\n")
-    summary(fitsrzero[[i]])
+    # cat("\n\nxi=", xis[i], "rzero\n")
+    # summary(fitsrzero[[i]])
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
-    print(removed)
+    # print(removed)
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
                             data$beta[mask], na.omit(arrayp[, mask])))
-    cat("\n\nxi=", xis[i], "plaq\n")
-    summary(fitsplaquette[[i]])
+    # cat("\n\nxi=", xis[i], "plaq\n")
+    # summary(fitsplaquette[[i]])
     if (opt$xiconst) {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fncon, c(1), data$xicalc[mask],
                             data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
@@ -341,8 +341,8 @@ for (i in seq(start, length(xis))) {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
                             data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
     }
-    cat("\n\nxi=", xis[i], "xiphys\n")
-    summary(fitsxi[[i]])
+    # cat("\n\nxi=", xis[i], "xiphys\n")
+    # summary(fitsxi[[i]])
 
     if (!inherits(fitsrzero[[i]], "try-error") && !inherits(fitsplaquette[[i]], "try-error") && !inherits(fitsxi[[i]], "try-error")) {
         try(errorpolygon(X = xvalues, fitsrzero[[i]], col.p = cols[i],
@@ -641,9 +641,6 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 resultspolynomial <- resultspolynomial[-1, ]
 # write out result
-namepol <- sprintf("%s/polynomial%scont%d.csv", opt$respath, endname, opt$indexfitcontlim)
-if (xisingle) namepol <- paste0(namepol, "xisingle")
-write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
 }
@@ -671,8 +668,12 @@ write.table(fitresults, file=namesave, col.names = TRUE, row.names = FALSE, appe
 namesave <- sprintf("%s/listresultsrenormalization%s.RData", opt$respath, endname)
 saveRDS(resultslist, file=namesave)
 
+if (opt$xisingle) endname <- paste0(endname, "xisingle")
+
+namepol <- sprintf("%s/polynomial%scont%d.csv", opt$respath, endname, opt$indexfitcontlim)
+write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+
 namesave <- sprintf("%s/listpolynomialrenormalization%scont%d.RData", opt$respath, endname, opt$indexfitcontlim)
-if (xisingle) namesave <- paste0(namesave, "xisingle")
 saveRDS(fitspolynomial, file=namesave)
 # move all plots into subfolder
 # system(sprintf("mv -v tikz* %s", opt$respath))
