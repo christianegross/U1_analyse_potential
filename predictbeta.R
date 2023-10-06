@@ -50,7 +50,9 @@ option_list <- list(
     such that the effects of autocorrelation are taken into account [default %default]"),
     make_option(c("--errortotpot"), action = "store_true", default = FALSE,
     help = "if true, potential bootstrap samples are rescaled before analysis
-        to take total error into account [default %default]")
+        to take total error into account [default %default]"),
+    make_option(c("--xisingle"), action = "store_true", default = FALSE,
+    help = "if true, continuum limit is fit in powers of xi instead of xi^2 [default %default]")
 
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
@@ -482,6 +484,10 @@ xirennaive <- c()
 bsamplescontlimit[, seq(1, length(xis))] <- plaqren
 bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
 bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys^2
+if(opt$xisingle) {
+bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys
+bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- xiphys
+}
 for (i in seq(1, length(xis))) {
     if (opt$naive) {
     row <- data$beta == opt$beta & abs(data$xi - xis[i]) < 0.01
@@ -490,6 +496,7 @@ for (i in seq(1, length(xis))) {
     bsamplescontlimitnaive[, i] <- arrayp[, row]
     bsamplescontlimitnaivexiren[, i] <- arrayp[, row]
     bsamplescontlimitnaivexiren[, length(xis) + i] <- arrayxi[, row]^2
+    if (opt$xisingle) bsamplescontlimitnaivexiren[, length(xis) + i] <- arrayxi[, row]
     }
     bsamplescontlimitbeta[, i] <- intercepts[, i]
     # bsamplescontlimitbeta[, length(xis) + i] <- arrayxi[, row]^2
@@ -516,6 +523,15 @@ fitspolynomial <- list()
 resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
                     p = NA, type = NA, limplot = NA, dlimplot = NA)
 
+xiinfit <- xis^2
+xinaivefit <- xirennaive^2
+xirenfit <- result$xiphys^2
+if(opt$xisingle) {
+xiinfit <- xis
+xinaivefit <- xirennaive
+xirenfit <- result$xiphys
+}
+
 maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
 i <- 1
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
@@ -523,7 +539,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     if (opt$naive) {
     # naive xi and beta
     fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = xis^2, y = pnaive, bsamples = bsamplescontlimitnaive,
+                x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
                 mask = maskfitcontlim))
     fitspolynomial[[i]] <- fitplaqnaive
 
@@ -542,7 +558,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # naive beta, xi renorm
     fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-            x = xirennaive^2, y = pnaive,
+            x = xinaivefit, y = pnaive,
             bsamples = bsamplescontlimitnaivexiren,
             mask = maskfitcontlim))
     fitspolynomial[[5 + i]] <- fitplaqnaivexiren
@@ -572,7 +588,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = result$xiphys^2, y = result$p, bsamples = bsamplescontlimit,
+                x = xirenfit, y = result$p, bsamples = bsamplescontlimit,
                 mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -594,7 +610,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = result$xiphys^2, y = result$beta, bsamples = bsamplescontlimitbeta,
+                x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
                 mask = maskfitcontlim))
     fitspolynomial[[15 + i]] <- fitbeta
 
@@ -626,6 +642,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 resultspolynomial <- resultspolynomial[-1, ]
 # write out result
 namepol <- sprintf("%s/polynomial%scont%d.csv", opt$respath, endname, opt$indexfitcontlim)
+if (xisingle) namepol <- paste0(namepol, "xisingle")
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
@@ -655,6 +672,7 @@ namesave <- sprintf("%s/listresultsrenormalization%s.RData", opt$respath, endnam
 saveRDS(resultslist, file=namesave)
 
 namesave <- sprintf("%s/listpolynomialrenormalization%scont%d.RData", opt$respath, endname, opt$indexfitcontlim)
+if (xisingle) namesave <- paste0(namesave, "xisingle")
 saveRDS(fitspolynomial, file=namesave)
 # move all plots into subfolder
 # system(sprintf("mv -v tikz* %s", opt$respath))

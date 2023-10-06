@@ -76,6 +76,7 @@ if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
 }
 
+if (opt$crzero != -1.65) end <- sprintf("%sc%.2f", end, opt$crzero)
 
 ## filter for AIC and scaled errors
 if (opt$aic) {
@@ -109,9 +110,11 @@ if (opt$xiconst) xiconststr <- "xiconst"
 print(opt$singlemulti)
 if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
 if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+if (opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
-endnamewrite <- paste0(endname, "xiinsteadofxisq")
+endnamewrite <- endname
+if (opt$xisingle) endnamewrite <- paste0(endname, "xisingle")
 
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
@@ -166,9 +169,13 @@ xirennaive <- c()
 # naivexiren: use renormalized xi, but leave beta fixed
 # beta: take continuum limit for beta(xi) as well
 bsamplescontlimit[, seq(1, length(xis))] <- resultslist[["plaqren"]]
+bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
+bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
+bsamplescontlimitbeta[, seq(1, length(xis))] <- resultslist[["intercepts"]][, seq(1, length(xis))]
+if (opt$xisingle) {
 bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]
 bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]
-bsamplescontlimitbeta[, seq(1, length(xis))] <- resultslist[["intercepts"]][, seq(1, length(xis))]
+}
 
 if (result$dbeta[1] < 1e-8) {
     bsamplescontlimitbeta[, 1] <- parametric.bootstrap(opt$bootsamples, c(opt$beta), c(1e-4))
@@ -189,15 +196,19 @@ resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
 
 maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
 i <- 1
+xirenfit <- result$xiphys^2
+if(opt$xisingle) {
+xirenfit <- result$xiphys
+}
 
-pdf(sprintf("%s/plotsbetachosen%s.pdf", opt$respath, endname), title="")
+pdf(sprintf("%s/plotsbetachosen%s.pdf", opt$respath, endnamewrite), title="")
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     print(paste("Doing fits of polynomial degree", i))
 
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = result$xiphys, y = result$p, bsamples = bsamplescontlimit,
+                x = xirenfit, y = result$p, bsamples = bsamplescontlimit,
                 mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -208,7 +219,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
             plot.range = c(-0.2, 1.2),
             ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
-            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren", ylab = "P")
+            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P")
 
     resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
@@ -219,7 +230,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = result$xiphys, y = result$beta, bsamples = bsamplescontlimitbeta,
+                x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
                 mask = maskfitcontlim))
     fitspolynomial[[5 + i]] <- fitbeta
 
@@ -228,7 +239,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
             plot.range = c(-0.2, 1.2),
             ylim = c(1.3, 1.75),
-            xlab = "xi_ren", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)))
+            xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)))
 
     try(resultspolynomial <- rbind(resultspolynomial,
             data.frame(degree = i, lim = tex.catwitherror(fitbeta$t0[1],
