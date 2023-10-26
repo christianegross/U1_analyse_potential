@@ -16,6 +16,8 @@ The scripts in this repository can be used to determine the static potential, th
 - helpers:
     - makeinputtable.R
     - converttablelatex.R
+    - rescaleslope.R
+    - gflowanisotropy.R
 
 ### Required packages
  - hadron and its dependencies -> statistical analysis
