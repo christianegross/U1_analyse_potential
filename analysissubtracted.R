@@ -562,14 +562,14 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 
 #determine parameters of potential by bootstrap, save results
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
-                    yc, xc, bsamplesc, mask = maskc)
+                    yc, xc, bsamplesc, mask = maskc, CovMatrix=NULL)
 filenamecoarse <- sprintf("%sfitresultcoarsenormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
                     yf, xf, bsamplesf, mask = maskf)
 filenamefine <- sprintf("%sfitresultfinenormal%s.RData", opt$plotpath, endingdofit)
-saveRDS(fit.resultfine, file = filenamefine)
+saveRDS(fit.resultfine, file = filenamefine, CovMatrix=NULL)
 
 # plot potentials
 plot(fit.resultfine, main  =  sprintf(
@@ -625,7 +625,7 @@ for (bs in seq(1, bootsamples, 1)) {
 maskc <- maskc & c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim))
 
 fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
-            y = yc, x = yf, bsamples[, 1:Ns], mask = maskc)
+            y = yc, x = yf, bsamples[, 1:Ns], mask = maskc, CovMatrix=NULL)
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
             main = "matching potentials to determine xi")
 # print(fit.match)
@@ -645,7 +645,7 @@ for (i in seq(1, bootsamples, 1)) {
 
 # fit to overall potential
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.1, 0.1),
-                    y, x, bsamples, mask = mask)
+                    y, x, bsamples, mask = mask, CovMatrix=NULL)
 filenamescaled <- sprintf("%sfitresultscalednormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultscaled, file = filenamescaled)
 

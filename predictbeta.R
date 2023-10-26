@@ -324,22 +324,22 @@ for (i in seq(start, length(xis))) {
     mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
-                            data$beta[mask], na.omit(arrayrzero[, mask])))
+                            data$beta[mask], na.omit(arrayrzero[, mask]), CovMatrix=NULL))
     # cat("\n\nxi=", xis[i], "rzero\n")
     # summary(fitsrzero[[i]])
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
     # print(removed)
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
-                            data$beta[mask], na.omit(arrayp[, mask])))
+                            data$beta[mask], na.omit(arrayp[, mask]), CovMatrix=NULL))
     # cat("\n\nxi=", xis[i], "plaq\n")
     # summary(fitsplaquette[[i]])
     if (opt$xiconst) {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fncon, c(1), data$xicalc[mask],
-                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
+                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4, CovMatrix=NULL))
 
     } else {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
-                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
+                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4, CovMatrix=NULL))
     }
     # cat("\n\nxi=", xis[i], "xiphys\n")
     # summary(fitsxi[[i]])
@@ -540,7 +540,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     # naive xi and beta
     fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
-                mask = maskfitcontlim))
+                mask = maskfitcontlim, CovMatrix=NULL))
     fitspolynomial[[i]] <- fitplaqnaive
 
     try(plot(fitplaqnaive, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
@@ -560,7 +560,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
             x = xinaivefit, y = pnaive,
             bsamples = bsamplescontlimitnaivexiren,
-            mask = maskfitcontlim))
+            mask = maskfitcontlim, CovMatrix=NULL))
     fitspolynomial[[5 + i]] <- fitplaqnaivexiren
 
     try(plot(fitplaqnaivexiren, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
@@ -589,7 +589,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$p, bsamples = bsamplescontlimit,
-                mask = maskfitcontlim))
+                mask = maskfitcontlim, CovMatrix=NULL))
 
     if (!inherits(fitplaq, "try-error")) {
     fitspolynomial[[10 + i]] <- fitplaq
@@ -611,7 +611,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
-                mask = maskfitcontlim))
+                mask = maskfitcontlim, CovMatrix=NULL))
     fitspolynomial[[15 + i]] <- fitbeta
 
     try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",

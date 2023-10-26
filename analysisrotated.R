@@ -564,13 +564,13 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 ## for the fine and coarse potentials, only omit is necessary, lowlim does not change the result
 #determine parameters of potentials by bootstrap, save results
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc,
-                                        bsamplesc, mask = maskc)
+                                        bsamplesc, mask = maskc, CovMatrix=NULL)
 filenamecoarse <- sprintf("%sfitresultcoarsesideways%s.RData", opt$plotpath, endingdofit)
 
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yf, xf,
-                                    bsamplesf, mask = maskf)
+                                    bsamplesf, mask = maskf, CovMatrix=NULL)
 filenamefine <- sprintf("%sfitresultfinesideways%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultfine, file = filenamefine)
 
@@ -705,7 +705,7 @@ title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
 
 # fit and save overall potential
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.13, 0.05),
-                    y, x, bsamples, mask = mask)
+                    y, x, bsamples, mask = mask, CovMatrix=NULL)
 filenamescaled <- sprintf(
             "%sfitresultscaledsideways%s.RData",
             opt$plotpath, endingdofit)

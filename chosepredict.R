@@ -209,7 +209,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$p, bsamples = bsamplescontlimit,
-                mask = maskfitcontlim))
+                mask = maskfitcontlim, CovMatrix=NULL))
 
     if (!inherits(fitplaq, "try-error")) {
     fitspolynomial[[i]] <- fitplaq
@@ -231,7 +231,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
-                mask = maskfitcontlim))
+                mask = maskfitcontlim, CovMatrix=NULL))
     fitspolynomial[[5 + i]] <- fitbeta
 
     try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
