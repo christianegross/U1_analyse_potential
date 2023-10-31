@@ -524,6 +524,7 @@ yall <- y
 bsamplesall <- bsamples[, 1:Ns / 2 + Nt / 2]
 
 
+
 # fine potential
 # read in data points, bootstrap samples:
 # have to initialise empty vectors,
