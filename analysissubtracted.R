@@ -465,7 +465,7 @@ filename <- sprintf(
 
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], pl = TRUE)
 nom <- floor(length(plaquettecolumn))
 
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
@@ -561,15 +561,17 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 }
 
 #determine parameters of potential by bootstrap, save results
+print(cor(bsamplesc[, maskc]))
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
                     yc, xc, bsamplesc, mask = maskc, CovMatrix=NULL)
 filenamecoarse <- sprintf("%sfitresultcoarsenormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
+print(cor(bsamplesf[, maskf]))
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
-                    yf, xf, bsamplesf, mask = maskf)
+                    yf, xf, bsamplesf, mask = maskf, CovMatrix=NULL)
 filenamefine <- sprintf("%sfitresultfinenormal%s.RData", opt$plotpath, endingdofit)
-saveRDS(fit.resultfine, file = filenamefine, CovMatrix=NULL)
+saveRDS(fit.resultfine, file = filenamefine)
 
 # plot potentials
 plot(fit.resultfine, main  =  sprintf(
@@ -624,6 +626,8 @@ for (bs in seq(1, bootsamples, 1)) {
 
 maskc <- maskc & c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim))
 
+
+print(cor(bsamples[, 1:Ns]))
 fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
             y = yc, x = yf, bsamples[, 1:Ns], mask = maskc, CovMatrix=NULL)
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
@@ -644,6 +648,7 @@ for (i in seq(1, bootsamples, 1)) {
 }
 
 # fit to overall potential
+print(cor(bsamples[, mask]))
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.1, 0.1),
                     y, x, bsamples, mask = mask, CovMatrix=NULL)
 filenamescaled <- sprintf("%sfitresultscalednormal%s.RData", opt$plotpath, endingdofit)
