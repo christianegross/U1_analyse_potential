@@ -321,18 +321,21 @@ if (start != 1) {
 
 print(paste("start=", start))
 for (i in seq(start, length(xis))) {
+    print(i)
     mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
                             data$beta[mask], na.omit(arrayrzero[, mask]), CovMatrix=NULL))
-    # cat("\n\nxi=", xis[i], "rzero\n")
-    # summary(fitsrzero[[i]])
+    cat("\n\nxi=", xis[i], "rzero\n")
+    summary(fitsrzero[[i]])
+    print(cor(na.omit(arrayrzero[, mask])))
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
     # print(removed)
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
                             data$beta[mask], na.omit(arrayp[, mask]), CovMatrix=NULL))
-    # cat("\n\nxi=", xis[i], "plaq\n")
-    # summary(fitsplaquette[[i]])
+    cat("\n\nxi=", xis[i], "plaq\n")
+    summary(fitsplaquette[[i]])
+    print(cor(na.omit(arrayp[, mask])))
     if (opt$xiconst) {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fncon, c(1), data$xicalc[mask],
                             data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4, CovMatrix=NULL))
@@ -341,8 +344,9 @@ for (i in seq(start, length(xis))) {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
                             data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4, CovMatrix=NULL))
     }
-    # cat("\n\nxi=", xis[i], "xiphys\n")
-    # summary(fitsxi[[i]])
+    cat("\n\nxi=", xis[i], "xiphys\n")
+    summary(fitsxi[[i]])
+    print(cor(na.omit(arrayxi[, mask])))
 
     if (!inherits(fitsrzero[[i]], "try-error") && !inherits(fitsplaquette[[i]], "try-error") && !inherits(fitsxi[[i]], "try-error")) {
         try(errorpolygon(X = xvalues, fitsrzero[[i]], col.p = cols[i],
