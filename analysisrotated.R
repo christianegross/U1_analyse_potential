@@ -485,7 +485,7 @@ bsamplesc <- array(c(rep(NA, Ns / 2 * bootsamples)), dim = c(bootsamples, Ns / 2
 #also have vectors for combined potential
 # finemask: needed later for combining potentials
 x <- rep(NA, Ns / 2 + Nt / 2)
-dx <- rep(NA, Ns / 2 + Nt / 2)
+dx <- rep(1e-4, Ns / 2 + Nt / 2)
 y <- rep(NA, Ns / 2 + Nt / 2)
 mask <- rep(FALSE, Ns / 2 + Nt / 2)
 finemask <- rep(FALSE, Ns / 2 + Nt / 2)
@@ -680,23 +680,25 @@ message(warnings())
 if (dofit) {
     #rescale t so potential, r0 can be determined, all r are given in units of a_s
 
+# generate bootsamples for fit
+bsamplesx <- parametric.bootstrap(bootsamples, c(x), c(dx))
 
 x[finemask] <- x[finemask] * xicalc
 dx[finemask] <- x[finemask] * dxicalc
 # For the coarse potential, no rescaling is necessary,
 # but an error has to be given to the fit-function. could error be zero?
-dx[!finemask] <- 1e-8
+# dx[!finemask] <- 1e-8
 
-# generate bootsamples for fit
-bsamplesx <- parametric.bootstrap(bootsamples, c(x[!finemask]), c(dx[!finemask]))
 
 #join bootstrapsamples for x, y together
-for (i in seq(1, Ns / 2 - opt$omit)) {
-    bsamples[, i + Ns / 2 + Nt / 2] <- bsamplesx[, i]
-}
-for (i in seq(1, Nt / 2 - opt$omit / xi)) {
-    bsamples[, i + Ns + Nt / 2] <- i * array(xibootsamples, dim = c(bootsamples, 1))
-}
+# for (i in seq(1, Ns / 2 - opt$omit)) {
+#     bsamples[, i + Ns / 2 + Nt / 2] <- bsamplesx[, i]
+# }
+# for (i in seq(1, Nt / 2 - opt$omit / xi)) {
+#     bsamples[, i + Ns + Nt / 2] <- i * array(xibootsamples, dim = c(bootsamples, 1))
+# }
+bsamples[, Ns/2 + Nt/2 + (1:(Ns/2 - opt$omit))] <- bsamplesx[, (1:(Ns/2 - opt$omit))]
+bsamples[, Ns + Nt/2 + seq(1, Nt / 2 - opt$omit / xi)] <- bsamplesx[, Ns/2 + seq(1, Nt / 2 - opt$omit / xi)] * array(rep(xibootsamples, Nt / 2), dim = c(bootsamples, Nt / 2))
 
 
 title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
