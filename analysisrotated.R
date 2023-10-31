@@ -461,7 +461,7 @@ filename <- sprintf(
 
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], S = 6)
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], S = 6, pl = TRUE)
 nom <- floor(length(plaquettecolumn) / opt$every)
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
 
@@ -485,15 +485,15 @@ bsamplesc <- array(c(rep(NA, Ns / 2 * bootsamples)), dim = c(bootsamples, Ns / 2
 #also have vectors for combined potential
 # finemask: needed later for combining potentials
 x <- rep(NA, Ns / 2 + Nt / 2)
-dx <- rep(NA, Ns / 2 + Nt / 2)
+dx <- rep(1e-4, Ns / 2 + Nt / 2)
 y <- rep(NA, Ns / 2 + Nt / 2)
 mask <- rep(FALSE, Ns / 2 + Nt / 2)
 finemask <- rep(FALSE, Ns / 2 + Nt / 2)
 bsamples <- array(c(rep(NA, 2 * (Ns / 2 + Nt / 2) * bootsamples)), dim = c(bootsamples, 2 * (Ns / 2 + Nt / 2)))
 #~ message("defined empty arrays")
 
-print(names(listmeff[[1]][[1]]))
-print(names(listmeff[[1]][[2]]))
+# print(names(listmeff[[1]][[1]]))
+# print(names(listmeff[[1]][[2]]))
 
 for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
@@ -563,12 +563,15 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 
 ## for the fine and coarse potentials, only omit is necessary, lowlim does not change the result
 #determine parameters of potentials by bootstrap, save results
+print(cor(bsamplesc[, maskc]))
+
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc,
                                         bsamplesc, mask = maskc, CovMatrix=NULL)
 filenamecoarse <- sprintf("%sfitresultcoarsesideways%s.RData", opt$plotpath, endingdofit)
 
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
+print(cor(bsamplesf[, maskf]))
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yf, xf,
                                     bsamplesf, mask = maskf, CovMatrix=NULL)
 filenamefine <- sprintf("%sfitresultfinesideways%s.RData", opt$plotpath, endingdofit)
@@ -681,22 +684,25 @@ if (dofit) {
     #rescale t so potential, r0 can be determined, all r are given in units of a_s
 
 
-x[finemask] <- x[finemask] * xicalc
-dx[finemask] <- x[finemask] * dxicalc
 # For the coarse potential, no rescaling is necessary,
 # but an error has to be given to the fit-function. could error be zero?
-dx[!finemask] <- 1e-8
+# dx[!finemask] <- 1e-8
 
 # generate bootsamples for fit
-bsamplesx <- parametric.bootstrap(bootsamples, c(x[!finemask]), c(dx[!finemask]))
+bsamplesx <- parametric.bootstrap(bootsamples, c(x), c(dx))
+
+x[finemask] <- x[finemask] * xicalc
+dx[finemask] <- x[finemask] * dxicalc
 
 #join bootstrapsamples for x, y together
-for (i in seq(1, Ns / 2 - opt$omit)) {
-    bsamples[, i + Ns / 2 + Nt / 2] <- bsamplesx[, i]
-}
-for (i in seq(1, Nt / 2 - opt$omit / xi)) {
-    bsamples[, i + Ns + Nt / 2] <- i * array(xibootsamples, dim = c(bootsamples, 1))
-}
+# for (i in seq(1, Ns / 2 - opt$omit)) {
+#     bsamples[, i + Ns / 2 + Nt / 2] <- bsamplesx[, i]
+# }
+# for (i in seq(1, Nt / 2 - opt$omit / xi)) {
+#     bsamples[, i + Ns + Nt / 2] <- i * array(xibootsamples, dim = c(bootsamples, 1))
+# }
+bsamples[, Ns/2 + Nt/2 + (1:(Ns/2 - opt$omit))] <- bsamplesx[, (1:(Ns/2 - opt$omit))]
+bsamples[, Ns + Nt/2 + seq(1, Nt / 2 - opt$omit / xi)] <- bsamplesx[, Ns/2 + seq(1, Nt / 2 - opt$omit / xi)] * array(rep(xibootsamples, Nt / 2), dim = c(bootsamples, Nt / 2))
 
 
 title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
@@ -704,6 +710,7 @@ title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
         beta, xicalc, dxicalc, Ns, nom * opt$nsave, skip * opt$nsave)
 
 # fit and save overall potential
+print(cor(bsamples))
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.13, 0.05),
                     y, x, bsamples, mask = mask, CovMatrix=NULL)
 filenamescaled <- sprintf(
