@@ -513,11 +513,11 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
         if (!opt$errortotpot) bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50
         bsamples[, i] <- bsamplesc[, i]
       }
-      maskc[i] <- TRUE
+      maskc[i] <- i > opt$lowlim
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      mask[i] <- TRUE
+      mask[i] <- i > opt$lowlim
       finemask[i] <- FALSE
   }
 }
@@ -539,7 +539,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
       xf[i] <- listmeff[[Ns / 2 + i]][[2]]
 #~       message("xc =  ",xc[i])
       yf[i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      maskf[i] <- TRUE
+      maskf[i] <- i > opt$lowlim
       if (!opt$aic) {
         bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
@@ -555,7 +555,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      mask[Ns / 2 + i] <- TRUE
+      mask[Ns / 2 + i] <- i > opt$lowlim
       finemask[Ns / 2 + i] <- TRUE
   }
 }
