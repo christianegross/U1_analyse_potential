@@ -499,7 +499,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      maskc[i] <- i > opt$lowlim
+      maskc[i] <- TRUE
       if(!opt$aic) {
         bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
         bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
@@ -515,7 +515,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      mask[i] <- i > opt$lowlim
+      mask[i] <- TRUE
       finemask[i] <- FALSE
   }
 }
@@ -539,7 +539,7 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   if (listmeff[[Ns / 2 + i]][[2]]) {
       xf[i]     <- listmeff[[Ns / 2 + i]][[2]]
       yf[i]     <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      maskf[i]      <- i > (opt$lowlim / xi)
+      maskf[i]      <- TRUE
       if (!opt$aic) {
         bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
@@ -555,7 +555,7 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      mask[Ns / 2 + i]  <- i > (opt$lowlim / xi)
+      mask[Ns / 2 + i]  <- TRUE
       finemask[Ns / 2 + i] <- TRUE
 
   }
