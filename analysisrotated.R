@@ -136,7 +136,7 @@ if (opt$scaletauint) {
         opt$bootl <- 1
 }
 
-if (opt$lowlimpot < 0) opt$lowlimfitpot <- opt$lowlim
+if (opt$lowlimpot < 0) opt$lowlimpot <- opt$lowlim
 
 endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) {
@@ -144,11 +144,11 @@ if (opt$smearing) {
         Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
 }
 
-endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dlowlim%d",
-        Nt, Ns, beta, xi, opt$bootsamples, opt$omit, opt$lowlim)
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dllxi%dllr0%d",
+        Nt, Ns, beta, xi, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
 if (opt$smearing) {
-        endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dlowlim%d",
-        Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim)
+        endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dllxi%dllr0%d",
+        Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
 }
 
 if(opt$crzero != -1.65) endingdofit <- sprintf("%sc%.2f", endingdofit, opt$crzero)
@@ -508,7 +508,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      maskc[i] <- i > opt$lowlimfitpot
+      maskc[i] <- i > opt$lowlimpot
       if(!opt$aic) {
         bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
         bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
@@ -524,7 +524,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      mask[i] <- i > opt$lowlimfitpot
+      mask[i] <- i > opt$lowlimpot
       finemask[i] <- FALSE
   }
 }
@@ -548,7 +548,7 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   if (listmeff[[Ns / 2 + i]][[2]]) {
       xf[i]     <- listmeff[[Ns / 2 + i]][[2]]
       yf[i]     <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      maskf[i]      <- i > opt$lowlimfitpot/opt$xi
+      maskf[i]      <- i > opt$lowlimpot/opt$xi
       if (!opt$aic) {
         bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
@@ -564,11 +564,14 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      mask[Ns / 2 + i]  <- i > opt$lowlimfitpot/opt$xi
+      mask[Ns / 2 + i]  <- i > opt$lowlimpot/opt$xi
       finemask[Ns / 2 + i] <- TRUE
 
   }
 }
+print(mask)
+print(maskc)
+print(maskf)
 
 
 ## for the fine and coarse potentials, only omit is necessary, lowlim does not change the result
@@ -884,7 +887,8 @@ resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2]
         p = plaquettecf$cf.tsboot$t0[1], dp = plaquettecf$tsboot.se[1], bsp = plaquettecf$cf.tsboot$t[, 1],
         beta = beta, xiin = xi, Nt = Nt, Ns = Ns, bootsamples = bootsamples,
         nom = nom, skip = opt$skip,
-        xicalc = xicalc, dxicalc = dxicalc, bsxicalc = xibootsamples)
+        xicalc = xicalc, dxicalc = dxicalc, bsxicalc = xibootsamples,
+        lowlim = opt$lowlim, lowlimpot=opt$lowlimpot, omit = opt$omit, etp = opt$errortotpot)
 class(resultssummary) <- "resultssummary"
 
 
@@ -894,7 +898,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         Nt = NA, nape = NA, alpha = NA, omit = NA, nom = NA, skip = NA,
         xi2 = NA, dxi2 = NA, xisingle = NA, dxisingle = NA,
         job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
-        xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, aic = NA,
+        xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, lowlimpot = NA, aic = NA,
         scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
@@ -912,7 +916,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint[1],
         bootl = opt$bootl, xirzero = differentxiresults[1], dxirzero = differentxiresults[2],
         xist = differentxiresults[3], dxist = differentxiresults[4],
-        lowlim = opt$lowlim, aic=opt$aic, scaletauint=opt$scaletauint,
+        lowlim = opt$lowlim, lowlimpot=opt$lowlimpot, aic = opt$aic, scaletauint = opt$scaletauint,
         puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot)
 
 resultlist <- rbind(resultlist, newline)
@@ -921,7 +925,7 @@ resultlist <- rbind(resultlist, newline)
 resultlist <- resultlist[-1, ]
 print(resultlist)
 filename <- sprintf("%sresultsummary2p1dsidewaysb%.3fNs%d%s.csv",
-                    opt$plotpath, opt$betaone, opt$Ns, ept$extra)
+                    opt$plotpath, opt$betaone, opt$Ns, opt$extra)
 columnnames <- FALSE
 if (!file.exists(filename)) {
     columnnames <- TRUE

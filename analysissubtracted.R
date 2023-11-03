@@ -143,7 +143,7 @@ if (opt$scaletauint) {
         opt$bootl <- 1
 }
 
-if (opt$lowlimpot < 0) opt$lowlimfitpot <- opt$lowlim
+if (opt$lowlimpot < 0) opt$lowlimpot <- opt$lowlim
 
 t2 <- Ns / 2 - 2
 t1 <- opt$lowerboundmeff
@@ -152,8 +152,10 @@ rmax <- opt$rmax
 endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d", Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
 
-endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dlowlim%d",Nt, Ns, beta, xi, opt$bootsamples, opt$omit, opt$lowlim)
-if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dlowlim%d",Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim)
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dllxi%dllr0%d",
+                    Nt, Ns, beta, xi, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
+if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dllxi%dllr0%d",
+                    Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
 
 
 if(opt$crzero != -1.65) endingdofit <- sprintf("%sc%.2f", endingdofit, opt$crzero)
@@ -475,7 +477,7 @@ filename <- sprintf(
 
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], pl = TRUE)
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], S =6 , pl = TRUE)
 nom <- floor(length(plaquettecolumn))
 
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
@@ -570,6 +572,10 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   }
 }
 
+print(mask)
+print(maskc)
+print(maskf)
+
 #determine parameters of potential by bootstrap, save results
 print(cor(bsamplesc[, maskc]))
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
@@ -634,7 +640,7 @@ for (bs in seq(1, bootsamples, 1)) {
     bsamplesmatch[bs, (Ns / 2 + 1):Ns] <- bsamples[bs, 1:(Ns / 2)]
 }
 
-maskmatch <- rep(c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim)), 2)
+maskmatch <- c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim))
 
 
 print(cor(bsamples[, 1:Ns]))
@@ -784,7 +790,7 @@ resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2]
         rzeros = rzero, drzeros = drzero, crz = opt$crzero, bsrzeros = bsrzero,
         p = plaquettecf$cf.tsboot$t0[1], dp = plaquettecf$tsboot.se[1], bsp = plaquettecf$cf.tsboot$t[, 1],
         beta = beta, xiin = xi, Nt = Nt, Ns = Ns, bootsamples = bootsamples,
-        nom = nom, skip = opt$skip, lowlim = opt$lowlim,
+        nom = nom, skip = opt$skip, lowlim = opt$lowlim, lowlimpot = opt$lowlimpot,
         xicalc  =  fit.match$t0[2], dxicalc  =  fit.match$se[2], bsxicalc = fit.match$t[, 2])
 class(resultssummary) <- "resultssummary"
 
@@ -795,7 +801,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     xicalcsub = NA, dxicalcsub = NA, xi2sub = NA, dxi2 = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
     omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash = NA,
-    every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, aic = NA,
+    every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, lowlimpot = NA, aic = NA,
     scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
@@ -813,8 +819,8 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       omit = opt$omit, nom = nom, skip = skip,
                       t1 = t1, job = opt$job, hash = githash, every = opt$every,
                       tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint,
-                      bootl = opt$bootl, lowlim = opt$lowlim, aic=opt$aic,
-                      scaletauint=opt$scaletauint,
+                      bootl = opt$bootl, lowlim = opt$lowlim, lowlimpot = opt$lowlimpot, aic = opt$aic,
+                      scaletauint = opt$scaletauint,
                       puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot)
 resultlist <- rbind(resultlist, newline)
 }
@@ -822,7 +828,7 @@ resultlist <- rbind(resultlist, newline)
 resultlist <- resultlist[-1, ]
 print(resultlist)
 filename <- sprintf("%sresultsummary2p1dnormalb%.3fNs%d%s.csv",
-        opt$plotpath, opt$betaone, opt$Ns, ept$extra)
+        opt$plotpath, opt$betaone, opt$Ns, opt$extra)
 
 columnnames <- FALSE
 if (!file.exists(filename)) {
