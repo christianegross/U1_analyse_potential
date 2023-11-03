@@ -309,7 +309,7 @@ deteffmass <- function (WL.effmass, yt, t1, t2, isspatial, usecov = FALSE) {
     if (length(na.omit(as.vector(WL.effmass$effMass))) > 1) {
         WL.effmass <- try(fit.effectivemass(WL.effmass, t1 = t1,
                 t2 = t2, useCov = usecov), silent = FALSE)
-        ## usecov=FALSE
+        ## usecov = FALSE
         if (!inherits(WL.effmass, "try-error")) {
             newline <- data.frame(R = yt, m = WL.effmass$effmassfit$t0[1],
                     dm = WL.effmass$effmassfit$se[1], space = isspatial,
@@ -432,7 +432,7 @@ pointsxyerr <- function (x, y, dx, dy, arlength = 0.02, ...) {
 
 errorpolygon <- function (X, fitresult, col.p, col.band = "gray",
                         polygon = TRUE, arlength = 0.1, pch = 1, ...) {
-    # like plot of bootstrapfit, but with rep=TRUE
+    # like plot of bootstrapfit, but with rep = TRUE
     prediction <- predict(fitresult, X)
     if (missing(pch)) {
         p.pch <- col.p
@@ -469,7 +469,7 @@ errorpolygon <- function (X, fitresult, col.p, col.band = "gray",
 }
 
 points.effectivemass <- function (x, ..., ref.value, col, col.fitline) {
-    # plot.effectivemass with rep=TRUE
+    # plot.effectivemass with rep = TRUE
   effMass <- x
   if (missing(col)) {
     col <- c("black", rainbow(n = (effMass$nrObs - 1)))
@@ -671,7 +671,7 @@ fitplotfunctions <- function (fun1, fun2, x1, y1, dy1, x2, y2, dy2,
 }
 
 readinbootstrapsamples <- function (beta, Ns, Nt, xi, bootsamples = 500,
-                            path = "", names, columns, filename = "resultspot", end="") {
+                            path = "", names, columns, filename = "resultspot", end = "") {
     # reads in bootstrapsamples that were saved in a list to use
     # them for further analysis
     # the filename is constructed from the base filename and the parameters
@@ -729,7 +729,7 @@ getinterceptfromparams <- function(bsa, bsb, rzeroone, bootsamples = 500) {
     intercepts <- c()
     for (bs in seq(1, bootsamples)){
         intercepts[bs] <- (rzeroone[bs] - bsb[bs]) / bsa[bs]
-        # print(paste("a=", bsa[bs], "b=", bsb[bs], "rzero=", rzeroone[bs], "intercept=", intercepts[bs]))
+        # print(paste("a = ", bsa[bs], "b = ", bsb[bs], "rzero = ", rzeroone[bs], "intercept = ", intercepts[bs]))
     }
     return(intercepts)
 }
@@ -816,19 +816,19 @@ predictwithxerror.bootstrapfit <- function (object, x, error = object$error.func
 ## this is much faster than the blocking
 ## of tsboot
 ## directly copied from main repository
-blockts <- function(data, l=2) {
+blockts <- function(data, l = 2) {
   if(l == 1) {
     return(invisible(data))
   }
   if(is.vector(data)) {
     N <- floor(length(data)/l)*l
-    return( apply(array(data, dim=c(l, N/l)), 2, mean))
+    return( apply(array(data, dim = c(l, N/l)), 2, mean))
   }
-  if(length(dim(data))!=2) {
+  if(length(dim(data))!= 2) {
     stop("block.ts currently only implemented for vectors of 2-dim arrays\n")
   }
   N <- floor(length(data[,1])/l)*l
-  ncf <- array(0, dim=c(N/l,length(data[1,])))
+  ncf <- array(0, dim = c(N/l,length(data[1,])))
   j <- 1
   for ( i in seq(1,N,l)) {
     ncf[j,] <- apply(data[i:(i+l-1),], 2, mean)
@@ -842,19 +842,19 @@ blockts <- function(data, l=2) {
 #' fit boostrap by boostrap (generated from y and dy)
 #' x = matrix of size n \times N_pts
 #' returns a list with bootstraps of parameters, their mean, stderr, chi^2, reduced chi^2
-usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter=10000, method="BFGS", N_bts = 500){
+usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter = 10000, method = "BFGS", N_bts = 500){
     N_pts <- length(y) # number of points
     N_par <- length(guess)
     N_dof <- N_pts - N_par
 
-    par_bts <- matrix(data=NA, N_bts, N_par)
-    ch2_bts <- matrix(data=NA, N_bts, N_par)
+    par_bts <- matrix(data = NA, N_bts, N_par)
+    ch2_bts <- matrix(data = NA, N_bts, N_par)
 
     ## First do the fit on the mean data:
     mini <- fit_xiyey(
-                ansatz = ansatz, x=x, y=y, ey=ey,
+                ansatz = ansatz, x = x, y = y, ey = ey,
                 guess = guess,
-                maxiter=maxiter, method=method)
+                maxiter = maxiter, method = method)
 
     par_val <- mini[["par"]]
 
@@ -862,9 +862,9 @@ usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter=10000,
 
     for (i in 1:N_bts){
         mini <- fit_xiyey(
-            ansatz = ansatz, x=x, y=y_bts[i,], ey=ey,
+            ansatz = ansatz, x = x, y = y_bts[i,], ey = ey,
             guess = guess,
-            maxiter=maxiter, method=method)
+            maxiter = maxiter, method = method)
 
         par_bts[i,] <- mini[["par"]]
     }
@@ -872,12 +872,12 @@ usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter=10000,
     par_sd <- apply(par_bts, 2, sd)
 
     res <- list(
-        ansatz=ansatz,
-        N_bts=N_bts, N_pts = N_pts, N_par = N_par, N_dof = N_dof,
-        x=x,
-        par=list(bts=par_bts, val=par_val, dval=par_sd),
-        ch2=ch2_val,
-        y = list(y = y, dy = ey, y_bts = y_bts), boot=TRUE
+        ansatz = ansatz,
+        N_bts = N_bts, N_pts = N_pts, N_par = N_par, N_dof = N_dof,
+        x = x,
+        par = list(bts = par_bts, val = par_val, dval = par_sd),
+        ch2 = ch2_val,
+        y = list(y = y, dy = ey, y_bts = y_bts), boot = TRUE
         )
 
     attr(res, "class") <- c("multifit", "list")
@@ -901,7 +901,7 @@ usebootstrap.fit_xiyey <-function(ansatz, x, y, ey, y_bts, guess, maxiter=10000,
 predict.anyfunction <- function (fn, par, par_bts, x, error = sd, ...) {
   ## to include additional parameter to x$fn originally given as ... to
   ## bootstrap.nlsfit requires some pull-ups
-  if(length(par)!=length(par_bts[1, ])) stop("length of parameters and bootstrapsamples do not match")
+  if(length(par)!= length(par_bts[1, ])) stop("length of parameters and bootstrapsamples do not match")
   getresvector <- function(fn, par, x, ...) {
     res <- c()
     for (i in seq(1, length(x[1, ]))) {
@@ -935,11 +935,11 @@ predict.anyfunction <- function (fn, par, par_bts, x, error = sd, ...) {
 }
 
 
-## plot result of multifit with rep=TRUE
+## plot result of multifit with rep = TRUE
 ## plotindex: which row of matrix is used as the independent variable
 errorpolygonmultifit <- function (X, fitresult, col.p, col.band = "gray",
                         polygon = TRUE, arlength = 0.1, pch = 1, plotindex = 1, mask, ylim, ...) {
-    # like plot of bootstrapfit, but with rep=TRUE
+    # like plot of bootstrapfit, but with rep = TRUE
     prediction <- predict.anyfunction(fn = fitresult$ansatz, par = fitresult$par$val, par_bts = fitresult$par$bts, X)
     if (missing(pch)) {
         p.pch <- col.p
@@ -948,7 +948,7 @@ errorpolygonmultifit <- function (X, fitresult, col.p, col.band = "gray",
     }
     if(missing(mask)) mask <- seq(1:length(X[1, ]))
     limits <- plotwitherror(x = fitresult$x[plotindex, mask], y = fitresult$y$y[mask],
-            dy = fitresult$y$dy[mask], col = col.p, pch = p.pch, rep=TRUE, ...)
+            dy = fitresult$y$dy[mask], col = col.p, pch = p.pch, rep = TRUE, ...)
     if(missing(ylim)) ylim <- limits$ylim
 
     if (polygon) {
@@ -972,7 +972,7 @@ errorpolygonmultifit <- function (X, fitresult, col.p, col.band = "gray",
 
 ## TODO: make more pretty
 ## taken from summary.bootstrapnlsfit
-summary.multifit <- function(object, ..., digits = 2, title="") {
+summary.multifit <- function(object, ..., digits = 2, title = "") {
     # print(object)
     y <- object$y$y
     dy <- object$y$dy
@@ -982,25 +982,25 @@ summary.multifit <- function(object, ..., digits = 2, title="") {
     cat(title)
     cat("\nresult of multifit with bootstrap\n\n")
     if (object$boot) {
-        tmp <- apply(X=array(c(values, errors), dim=c(length(values), 2)), MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
-        bias <- values-apply(X=object$par$bts, MARGIN=2, FUN=mean, na.rm=TRUE)
+        tmp <- apply(X = array(c(values, errors), dim = c(length(values), 2)), MARGIN = 1, FUN = tex.catwitherror, digits = digits, with.dollar = FALSE, with.cdot = FALSE)
+        bias <- values-apply(X = object$par$bts, MARGIN = 2, FUN = mean, na.rm = TRUE)
         dim(bias) <- c(length(bias), 1)
-        bias <- apply(X=bias, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
-        ci16 <- apply(X=object$par$bts, MARGIN=2, FUN=quantile, probs=c(0.16), drop=FALSE, na.rm=TRUE)
+        bias <- apply(X = bias, MARGIN = 1, FUN = tex.catwitherror, digits = digits, with.dollar = FALSE, with.cdot = FALSE)
+        ci16 <- apply(X = object$par$bts, MARGIN = 2, FUN = quantile, probs = c(0.16), drop = FALSE, na.rm = TRUE)
         dim(ci16) <- c(length(ci16), 1)
-        ci16 <- apply(X=ci16, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
-        ci84 <- apply(X=object$par$bts, MARGIN=2, FUN=quantile, probs=c(0.84), drop=FALSE, na.rm=TRUE)
+        ci16 <- apply(X = ci16, MARGIN = 1, FUN = tex.catwitherror, digits = digits, with.dollar = FALSE, with.cdot = FALSE)
+        ci84 <- apply(X = object$par$bts, MARGIN = 2, FUN = quantile, probs = c(0.84), drop = FALSE, na.rm = TRUE)
         dim(ci84) <- c(length(ci84), 1)
-        ci84 <- apply(X=ci84, MARGIN=1, FUN=tex.catwitherror, digits=digits, with.dollar=FALSE, with.cdot=FALSE)
+        ci84 <- apply(X = ci84, MARGIN = 1, FUN = tex.catwitherror, digits = digits, with.dollar = FALSE, with.cdot = FALSE)
         cat("    best fit parameters with errors, bootstrap bias and 68% confidence interval\n\n")
-        print(data.frame(par=tmp[1:npar], bias=bias[1:npar], ci16=ci16[1:npar], ci84=ci84[1:npar]))
+        print(data.frame(par = tmp[1:npar], bias = bias[1:npar], ci16 = ci16[1:npar], ci84 = ci84[1:npar]))
     } else {
         tmp <- sprintf("%.4f", values)
         cat("best fit parameters\n\n")
-        print(data.frame(par=tmp[1:npar]))
+        print(data.frame(par = tmp[1:npar]))
     }
     cat("\n   chi^2 and fit quality\n")
-    cat("chisqr / dof =", object$ch2, "/", object$N_dof, "=", object$ch2 / object$N_dof, "\n\n\n")
+    cat("chisqr / dof  = ", object$ch2, "/", object$N_dof, " = ", object$ch2 / object$N_dof, "\n\n\n")
 }
 
 ## cdf needed for determining mean, intervals with AIC

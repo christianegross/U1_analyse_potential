@@ -39,6 +39,9 @@ option_list <- list(
     make_option(c("--lowlim"), type = "integer", default = 1,
     help = "points lower than this are not used
             for determining xi [default %default]"),
+    make_option(c("--lowlimpot"), type = "integer", default = -1,
+    help = "points lower than this are not used
+            for determining r_0, if negative, the same as lowlim [default %default]"),
     make_option(c("-a", "--alpha"), type = "double", default = 1.0,
     help = "alpha used in APE-smearing [default %default]"),
 
@@ -136,6 +139,8 @@ if (opt$scaletauint) {
         opt$usecov <- TRUE
         opt$bootl <- 1
 }
+
+if (opt$lowlimpot < 0) opt$lowlimfitpot <- opt$lowlim
 
 t2 <- Ns / 2 - 2
 t1 <- opt$lowerboundmeff
@@ -465,7 +470,7 @@ filename <- sprintf(
 
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)])
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], pl = TRUE)
 nom <- floor(length(plaquettecolumn))
 
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
@@ -513,11 +518,11 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
         if (!opt$errortotpot) bsamplesc[, i] <- listmeff[[i]][[1]]$boot$m50
         bsamples[, i] <- bsamplesc[, i]
       }
-      maskc[i] <- TRUE
+      maskc[i] <- i > opt$lowlimpot
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      mask[i] <- TRUE
+      mask[i] <- i > opt$lowlimpot
       finemask[i] <- FALSE
   }
 }
@@ -539,7 +544,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
       xf[i] <- listmeff[[Ns / 2 + i]][[2]]
 #~       message("xc =  ",xc[i])
       yf[i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      maskf[i] <- TRUE
+      maskf[i] <- i > opt$lowlimpot
       if (!opt$aic) {
         bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
@@ -555,19 +560,21 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      mask[Ns / 2 + i] <- TRUE
+      mask[Ns / 2 + i] <- i > opt$lowlimpot
       finemask[Ns / 2 + i] <- TRUE
   }
 }
 
 #determine parameters of potential by bootstrap, save results
+print(cor(bsamplesc[, maskc]))
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
-                    yc, xc, bsamplesc, mask = maskc)
+                    yc, xc, bsamplesc, mask = maskc, CovMatrix=NULL)
 filenamecoarse <- sprintf("%sfitresultcoarsenormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
+print(cor(bsamplesf[, maskf]))
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
-                    yf, xf, bsamplesf, mask = maskf)
+                    yf, xf, bsamplesf, mask = maskf, CovMatrix=NULL)
 filenamefine <- sprintf("%sfitresultfinenormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultfine, file = filenamefine)
 
@@ -622,10 +629,12 @@ for (bs in seq(1, bootsamples, 1)) {
     bsamplesmatch[bs, (Ns / 2 + 1):Ns] <- bsamples[bs, 1:(Ns / 2)]
 }
 
-maskc <- maskc & c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim))
+maskmatch <- rep(c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim)), 2)
 
+
+print(cor(bsamples[, 1:Ns]))
 fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
-            y = yc, x = yf, bsamples[, 1:Ns], mask = maskc)
+            y = yc, x = yf, bsamples[, 1:Ns], mask = maskmatch, CovMatrix=NULL)
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
             main = "matching potentials to determine xi")
 # print(fit.match)
@@ -644,8 +653,9 @@ for (i in seq(1, bootsamples, 1)) {
 }
 
 # fit to overall potential
+print(cor(bsamples[, mask]))
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.1, 0.1),
-                    y, x, bsamples, mask = mask)
+                    y, x, bsamples, mask = mask, CovMatrix=NULL)
 filenamescaled <- sprintf("%sfitresultscalednormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultscaled, file = filenamescaled)
 

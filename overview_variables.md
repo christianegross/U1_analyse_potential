@@ -4,7 +4,8 @@
 
 - AIC can be used or not, for now only AIC
 - etp: the total error is (m84-m16)/2, with m84 and m16 being the corresponding quantiles. We can take the bootstrapsamples of the potential to be the m50 bootstrapsamples, or we can rescale them so they are errortot/sd(m50) as large. This should include the systematical errors in the bootstrapsamples.
-- lowlim, omit: The potential is determined in a range from lower to upper limit, with lower >= 1 and upper <= L/2=8. The lower limit is called lowlim, and it is set to 1, which means the first point is not used. The upper limit is set with omit, and omit number of points are not used. for now, lowlim is always 1 and omit is 0 or 1, so the potential is calculated in the region 2-8 and 2-7.
+- lowlim(pot), omit: The potential and anisotropy are determined in a range from lower to upper limit, with lower >= 1 and upper <= L/2=8. The lower limit is called lowlim, and it is set to 1, which means the first point is not used. The upper limit is set with omit, and omit number of points are not used. for now, lowlim is always 1 and omit is 0 or 1, so the potential/r0 is calculated in the region 2-8 and 2-7.
+- lowlim refers to the region for the anisotropy and lowlimpot refers to the region for the potential, they do not have to be the same, but are by default
 - c: This is the parameter is used in the definition of r_0, default -1.65
 - normal/sideways: We can determine xi_ren and r_0 from the normal or sideways potential, see proceedings for details of determination of xi.
 
