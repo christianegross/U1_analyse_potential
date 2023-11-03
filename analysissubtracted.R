@@ -103,6 +103,9 @@ option_list <- list(
     help = "steps between saved configs [default %default]"),
     make_option(c("--crzero"), type = "double", default = -1.65,
     help = "c used for determining r_0 [default %default]"),
+
+    make_option(c("--extra"), type = "character", default = "",
+    help = "extra string for ending of fit analysis [default %default]"),
     make_option(c("--myfunctions"), type = "character",
     default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
     help = "path to where additional functions are stored,
@@ -164,6 +167,8 @@ if(opt$scaletauint){
         endinganalysis <- sprintf("%sscaletauint", endinganalysis)
         endingdofit <- sprintf("%sscaletauintetp%d", endingdofit, opt$errortotpot)
 }
+
+endingdofit <- paste0(endingdofit, opt$extra)
 
 }
 
@@ -816,8 +821,8 @@ resultlist <- rbind(resultlist, newline)
 
 resultlist <- resultlist[-1, ]
 print(resultlist)
-filename <- sprintf("%sresultsummary2p1dnormalb%.3fNs%d.csv",
-        opt$plotpath, opt$betaone, opt$Ns)
+filename <- sprintf("%sresultsummary2p1dnormalb%.3fNs%d%s.csv",
+        opt$plotpath, opt$betaone, opt$Ns, ept$extra)
 
 columnnames <- FALSE
 if (!file.exists(filename)) {

@@ -97,6 +97,8 @@ option_list <- list(
     help = "path to where the plots are stored [default %default]"),
     make_option(c("--effmasstype"), type = "character", default = "log",
     help = "type of effective mass [default %default]"),
+    make_option(c("--extra"), type = "character", default = "",
+    help = "extra string for ending of fit analysis [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
     default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
@@ -160,6 +162,8 @@ if(opt$scaletauint){
         endinganalysis <- sprintf("%sscaletauint", endinganalysis)
         endingdofit <- sprintf("%sscaletauintetp%d", endingdofit, opt$errortotpot)
 }
+
+endingdofit <- paste0(endingdofit, opt$extra)
 
 }
 
@@ -916,8 +920,8 @@ resultlist <- rbind(resultlist, newline)
 
 resultlist <- resultlist[-1, ]
 print(resultlist)
-filename <- sprintf("%sresultsummary2p1dsidewaysb%.3fNs%d.csv",
-                    opt$plotpath, opt$betaone, opt$Ns)
+filename <- sprintf("%sresultsummary2p1dsidewaysb%.3fNs%d%s.csv",
+                    opt$plotpath, opt$betaone, opt$Ns, ept$extra)
 columnnames <- FALSE
 if (!file.exists(filename)) {
     columnnames <- TRUE
