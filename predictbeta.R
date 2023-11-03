@@ -180,8 +180,8 @@ for (i in seq(1, nom)) {
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
     if (type == "normal" || type == "sideways") {
-    if (opt$crzero == -1.65) end <- sprintf("omit%dlowlim%d%s", data$omit[i], data$lowlim[i], end2)
-    if (opt$crzero != -1.65) end <- sprintf("omit%dlowlim%dc%.2f%s", data$omit[i], data$lowlim[i], opt$crzero, end2)
+    if (opt$crzero == -1.65) end <- sprintf("omit%dllxi%dllr0%d%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], end2)
+    if (opt$crzero != -1.65) end <- sprintf("omit%dllxi%dllr0%dc%.2f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], opt$crzero, end2)
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
@@ -471,7 +471,7 @@ for (i in seq(start, length(xis))){
 # save and plot results for naive limits
 resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
-                    fitsp = fitsplaquette)
+                    fitsp = fitsplaquette, githash = githash)
 
 
 if (TRUE) {
@@ -664,6 +664,8 @@ print(resultspolynomial)
 # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
 # print(fitresults)
 # print(result)
+
+fitspolynomial$githash <- githash
 
 namesave <- sprintf("%s/resultsrenormalization%s.csv", opt$respath, endname)
 write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)

@@ -276,6 +276,10 @@ resultspolynomial <- resultspolynomial[-1, ]
 # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
 # print(fitresults)
 # print(result)
+
+fitspolynomial$githash <- githash
+resultslist$githash <- githash
+
 namepol <- sprintf("%s/polynomialbetachosen%scont%d.csv", opt$respath, endnamewrite, opt$indexfitcontlim)
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
