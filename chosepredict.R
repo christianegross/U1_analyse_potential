@@ -55,16 +55,18 @@ data <- read.table(opt$summaryname, header = TRUE, sep = " ")
 
 if (type == "sideways") {
 data <- data[data$c == opt$crzero, ]
-data <- data[data$lowlim == opt$lowlimfitpot, ]
+data <- data[data$lowlim == opt$lowlimxi, ]
+data <- data[data$lowlimpot == opt$lowlimpot, ]
 filenameres <- sprintf("%s/resultssideways", opt$datapath)
-end <- sprintf("omit%dlowlim%d", opt$omit, opt$lowlimfitpot)
+end <- sprintf("omit%dllxi%dllr0%d", opt$omit, opt$lowlimxi, opt$lowlimpot)
 }
 
 if (type == "normal") {
 data <- data[data$c == opt$crzero, ]
-data <- data[data$lowlim == opt$lowlimfitpot, ]
+data <- data[data$lowlim == opt$lowlimxi, ]
+data <- data[data$lowlimpot == opt$lowlimpot, ]
 filenameres <- sprintf("%s/resultsnormal", opt$datapath)
-end <- sprintf("omit%dlowlim%d", opt$omit, opt$lowlimfitpot)
+end <- sprintf("omit%dllxi%dllr0%d", opt$omit, opt$lowlimxi, opt$lowlimpot)
 }
 
 if (type == "slope") {
@@ -108,8 +110,8 @@ nom <- length(data$beta)
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
 print(opt$singlemulti)
-if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
-if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot)
+if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi)
 if (opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)

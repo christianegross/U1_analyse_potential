@@ -32,8 +32,10 @@ option_list <- list(
     help = "omission of highest points from the potential, -1=any [default %default]"),
     make_option(c("--indexfitcontlim"), type = "integer", default = 1,
     help = "for the fit to the contlim, only xi with index larger than this are used [default %default]"),
-    make_option(c("--lowlimfitpot"), type = "integer", default = 1,
-    help = "points lower than this are not used to determine xi with the normal potential [default %default]"),
+    make_option(c("--lowlimxi"), type = "integer", default = 1,
+    help = "points lower than this are not used to determine xi [default %default]"),
+    make_option(c("--lowlimpot"), type = "integer", default = -1,
+    help = "points lower than this are not used to determine the potential and r0. If negative, the same as lowlimxi [default %default]"),
     make_option(c("--fitlim"), type = "double", default = 0.3,
     help = "how much may the value of r0 deviate from the xi=1 value to still be considered? [default %default]"),
 
@@ -63,6 +65,8 @@ source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 githash <- printgitcommit(opt$myfunctions)
 
 factorrzero <- 1
+
+if (opt$lowlimpot < 0) opt$lowlimpot <- opt$lowlimxi
 
 type <- opt$type
 if (! (type == "normal" || type == "sideways" || type == "slope")) {
@@ -116,12 +120,14 @@ data <- read.table(dataname, header = TRUE, sep = " ")
 # data <- na.omit(data)
 if (type == "sideways") {
 data <- data[data$c == opt$crzero, ]
-data <- data[data$lowlim == opt$lowlimfitpot, ]
+data <- data[data$lowlim == opt$lowlimxi, ]
+data <- data[data$lowlimpot == opt$lowlimpot, ]
 }
 
 if (type == "normal") {
 data <- data[data$c == opt$crzero, ]
-data <- data[data$lowlim == opt$lowlimfitpot, ]
+data <- data[data$lowlim == opt$lowlimxi, ]
+data <- data[data$lowlimpot == opt$lowlimpot, ]
 }
 
 if (opt$omit >=0) {
@@ -216,7 +222,7 @@ packages <- c("\\usepackage{tikz}",
 
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
-endname <- sprintf("%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimfitpot)
+endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot)
 if(opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
