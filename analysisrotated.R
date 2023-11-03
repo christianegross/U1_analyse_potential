@@ -57,6 +57,9 @@ option_list <- list(
     make_option(c("--lowlim"), type = "integer", default = 1,
     help = "points lower than this are not used
             for determining xi [default %default]"),
+    make_option(c("--lowlimpot"), type = "integer", default = -1,
+    help = "points lower than this are not used
+            for determining r_0, if negative, the same as lowlim [default %default]"),
 
     make_option(c("--aic"), action = "store_true", default = FALSE,
     help = "if true, effective masses are determined with weighting
@@ -130,6 +133,8 @@ if (opt$scaletauint) {
         opt$usecov <- TRUE
         opt$bootl <- 1
 }
+
+if (opt$lowlimpot < 0) opt$lowlimfitpot <- opt$lowlim
 
 endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) {
@@ -499,7 +504,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   if (listmeff[[i]][[2]]) {
       xc[i] <- listmeff[[i]][[2]]
       yc[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      maskc[i] <- TRUE
+      maskc[i] <- i > opt$lowlimfitpot
       if(!opt$aic) {
         bsamplesc[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
         bsamples[, i] <- listmeff[[i]][[1]]$massfit.tsboot[, 1]
@@ -515,7 +520,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
 
       x[i] <- listmeff[[i]][[2]]
       y[i] <- listmeff[[i]][[1]]$effmassfit$t0[1]
-      mask[i] <- TRUE
+      mask[i] <- i > opt$lowlimfitpot
       finemask[i] <- FALSE
   }
 }
@@ -539,7 +544,7 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
   if (listmeff[[Ns / 2 + i]][[2]]) {
       xf[i]     <- listmeff[[Ns / 2 + i]][[2]]
       yf[i]     <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      maskf[i]      <- TRUE
+      maskf[i]      <- i > opt$lowlimfitpot/opt$xi
       if (!opt$aic) {
         bsamplesf[, i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
         bsamples[, Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[, 1]
@@ -555,7 +560,7 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 
       x[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[2]]
       y[Ns / 2 + i] <- listmeff[[Ns / 2 + i]][[1]]$effmassfit$t0[1]
-      mask[Ns / 2 + i]  <- TRUE
+      mask[Ns / 2 + i]  <- i > opt$lowlimfitpot/opt$xi
       finemask[Ns / 2 + i] <- TRUE
 
   }
@@ -703,7 +708,7 @@ dx[finemask] <- x[finemask] * dxicalc
 #     bsamples[, i + Ns + Nt / 2] <- i * array(xibootsamples, dim = c(bootsamples, 1))
 # }
 bsamples[, Ns/2 + Nt/2 + (1:(Ns/2 - opt$omit))] <- bsamplesx[, (1:(Ns/2 - opt$omit))]
-bsamples[, Ns + Nt/2 + seq(1, Nt / 2 - opt$omit / xi)] <- bsamplesx[, Ns/2 + seq(1, Nt / 2 - opt$omit / xi)] * array(rep(xibootsamples, Nt / 2), dim = c(bootsamples, Nt / 2))
+bsamples[, Ns + Nt/2 + seq(1, Nt / 2 - opt$omit / xi)] <- bsamplesx[, Ns/2 + seq(1, Nt / 2 - opt$omit / xi)] * array(rep(xibootsamples, Nt / 2 - opt$omit / xi), dim = c(bootsamples, Nt / 2 - opt$omit / xi))
 
 
 title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
@@ -744,10 +749,12 @@ for (i in seq(1, bootsamples, 1)) {
 }
 bootsforce <- na.omit(bootsforce)
 
-forceerrs <- c()
-for (i in seq(1, length(xx), 1)) {
-    forceerrs[i] <- sd(bootsforce[, i])
-}
+# forceerrs <- c()
+
+# for (i in seq(1, length(xx), 1)) {
+#     forceerrs[i] <- sd(bootsforce[, i])
+# }
+forceerrs <- apply(bootsforce, 2, sd)
 
 #Determine r0 as solution of equation -r^2 d / dr V(r) = c, solve for each bootstrapsample, r0 = mean pm sd
 # V(r) = a + sigma * r + b * ln(r)
