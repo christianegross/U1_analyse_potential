@@ -569,9 +569,6 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 
   }
 }
-print(mask)
-print(maskc)
-print(maskf)
 
 
 ## for the fine and coarse potentials, only omit is necessary, lowlim does not change the result
@@ -896,10 +893,10 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         r0 = NA, dr0 = NA, st = NA, dst = NA, p = NA, dp = NA,
         chi = NA, chifine = NA, chicoarse = NA, c = NA, bs = NA, Ns = NA,
         Nt = NA, nape = NA, alpha = NA, omit = NA, nom = NA, skip = NA,
-        xi2 = NA, dxi2 = NA, xisingle = NA, dxisingle = NA,
+        xisingle = NA, dxisingle = NA,
         job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
         xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, lowlimpot = NA, aic = NA,
-        scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA)
+        scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA, coulpart = NA, dcoulpart = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -911,13 +908,14 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         chicoarse = fit.resultcoarse$chisqr / fit.resultcoarse$dof,
         c = rzeroofc$c[i], bs = bootsamples, Ns = Ns, Nt = Nt,
         nape = nape, alpha = alpha, omit = opt$omit, nom = nom, skip = skip,
-        xi2 = xisquared, dxi2 = dxisquared, xisingle = xisingle, dxisingle = dxisingle,
+        xisingle = xisingle, dxisingle = dxisingle,
         job = opt$job, hash = githash, every = opt$every,
         tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint[1],
         bootl = opt$bootl, xirzero = differentxiresults[1], dxirzero = differentxiresults[2],
         xist = differentxiresults[3], dxist = differentxiresults[4],
         lowlim = opt$lowlim, lowlimpot=opt$lowlimpot, aic = opt$aic, scaletauint = opt$scaletauint,
-        puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot)
+        puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot, 
+        coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3])
 
 resultlist <- rbind(resultlist, newline)
 }

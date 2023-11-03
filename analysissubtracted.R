@@ -572,10 +572,6 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   }
 }
 
-print(mask)
-print(maskc)
-print(maskf)
-
 #determine parameters of potential by bootstrap, save results
 print(cor(bsamplesc[, maskc]))
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
@@ -795,33 +791,32 @@ resultssummary <- list(st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2]
 class(resultssummary) <- "resultssummary"
 
 
-resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
-    xi2 = NA, dxi2 = NA, r0 = NA, dr0 = NA, st = NA, dst = NA, p = NA,
+resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA, 
+    r0 = NA, dr0 = NA, st = NA, dst = NA, p = NA,
     dp = NA, chi = NA, diff = NA, ddiff = NA, bs = NA,
-    xicalcsub = NA, dxicalcsub = NA, xi2sub = NA, dxi2 = NA,
+    xicalcsub = NA, dxicalcsub = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
-    omit = NA, nom = NA, skip = NA, t1 = NA, job = NA, hash = NA,
+    omit = NA, nom = NA, skip = NA, job = NA, hash = NA,
     every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, lowlimpot = NA, aic = NA,
-    scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA)
+    scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA, coulpart = NA, dcoulpart = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
-                      xi2 = xisquared, dxi2 = dxisquared,
                       r0 = rzeroofc$r0[i], dr0 = rzeroofc$dr0[i],
                       st = fit.resultscaled$t0[2], dst = fit.resultscaled$se[2],
                       p = plaquettecf$cf.tsboot$t0[1], dp = plaquettecf$tsboot.se[1],
                       chi = fit.resultscaled$chisqr / fit.resultscaled$dof,
                       diff = fit.match$t0[1], ddiff = fit.match$se[1],
                       bs = bootsamples, xicalcsub = xicalcsub,
-                      dxicalcsub = dxicalcsub, xi2sub = xisquaredsub,
-                      dxi2 = dxisquaredsub, c = rzeroofc$c[i], rmin = opt$rmin,
+                      dxicalcsub = dxicalcsub, c = rzeroofc$c[i], rmin = opt$rmin,
                       rmax = opt$rmax, Ns = Ns, Nt = Nt, nape = nape, alpha = alpha,
                       omit = opt$omit, nom = nom, skip = skip,
-                      t1 = t1, job = opt$job, hash = githash, every = opt$every,
+                      job = opt$job, hash = githash, every = opt$every,
                       tauint = plaquettedata$tauint, dtauint = plaquettedata$dtauint,
                       bootl = opt$bootl, lowlim = opt$lowlim, lowlimpot = opt$lowlimpot, aic = opt$aic,
                       scaletauint = opt$scaletauint,
-                      puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot)
+                      puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot, 
+                      coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3])
 resultlist <- rbind(resultlist, newline)
 }
 
