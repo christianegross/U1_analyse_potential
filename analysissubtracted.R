@@ -572,6 +572,7 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
   }
 }
 
+
 #determine parameters of potential by bootstrap, save results
 print(cor(bsamplesc[, maskc]))
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2),
@@ -636,15 +637,12 @@ for (bs in seq(1, bootsamples, 1)) {
     bsamplesmatch[bs, (Ns / 2 + 1):Ns] <- bsamples[bs, 1:(Ns / 2)]
 }
 
-maskmatch <- c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim))
-
-
-print(cor(bsamples[, 1:Ns]))
-fit.match <- bootstrap.nlsfit(matchpot, c(0.1, xi),
-            y = yc, x = yf, bsamples[, 1:Ns], mask = maskmatch)
+maskmatch <- c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim - opt$omit), rep(FALSE, opt$omit))
+print(cor(bsamples[, c(maskmatch, maskmatch)]))
+fit.match <- bootstrap.nlsfit(fn = matchpot, par = c(0.1, xi),
+            y = yc, x = yf, bsamples = bsamples[, 1:Ns], mask = maskmatch)
 plot(fit.match, xlab = "a_tV_s(x)", ylab = "a_sV_s(x)",
             main = "matching potentials to determine xi")
-# print(fit.match)
 filenamematch <- sprintf("%sfitresultmatchnormal%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.match, file = filenamematch)
 
