@@ -206,7 +206,7 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
     # skip: number of configurations that are stripped from the beginnig
     # every: step between read lines
     # l: median blocking size for bootstrap
-    WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Ns * fraction, x = x,
+    WL <- readloopfilecfsub(file = file, skip = skip, path=path, Nytmax = Ns * fraction, x = x,
                 Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
@@ -235,7 +235,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
     # skip: number of configurations that are stripped from the beginnig
     # every: step between read lines
     # l: median blocking size for bootstrap
-    WL <- readloopfilecfsub(file = file, skip = skip, Nytmax = Nt * fraction, x = x,
+    WL <- readloopfilecfsub(file = file, skip = skip, path=path, Nytmax = Nt * fraction, x = x,
                     Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
     WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
