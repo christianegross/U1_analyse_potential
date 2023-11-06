@@ -326,7 +326,7 @@ if (start != 1) {
     xiphys[, 1] <- arrayxi[, maskone]
 
     interceptsimple <- c(opt$beta)
-    xisimple <- data$xi[maskone]
+    xisimple <- data$xicalc[maskone]
     psimple <- data$p[maskone]
 
     fitsrzero[[1]] <- list(rzero = data$r0[maskone], drzero = data$dr0[maskone], fitlim = opt$fitlim)
@@ -378,7 +378,7 @@ for (i in seq(start, length(xis))) {
         }
 
         xisimple[i] <- fitsxi[[i]]$fn(par = fitsxi[[i]]$t0, x = interceptsimple[i], boot.r = 0)
-        psimple[i] <- fitsp[[i]]$fn(par = fitsp[[i]]$t0, x = interceptsimple[i], boot.r = 0)
+        psimple[i] <- fitsplaquette[[i]]$fn(par = fitsplaquette[[i]]$t0, x = interceptsimple[i], boot.r = 0)
 
         newline <- data.frame(xiin = xis[i],
             r0slope = tex.catwitherror(fitsrzero[[i]]$t0[2], fitsrzero[[i]]$se[2], with.dollar = FALSE, digits = 2),

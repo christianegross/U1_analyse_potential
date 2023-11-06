@@ -146,8 +146,10 @@ for (i in seq(1, length(xis))){
             result$beta[i] <- opt[[betafix]]
             result$betasimple[i] <- opt[[betafix]]
             result$p[i] <- data$p[j]
+            result$psimple[i] <- data$p[j]
             result$dp[i] <- data$dp[j]
             result$xiphys[i] <- data$xicalc[j]
+            result$xisimple[i] <- data$xicalc[j]
             result$dxiphys[i] <- data$dxicalc[j]
             result$betachosen[i] <- TRUE
         }
@@ -198,9 +200,9 @@ resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
 
 maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
 i <- 1
-xirenfit <- result$xiphys^2
+xirenfit <- result$xisimple^2
 if(opt$xisingle) {
-xirenfit <- result$xiphys
+xirenfit <- result$xisimple
 }
 
 pdf(sprintf("%s/plotsbetachosen%s.pdf", opt$respath, endnamewrite), title="")
@@ -210,7 +212,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = xirenfit, y = result$p, bsamples = bsamplescontlimit,
+                x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
                 mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
