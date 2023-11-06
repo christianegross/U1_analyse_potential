@@ -222,7 +222,7 @@ packages <- c("\\usepackage{tikz}",
 
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
-endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot)
+endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%dfl%.2f", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot, opt$fitlim)
 if(opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
