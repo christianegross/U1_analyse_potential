@@ -270,6 +270,9 @@ fitsxi <- list(NULL)
 intercepts <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 plaqren <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
 xiphys <- array(rep(NA, bootsamples * (length(xis))), dim = c(bootsamples, length(xis)))
+interceptsimple <- c()
+xisimple <- c()
+psimple <- c()
 
 legendtext <- c("1.000")
 xvalues <- seq(opt$beta-0.4, opt$beta+0.2, length.out=41)
@@ -323,6 +326,10 @@ if (start != 1) {
     xiphys[, 1] <- arrayxi[, maskone]
 
     interceptsimple <- c(opt$beta)
+    xisimple <- data$xi[maskone]
+    psimple <- data$p[maskone]
+
+    fitsrzero[[1]] <- list(rzero = data$r0[maskone], drzero = data$dr0[maskone], fitlim = opt$fitlim)
 }
 
 print(paste("start=", start))
@@ -370,6 +377,9 @@ for (i in seq(start, length(xis))) {
             xiphys[, i] <- fillexceptna(removed, prediction$boot)
         }
 
+        xisimple[i] <- fitsxi[[i]]$fn(par = fitsxi[[i]]$t0, x = interceptsimple[i], boot.r = 0)
+        psimple[i] <- fitsp[[i]]$fn(par = fitsp[[i]]$t0, x = interceptsimple[i], boot.r = 0)
+
         newline <- data.frame(xiin = xis[i],
             r0slope = tex.catwitherror(fitsrzero[[i]]$t0[2], fitsrzero[[i]]$se[2], with.dollar = FALSE, digits = 2),
             r0intercept = tex.catwitherror(fitsrzero[[i]]$t0[1], fitsrzero[[i]]$se[1], with.dollar = FALSE, digits = 2),
@@ -399,6 +409,8 @@ for (i in seq(start, length(xis))) {
         }
         fitresults <- rbind(fitresults, newline)
         interceptsimple[i] <- NA
+        xisimple[i] <- NA
+        psimple[i] <- NA
     }
 
     legendtext[i] <- sprintf("%.3f", xis[i])
@@ -443,7 +455,7 @@ result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = F),
                     p = apply(plaqren, 2, mean, na.rm = F), dp = apply(plaqren, 2, sd, na.rm = F))
 # result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
 # result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
-result <- cbind(result, data.frame(betasimple = interceptsimple))
+result <- cbind(result, data.frame(betasimple = interceptsimple, xisimple = xisimple, psimple = psimple))
 par(mai = defaultmargin)
 print(result)
 }
@@ -531,11 +543,11 @@ resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
 
 xiinfit <- xis^2
 xinaivefit <- xirennaive^2
-xirenfit <- result$xiphys^2
+xirenfit <- result$xisimple^2
 if(opt$xisingle) {
 xiinfit <- xis
 xinaivefit <- xirennaive
-xirenfit <- result$xiphys
+xirenfit <- result$xisimple
 }
 
 maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
@@ -594,7 +606,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 # xi and beta renorm
 # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = xirenfit, y = result$p, bsamples = bsamplescontlimit,
+                x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
                 mask = maskfitcontlim))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -616,7 +628,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
 
 # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
+                x = xirenfit, y = result$betasimple, bsamples = bsamplescontlimitbeta,
                 mask = maskfitcontlim))
     fitspolynomial[[15 + i]] <- fitbeta
 
