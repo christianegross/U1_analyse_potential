@@ -671,19 +671,19 @@ getxisideways <- function(ydata, Nstmp = Ns, Nttmp = Nt, omit = opt$omit, lowlim
 xis <- apply(bsamples, 1, getxisideways)
 
 
-xis_xi <- unlist(sapply(xis, getElement, "mean"))
-xibootsamples <- unlist(sapply(xis, getElement, "all"))
+xis_xi <- unlist(sapply(xis, getElement, "all"))
+xibootsamples <- unlist(sapply(xis, getElement, "mean"))
 
 # calculate xi, xi^2 as mean over all values
 # compare to values of bootstrapsamples
-xicalc <- mean(xis_xi)
-dxicalc <-  sd(xis_xi)
-xisquared <- mean(xis_xi^2)
-dxisquared <- sd(xis_xi^2)
+xicalc <- getxisideways(y)$mean
+dxicalc <-  sd(xibootsamples)
+xisquared <- mean(xibootsamples^2)
+dxisquared <- sd(xibootsamples^2)
 strings <- sprintf("%e +/- %e %f",
         xicalc - mean(xibootsamples), dxicalc - sd(xibootsamples),
         mean(xibootsamples))
-message("deviation different means: ", strings)
+message("bias: ", strings)
 message(xicalc)
 message(warnings())
 
