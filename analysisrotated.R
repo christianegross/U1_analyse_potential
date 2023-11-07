@@ -614,73 +614,72 @@ strings <- sprintf("xi from single potentials: %f+/-%f", xisingle, dxisingle)
 # determine xi by interpolating between different V(t) to get V(x) = V(t xi),
 # like in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.63.074501
 
-xis <- data.frame(xi = NA, t = NA, y = NA, j = NA)
-xibootsamples <- c()
 # Determine parameters of interpolation for V_t, V_t(t) = a * t + b
 # defined by two points, lower and upper,
 # with distance 1 a_t, V(i) = lower, V(i + 1) = upper
 # for all bootstrapsamples: calculate interpolation, determine xi from interpolation
-for (bs in seq(1, bootsamples, 1)) {
-
-interpolation <- data.frame(lower = NA, upper = NA,
-            a = NA, b = NA, lowerx = NA)
-for (i in seq(1, Nt / 2 - 1 - opt$omit / xi, 1)) {
-    if (listmeff[[Ns / 2 + i + 1]][[2]]) {
-#     lower     <- listmeff[[Ns / 2 + i]][[1]]$massfit.tsboot[bs, 1]
-#     upper     <- listmeff[[Ns / 2 + i + 1]][[1]]$massfit.tsboot[bs, 1]
-    lower <- bsamples[bs, Ns / 2 + i]
-    upper <- bsamples[bs, Ns / 2 + i + 1]
-    a <- upper - lower
-    b <- lower - i * a
-    newline <- data.frame(lower = lower, upper = upper,
-                a = a, b = b, lowerx = i)
-    interpolation <- rbind(interpolation, newline)
-}
-}
-
-interpolation <- interpolation[-1, ]
-
-# solve equation V_s(x) = V_t(xi t) = a * t + b -> t = (V_s-b) / a
-# -> xir = x / t = xiresult
-# for all possible V_s with x > =  2 (variable name xi is already taken)
-# potential not dominated by linear part for y > 2
-xiboots <- c()
-for (i in seq(1 + opt$lowlim, Ns / 2 - opt$omit, 1)) {
-  if (listmeff[[i]][[2]]) {
-#     Vs <- listmeff[[i]][[1]]$massfit.tsboot[bs, 1]
-    Vs <- bsamples[bs, i]
-    index <- NA
-# determine in which interval of the V_t V_s is sitting by selecting
-# lowest possible interval for which the upper limit is bigger than V_s
-    for (j in seq(1, Nt / 2 - 1 - opt$omit / xi)) {
-        if (length(interpolation$upper[interpolation$lowerx == j]) > 0) {
-        if (Vs < interpolation$upper[interpolation$lowerx == j]) {
-            index <- interpolation$lowerx == j
-            break
-        }
-        }
+getxisideways <- function(ydata, Nstmp = Ns, Nttmp = Nt, omit = opt$omit, lowlim = opt$lowlim, xitmp = xi) {
+    interpolation <- data.frame(lower = NA, upper = NA,
+                a = NA, b = NA, lowerx = NA)
+    for (i in seq(1, Nttmp / 2 - 1 - omit / xitmp, 1)) {
+        if (listmeff[[Nstmp / 2 + i + 1]][[2]]) {
+    #     lower     <- listmeff[[Nstmp / 2 + i]][[1]]$massfit.tsboot[bs, 1]
+    #     upper     <- listmeff[[Nstmp / 2 + i + 1]][[1]]$massfit.tsboot[bs, 1]
+        lower <- ydata[Nstmp / 2 + i]
+        upper <- ydata[Nstmp / 2 + i + 1]
+        a <- upper - lower
+        b <- lower - i * a
+        newline <- data.frame(lower = lower, upper = upper,
+                    a = a, b = b, lowerx = i)
+        interpolation <- rbind(interpolation, newline)
     }
-    #highest V_s could be bigger than highest V_t, so there is not an index for every y
-    if (!is.na(index)) {
-        t <- (Vs - interpolation$b[index]) / interpolation$a[index]
-        xir <- i / t
-        newline <- data.frame(xi = xir, t = t, y = i,
-                    j = interpolation$lowerx[index])
-        xis <- rbind(xis, newline)
-        xiboots <- append(xiboots, xir)
     }
-  }
+    
+    interpolation <- interpolation[-1, ]
+    
+    # solve equation V_s(x) = V_t(xi t) = a * t + b -> t = (V_s-b) / a
+    # -> xir = x / t = xiresult
+    # for all possible V_s with x > =  2 (variable name xi is already taken)
+    # potential not dominated by linear part for y > 2
+    xiboots <- c()
+    for (i in seq(1 + lowlim, Nstmp / 2 - omit, 1)) {
+      if (listmeff[[i]][[2]]) {
+        Vs <- ydata[i]
+        index <- NA
+    # determine in which interval of the V_t V_s is sitting by selecting
+    # lowest possible interval for which the upper limit is bigger than V_s
+        for (j in seq(1, Nttmp / 2 - 1 - omit / xitmp)) {
+            if (length(interpolation$upper[interpolation$lowerx == j]) > 0) {
+            if (Vs < interpolation$upper[interpolation$lowerx == j]) {
+                index <- interpolation$lowerx == j
+                break
+            }
+            }
+        }
+        #highest V_s could be bigger than highest V_t, so there is not an index for every y
+        if (!is.na(index)) {
+            t <- (Vs - interpolation$b[index]) / interpolation$a[index]
+            xir <- i / t
+            newline <- data.frame(xi = xir, t = t, y = i,
+                        j = interpolation$lowerx[index])
+            xiboots <- append(xiboots, xir)
+        }
+      }
+    }
+    return(list(mean = mean(xiboots), all = xiboots))
 }
-xibootsamples[bs] <- mean(xiboots)
-}
+xis <- apply(bsamples, 1, getxisideways)
+
+
+xis_xi <- unlist(sapply(xis, getElement, "mean"))
+xibootsamples <- unlist(sapply(xis, getElement, "all"))
 
 # calculate xi, xi^2 as mean over all values
 # compare to values of bootstrapsamples
-xis <- xis[-1, ]
-xicalc <- mean(xis$xi)
-dxicalc <-  sd(xis$xi)
-xisquared <- mean(xis$xi^2)
-dxisquared <- sd(xis$xi^2)
+xicalc <- mean(xis_xi)
+dxicalc <-  sd(xis_xi)
+xisquared <- mean(xis_xi^2)
+dxisquared <- sd(xis_xi^2)
 strings <- sprintf("%e +/- %e %f",
         xicalc - mean(xibootsamples), dxicalc - sd(xibootsamples),
         mean(xibootsamples))
@@ -769,19 +768,20 @@ forceerrs <- apply(bootsforce, 2, sd)
 rzeroofc <- data.frame(r0 = NA, dr0 = NA, c = NA)
 
 for (c in list(opt$crzero)) {
-rzerolist <- data.frame(r1 = NA, r2 = NA)
-for (bs in seq(1, bootsamples)) {
-    sigma <- fit.resultscaled$t[bs, 2]
-    b <- fit.resultscaled$t[bs, 3]
-    r1 <- -b / (2.0 * sigma) + sqrt((b / (2.0 * sigma))^2 - c / sigma)
-    r2 <- -b / (2.0 * sigma) - sqrt((b / (2.0 * sigma))^2 - c / sigma)
-    rzerolist <- rbind(rzerolist, data.frame(r1 = r1, r2 = r2))
-}
-rzerolist <- rzerolist[-1, ]
-rzero <- mean(rzerolist$r1)
-drzero <- sd(rzerolist$r1)
+# rzerolist <- data.frame(r1 = NA, r2 = NA)
+# for (bs in seq(1, bootsamples)) {
+#     sigma <- fit.resultscaled$t[bs, 2]
+#     b <- fit.resultscaled$t[bs, 3]
+#     r1 <- -b / (2.0 * sigma) + sqrt((b / (2.0 * sigma))^2 - c / sigma)
+#     r2 <- -b / (2.0 * sigma) - sqrt((b / (2.0 * sigma))^2 - c / sigma)
+#     rzerolist <- rbind(rzerolist, data.frame(r1 = r1, r2 = r2))
+# }
+rzerolist <- apply(fit.resultscaled$t, 1, getrzero)
+rzero <- getrzero(fit.resultscaled$t0)
+# print(rzero - mean(rzerolist))
+drzero <- sd(rzerolist)
 rzeroofc <- rbind(rzeroofc, data.frame(r0 = rzero, dr0 = drzero, c = c))
-bsrzero <- rzerolist[, 1]
+bsrzero <- rzerolist
 }
 rzeroofc <- rzeroofc[-1, ]
 

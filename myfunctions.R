@@ -529,6 +529,14 @@ determinerzero <- function (fit.result, bootsamples, c = -1.65, xi = 1) {
     return(list(rzero, drzero, rzerolist))
 }
 
+# fitpars = const, linear, coulomb
+# get rzero from a single set of potential parameters
+getrzero <- function(fitpars, c = -1.65) {
+    b <- fitpars[3]
+    sigma <- fitpars[2]
+    return(-b / (2 * sigma) + sqrt((b / (2 * sigma))^2 - c / sigma))
+}
+
 drawallticks <- function (all = FALSE, inward = FALSE) {
     # want to draw tick labels on every side, but do not always want tick labels
     if (!inward) {
@@ -1114,3 +1122,5 @@ deteffmassaic <- function(effmass, start = 1, mindistance = 2, verbose = FALSE) 
 
 
 }
+
+

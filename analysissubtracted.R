@@ -696,21 +696,21 @@ for (i in seq(1, length(xx), 1)) {
 rzeroofc <- data.frame(r0 = NA, dr0 = NA, c = NA)
 
 for (c in list(opt$crzero)) {
-rzerolist <- data.frame(r1 = NA, r2 = NA)
-for (bs in seq(1, bootsamples)) {
-#~     a <- fit.resultscaled$t[bs, 1]
-    sigma <- fit.resultscaled$t[bs, 2]
-    b <- fit.resultscaled$t[bs, 3]
-    r1 <- -b / (2 * sigma) + sqrt((b / (2 * sigma))^2 - c / sigma)
-    r2 <- -b / (2 * sigma) - sqrt((b / (2 * sigma))^2 - c / sigma)
-    rzerolist <- rbind(rzerolist, data.frame(r1 = r1, r2 = r2))
-}
-rzerolist <- na.omit(rzerolist)
-
-rzero <- mean(rzerolist$r1)
-drzero <- sd(rzerolist$r1)
+# rzerolist <- data.frame(r1 = NA, r2 = NA)
+# for (bs in seq(1, bootsamples)) {
+# #~     a <- fit.resultscaled$t[bs, 1]
+#     sigma <- fit.resultscaled$t[bs, 2]
+#     b <- fit.resultscaled$t[bs, 3]
+#     r1 <- -b / (2 * sigma) + sqrt((b / (2 * sigma))^2 - c / sigma)
+#     r2 <- -b / (2 * sigma) - sqrt((b / (2 * sigma))^2 - c / sigma)
+#     rzerolist <- rbind(rzerolist, data.frame(r1 = r1, r2 = r2))
+# }
+rzerolist <- apply(fit.resultscaled$t, 1, getrzero)
+rzero <- getrzero(fit.resultscaled$t0)
+# print(rzero - mean(rzerolist))
+drzero <- sd(rzerolist)
 rzeroofc <- rbind(rzeroofc, data.frame(r0 = rzero, dr0 = drzero, c = c))
-bsrzero <- rzerolist[, 1]
+bsrzero <- rzerolist
 }
 rzeroofc <- na.omit(rzeroofc)
 
