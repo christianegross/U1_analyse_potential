@@ -174,7 +174,7 @@ arrayp <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 arrayxi <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 intercepts <- array(rep(NA, bootsamples * nom), dim = c(bootsamples, nom))
 
-
+nalist <- rep(FALSE, opt$bootsamples)
 for (i in seq(1, nom)) {
     string <- sprintf("i = %d, beta = %f, Ns = %d, Nt = %d, xi = %f",
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
@@ -195,8 +195,17 @@ for (i in seq(1, nom)) {
     arrayrzero[, i] <- result[, 1] * factorrzero
     arrayp[, i] <- result[, 2]
     arrayxi[, i] <- result[, 3]
+    nalist <- nalist | is.na(result[, 1]) | is.na(result[, 2]) | is.na(result[, 3])
     if (sum(is.na(result)) > 0) print(sum(is.na(result)))
 }
+print(sum(nalist))
+# stop if there are too many NAs in the data
+stopifnot(sum(nalist) < 0.1*opt$bootsamples)
+# remove all NAs from dataset, save this list to be able to remove the same bootstrapsample from other observables
+arrayrzero <- arrayrzero[!nalist, ]
+arrayxi <- arrayxi[!nalist, ]
+arrayp <- arrayp[!nalist, ]
+bootsamples <- bootsamples - sum(nalist)
 
 if (type == "slope") {
     data$xicalc <- apply(arrayxi, 2, mean, na.rm = F)
@@ -483,7 +492,7 @@ for (i in seq(start, length(xis))){
 # save and plot results for naive limits
 resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
-                    fitsp = fitsplaquette, githash = githash)
+                    fitsp = fitsplaquette, githash = githash, nalist = nalist)
 
 
 if (TRUE) {
@@ -678,6 +687,7 @@ print(resultspolynomial)
 # print(result)
 
 fitspolynomial$githash <- githash
+fitspolynomial$nalist <- nalist
 
 namesave <- sprintf("%s/resultsrenormalization%s.csv", opt$respath, endname)
 write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
