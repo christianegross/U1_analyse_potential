@@ -1,3 +1,4 @@
 ##,example,input,file,for,choseprediction.R,,,,,,,,,,,,,,,,,,,,,,,,
-beta,length,type,bootsamples,omit,lowlimxi,lowlimpot,xiconst,indexfitcontlim,singlemulti,summaryname,datapath,respath,aic,scaletauint,errortotpot,crzero,xisingle,xi1fix,xi2fix,xi2beta,xi3fix,xi3beta,xi4fix,xi4beta,xi5fix,xi5beta,xi6fix,xi6beta,xi7fix,xi7beta
-1.7,16,sideways,500,0,1,1,1,1,single,resultsummary2p1dsidewaysb1.700Ns16.csv,./,plotstikz/,1,1,1,-1.65,0,1,1,1.6521,1,1.6,0,0,1,1.525,1,1.4814,1,1.49
+## if a beta cannot be fixed at large volume, a beta for the samll volume should still be given
+beta,length,type,bootsamples,omit,lowlimxi,lowlimpot,xiconst,indexfitcontlim,fitlim,singlemulti,summaryname,datapath,respath,aic,scaletauint,errortotpot,crzero,xisingle,xi1fix,xi2fix,xi2beta,xi3fix,xi3beta,xi4fix,xi4beta,xi5fix,xi5beta,xi6fix,xi6beta,xi7fix,xi7beta
+1.7,16,sideways,500,0,1,1,1,1,0.3,single,resultsummary2p1dsidewaysb1.700Ns16.csv,./,plotstikz/,1,1,1,-1.65,0,1,1,1.6521,1,1.6,0,0,1,1.525,1,1.4814,1,1.49

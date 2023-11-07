@@ -3,6 +3,7 @@
 *.RData
 *.csv
 *.json
+*.png
 contlimitslope.R
 predictbetarzero.R
 test.R

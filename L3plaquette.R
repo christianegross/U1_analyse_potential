@@ -5,8 +5,6 @@ if (TRUE) {
 option_list <- list(
     make_option(c("-s", "--bootsamples"), type = "integer", default = 500,
     help = "how many bootstrapsamples should be drawn [default %default]"),
-    make_option(c("-b", "--beta"), type = "double", default = 1.7,
-    help = "beta at xi = 1 [default %default]"),
     make_option(c("--sparam"), type = "double", default = 6,
     help = "S parameter for the uwerr-function [default %default]"),
     make_option(c("--myfunctions"), type = "character",
@@ -18,44 +16,38 @@ option_list <- list(
     help = "path to where the resulting plots and data are stored [default %default]"),
     make_option(c("--datapath"), type = "character", default = "./",
     help = "path to where the data for the analyzed configs are stored [default %default]"),
-    make_option(c("--type"), type = "character", default = "normal",
-    help = "type of ensembles that shoule be analysed, one of normal, sideways [default %default]")
+    make_option(c("--inputfile"), type = "character", default = "./",
+    help = "inputfile for further parameters (list of betas, types, ...) [default %default]"),
+    make_option(c("--line"), type = "integer", default = "1",
+    help = "line of inputfile to read [default %default]")
 )
+
+## the inputfile should be formatted the same as for chosepredict
+
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
 args <- parse_args(parser, positional_arguments = 0)
 opt <- args$options
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 }
 
+input <- read.table(opt$input, header = TRUE)
+input <- input[opt$line, ]
+
 githash <- printgitcommit(opt$myfunctions)
 bootsamples <-  500
 
-beta <-  opt$beta
+
+xiconststr <- ""
+if (opt$xiconst) xiconststr <- "xiconst"
+print(opt$singlemulti)
+if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot)
+if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi)
+if (opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
+if (opt$aic) endname <- sprintf("%saic", endname)
+if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
+
+
 S <-  opt$sparam
-readindata <- opt$readindata
-if (opt$type ==  "normal") {
-if (beta ==  1.65) {
-
-betas <-  c(1.65, 1.615, 1.5614, 1.515, 1.48, 1.45, 1.42) # beta = 1.65
-}
-
-if (beta ==  1.7) {
-
-betas <-  c(1.7, 1.6521, 1.6075, 1.5514, 1.525, 1.5, 1.49) # beta = 1.7
-}
-} else if (opt$type == "sideways") { #sideways potentials
-if (beta ==  1.65) {
-
-betas <-  c(1.65, 1.615, 1.565, 1.49, 1.4638, 1.4406, 1.42) # beta = 1.65
-}
-
-if (beta ==  1.7) {
-betas <-  c(1.7, 1.6521, 1.6, 1.5381, 1.525, 1.4814, 1.49) # beta = 1.7
-}
-} else {
-    stop(paste("type", opt$type, "is not supported"))
-}
-
 Nt <-  c(16, 20, 24, 32, 40, 48, 64)
 therm16 <-  c(500, 500, 500, 500, 500, 1000, 2000)
 therm3 <-  c(1333, 1333, 1333, 1333, 2666, 5333, 10666)
@@ -69,8 +61,6 @@ therm3 <-  c(1333, 1333, 1333, 1333, 2666, 5333, 10666)
 # if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 
 
-endname <- sprintf("%sbeta%f", opt$type, opt$beta)
-
 ## Read in result for L = 3
 
 
@@ -80,9 +70,11 @@ P3 <- array(NA, dim = c(opt$bootsamples, length(Nt)))
 
 pdf(sprintf("L3%s.pdf", endname), title = "")
 
-for (i in seq(1, length(betas))) {
+for (i in seq(1, 7)) {
     print(i)
-    filengthame3 <-  sprintf("%s/result2p1d.u1potential.Nt%d.Ns3.b%f.xi%f.nape0.alpha1.000000nonplanar", opt$datapath, Nt[i], betas[i], 16 / Nt[i])
+    betaname <- paste0("xi", i, "beta")
+    beta <- input[betaname]
+    filengthame3 <-  sprintf("%s/result2p1d.u1potential.Nt%d.Ns3.b%f.xi%f.nape0.alpha1.000000nonplanar", opt$datapath, Nt[i], beta, 16 / Nt[i])
     data3 <-  readloopfilecfonecolumn(file = filengthame3, path = "", skip = therm3[i], column = 6, memsafe = TRUE)
     uwerr3 <-  uwerrprimary(data3$cf[, 1], S = S)
     summary(uwerr3)
@@ -91,7 +83,7 @@ for (i in seq(1, length(betas))) {
     bootl <- ceiling(4 * uwerr3$tauint^2)
     plaquettecf <- bootstrap.cf(data3,
                 boot.R = opt$bootsamples, boot.l = bootl)
-    list3[[i]] <-  list(uwerr = uwerr3, cf = plaquettecf)
+    list3[[i]] <-  list(uwerr = uwerr3, cf = plaquettecf, beta = beta)
     P3[, i] <- plaquettecf$cf.tsboot$t[, 1]
 
 }

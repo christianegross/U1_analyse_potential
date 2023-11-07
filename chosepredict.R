@@ -136,7 +136,7 @@ for (i in seq(1, length(xis))){
     if (fix %in% names(opt)) {
         betafix <- paste("xi", i, "beta", sep="")
         if (as.logical(opt[[fix]])) {
-            j <- which(abs(data$xi - xis[i]) < 1e-3 & abs(data$beta - opt[[betafix]]) < 1e-3)
+            j <- which(abs(data$xi - xis[i]) < 1e-5 & abs(data$beta - opt[[betafix]]) < 1e-5)
             readin <- readinbootstrapsamples(beta = data$beta[j], Ns = data$Ns[j],
                         Nt = data$Nt[j], xi = data$xi[j], columns = c(1, 1),
                         names = c("bsp", "bsxicalc"), filename = filenameres, end = end)
