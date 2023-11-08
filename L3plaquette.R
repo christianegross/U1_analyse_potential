@@ -16,9 +16,9 @@ option_list <- list(
     help = "path to where the resulting plots and data are stored [default %default]"),
     make_option(c("--datapath"), type = "character", default = "./",
     help = "path to where the data for the analyzed configs are stored [default %default]"),
-    make_option(c("--inputfile"), type = "character", default = "./",
+    make_option(c("-i", "--inputfile"), type = "character", default = "./",
     help = "inputfile for further parameters (list of betas, types, ...) [default %default]"),
-    make_option(c("--line"), type = "integer", default = "1",
+    make_option(c("-l", "--line"), type = "integer", default = "1",
     help = "line of inputfile to read [default %default]")
 )
 
