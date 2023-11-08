@@ -110,7 +110,7 @@ nom <- length(data$beta)
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
 print(opt$singlemulti)
-if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot)
+if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%dfl%.2f", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot, opt$fitlim)
 if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi)
 if (opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
@@ -120,6 +120,7 @@ if (opt$xisingle) endnamewrite <- paste0(endname, "xisingle")
 
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
+bootreduced <- opt$bootsamples - sum(resultslist$nalist)
 
 namesave <- sprintf("%s/resultsrenormalization%s.csv", as.character(opt$respath), endname)
 result <- read.table(file = namesave, header = TRUE)
@@ -139,10 +140,13 @@ for (i in seq(1, length(xis))){
             j <- which(abs(data$xi - xis[i]) < 1e-5 & abs(data$beta - opt[[betafix]]) < 1e-5)
             readin <- readinbootstrapsamples(beta = data$beta[j], Ns = data$Ns[j],
                         Nt = data$Nt[j], xi = data$xi[j], columns = c(1, 1),
-                        names = c("bsp", "bsxicalc"), filename = filenameres, end = end)
+                        names = c("bsp", "bsxicalc"), filename = filenameres,
+                        end = end)
+            # remove the bootstrapsamples that had an NA somewhere in the prediction to keep the total number of samples consistent
+            readin <- readin[!resultslist$nalist, ]
             resultslist[["plaqren"]][, i] <- readin[, 1]
             resultslist[["xiphys"]][, i] <- readin[, 2]
-            resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
+            resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = bootreduced, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
             result$beta[i] <- opt[[betafix]]
             result$betasimple[i] <- opt[[betafix]]
             result$p[i] <- data$p[j]
@@ -161,10 +165,10 @@ print(result)
 
 if (TRUE) {
 # empty containers for result
-bsamplescontlimit <- array(rep(NA, opt$bootsamples * (2 * length(xis))), dim = c(opt$bootsamples, 2 * length(xis)))
-bsamplescontlimitnaive <- array(rep(NA, opt$bootsamples * (length(xis))), dim = c(opt$bootsamples, length(xis)))
-bsamplescontlimitnaivexiren <- array(rep(NA, 2 * opt$bootsamples * (length(xis))), dim = c(opt$bootsamples, 2 * length(xis)))
-bsamplescontlimitbeta <- array(rep(NA, 2 * opt$bootsamples * (length(xis))), dim = c(opt$bootsamples, 2 * length(xis)))
+bsamplescontlimit <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(bootreduced, 2 * length(xis)))
+bsamplescontlimitnaive <- array(rep(NA, bootreduced * (length(xis))), dim = c(bootreduced, length(xis)))
+bsamplescontlimitnaivexiren <- array(rep(NA, 2 * bootreduced * (length(xis))), dim = c(bootreduced, 2 * length(xis)))
+bsamplescontlimitbeta <- array(rep(NA, 2 * bootreduced * (length(xis))), dim = c(bootreduced, 2 * length(xis)))
 pnaive <- c()
 xirennaive <- c()
 
@@ -182,7 +186,7 @@ bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["
 }
 
 if (result$dbeta[1] < 1e-8) {
-    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(opt$bootsamples, c(opt$beta), c(1e-4))
+    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootreduced, c(opt$beta), c(1e-4))
 }
 
 
