@@ -69,7 +69,7 @@ factorrzero <- 1
 if (opt$lowlimpot < 0) opt$lowlimpot <- opt$lowlimxi
 
 type <- opt$type
-if (! (type == "normal" || type == "sideways" || type == "slope")) {
+if (! (type == "normal" || type == "sideways" || type == "slope" || type == "sidewaysstring" || type == "normalstring")) {
     stop(paste("type", type, "not allowed"))
 }
 
@@ -89,12 +89,12 @@ if (opt$indexfitcontlim < 1) {
 
 
 # set filenames, read in results, set up containers for bootstrapsamples
-if (type == "sideways") {
+if (type == "sideways" || type == "sidewaysstring") {
 dataname <- sprintf("%s/resultsummary2p1dsidewaysb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
 filenameres <- sprintf("%s/resultssideways", opt$datapath)
 side <- 2
 }
-if (type == "normal") {
+if (type == "normal" || type == "normalstring") {
 dataname <- sprintf("%s/resultsummary2p1dnormalb%.3fNs%d.csv", opt$datapath, opt$beta, opt$length)
 filenameres <- sprintf("%s/resultsnormal", opt$datapath)
 side <- 2
@@ -118,13 +118,13 @@ if (!file.exists(dataname)) {
 }
 data <- read.table(dataname, header = TRUE, sep = " ")
 # data <- na.omit(data)
-if (type == "sideways") {
+if (type == "sideways" || type == "sidewaysstring") {
 data <- data[data$c == opt$crzero, ]
 data <- data[data$lowlim == opt$lowlimxi, ]
 data <- data[data$lowlimpot == opt$lowlimpot, ]
 }
 
-if (type == "normal") {
+if (type == "normal" || type == "normalstring") {
 data <- data[data$c == opt$crzero, ]
 data <- data[data$lowlim == opt$lowlimxi, ]
 data <- data[data$lowlimpot == opt$lowlimpot, ]
@@ -185,6 +185,13 @@ for (i in seq(1, nom)) {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
+    }    
+    if (type == "normalstring" || type == "sidewaysstring") {
+    if (opt$crzero == -1.65) end <- sprintf("omit%dllxi%dllr0%d%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], end2)
+    if (opt$crzero != -1.65) end <- sprintf("omit%dllxi%dllr0%dc%.2f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], opt$crzero, end2)
+    result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
+                    Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
+                    names = c("bsst", "bsp", "bsxicalc"), filename = filenameres, end = end)
     }
     if (type == "slope") {
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
@@ -215,6 +222,13 @@ if (type == "slope") {
     data$xi <- data$xiin
     try(data[c("xiin", "ratio", "dratio", "st", "dst", "chipot", "icslope", "dicslope", "icpot", "dicpot", "logpot", "dlogpot", "ratioslope", "dratioslope", "ratiopot", "dratiopot", "rzero", "drzero", "puw", "dpuw", "job")] <- NULL)
     # print(data)
+}
+
+##  we want to use the string tension to fix a_s, but still use the same code, so we fix the name by renaming
+if (type == "sidewaysstring" || type == "normalstring") {
+    data$r0 <- data$st
+    data$dr0 <- data$dst
+    
 }
 
 
@@ -249,7 +263,7 @@ if (size > 1) {
                     height = mmtoinches(200 * size), packages = packages)
     }
 defaultmargin <- par(c("mai"))
-if (type == "normal" || type == "sideways") {
+if (type == "normal" || type == "sideways" || type == "normalstring" || type == "sidewaysstring") {
     par(mai = c(defaultmargin[1] * max(1, 0.8 * fontsize),
             defaultmargin[2] * max(1, 0.8 * fontsize), 0.1, 0.1))
 }
@@ -434,6 +448,11 @@ fitresults <- fitresults[-1, ]
 if (type == "normal" || type == "sideways") {
 mtext("$r_0 / a_s$", side = side, line = distance, cex = fontsize) #ylab
 legend(legend = legendtext, x = "topleft", title = "$\\xi_\\text{input} = $",
+        col = c(cols), pch = c(cols), cex = fontsize)
+}
+if (type == "normalstring" || type == "sidewaysstring") {
+mtext("$a_s \\sigma$", side = side, line = distance, cex = fontsize) #ylab
+legend(legend = legendtext, x = "bottomleft", title = "$\\xi_\\text{input} = $",
         col = c(cols), pch = c(cols), cex = fontsize)
 }
 if (type == "slope") {
