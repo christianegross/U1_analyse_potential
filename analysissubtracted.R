@@ -578,6 +578,8 @@ for (i in seq(1, Ns / 2 - opt$omit, 1)) {
       finemask[Ns / 2 + i] <- TRUE
   }
 }
+# do not use unecessary memory
+listmeff <- NA
 
 
 #determine parameters of potential by bootstrap, save results

@@ -577,6 +577,8 @@ for (i in seq(1, Nt / 2 - opt$omit / xi, 1)) {
 
   }
 }
+# do not use unsecessary memory
+listmeff <- NA
 
 
 ## for the fine and coarse potentials, only omit is necessary, lowlim does not change the result
@@ -630,7 +632,7 @@ getxisideways <- function(ydata, Nstmp = Ns, Nttmp = Nt, omit = opt$omit, lowlim
     interpolation <- data.frame(lower = NA, upper = NA,
                 a = NA, b = NA, lowerx = NA)
     for (i in seq(1, Nttmp / 2 - 1 - omit / xitmp, 1)) {
-        if (listmeff[[Nstmp / 2 + i + 1]][[2]]) {
+        if (!is.na(ydata[Nstmp / 2 + i + 1])) {
     #     lower     <- listmeff[[Nstmp / 2 + i]][[1]]$massfit.tsboot[bs, 1]
     #     upper     <- listmeff[[Nstmp / 2 + i + 1]][[1]]$massfit.tsboot[bs, 1]
         lower <- ydata[Nstmp / 2 + i]
@@ -651,7 +653,7 @@ getxisideways <- function(ydata, Nstmp = Ns, Nttmp = Nt, omit = opt$omit, lowlim
     # potential not dominated by linear part for y > 2
     xiboots <- c()
     for (i in seq(1 + lowlim, Nstmp / 2 - omit, 1)) {
-      if (listmeff[[i]][[2]]) {
+      if (!is.na(ydata[i])) {
         Vs <- ydata[i]
         index <- NA
     # determine in which interval of the V_t V_s is sitting by selecting
