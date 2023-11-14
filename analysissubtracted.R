@@ -783,6 +783,18 @@ try(qqnorm(fit.match$t[, 2], main = "qqplot of xi_ren"))
 try(qqline(fit.match$t[, 2]))
 try(qqnorm(bsrzero, main = "qqplot of r_0"))
 try(qqline(bsrzero))
+
+# calculate spatil-temporal plaquette as W(x = 1, y = 0, t = 1)
+# with uwerr
+filenamest <- sprintf(
+            "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%ffinedistance",
+            opt$respath, Nt, Ns, beta, xi, nape, alpha)
+
+alldatast <- read.table(filenamest)
+plaquettecolumnst <- alldatast[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
+plaquettedatast <- uwerrprimary(plaquettecolumnst[seq(skip + 1, length(plaquettecolumnst), opt$every)],
+        S = opt$uwerrs, pl = opt$plotuwerr)
+
 }
 
 
@@ -804,7 +816,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
     omit = NA, nom = NA, skip = NA, job = NA, hash = NA,
     every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, lowlimpot = NA, aic = NA,
-    scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA, 
+    scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA,
     coulpart = NA, dcoulpart = NA, uwerrs = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
@@ -823,7 +835,8 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       bootl = opt$bootl, lowlim = opt$lowlim, lowlimpot = opt$lowlimpot, aic = opt$aic,
                       scaletauint = opt$scaletauint,
                       puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot, 
-                      coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3], uwerrs = opt$uwerrs)
+                      coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3], uwerrs = opt$uwerrs,
+                      puwst = plaquettedatast$value, dpuwst = plaquettedatast$dvalue)
 resultlist <- rbind(resultlist, newline)
 }
 
