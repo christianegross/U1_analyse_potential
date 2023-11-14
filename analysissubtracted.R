@@ -1,4 +1,3 @@
-library(hadron)
 library(optparse)
 
 
@@ -122,6 +121,8 @@ opt <- args$options
 
 if (TRUE) {
 # set some constants
+# we have to use a custom installation of R to be able to change the parameter S in uwerr
+require("hadron", lib.loc="/hiskp4/gross/masterthesis/analyse/code/")
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 githash <- printgitcommit(opt$myfunctions)
 beta <- opt$beta
