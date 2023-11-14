@@ -77,6 +77,11 @@ option_list <- list(
     help = "Draw bootstrap samples and determine effective mass
             before doing effective mass fits [default %default]"),
 
+    make_option(c("--plotuwerr"), action = "store_true", default = FALSE,
+    help = "plot the results of the uwerr analysis of the effective masses [default %default]"),
+    make_option(c("--uwerrs"), type = "double", default = 6,
+    help = "parameter S used for the uwerr analysis [default %default]"),
+
     make_option(c("--dofit"), action = "store_true", default = FALSE,
     help = "if true, potentials and xi are calculated [default %default]"),
     make_option(c("--smearing"), action = "store_true", default = FALSE,
@@ -239,7 +244,7 @@ for (y in seq(1, Ns / 2, 1)) {
                 every = opt$every, l = opt$bootl, fraction = opt$fraction,
                 maxrows = opt$maxrows)
 
-        uwerrresults <- uwerr.cf(WL)
+        uwerrresults <- uwerr.cf(WL, S = opt$uwerrs, pl = opt$plotuwerr, main=paste("spatial y =", y))
 
 #         print(names(uwerrresults$uwcf))
 #         "value"   "dvalue"  "ddvalue" "tauint"  "dtauint" "t"
@@ -341,7 +346,7 @@ for (t in seq(1, Nt / 2, 1)) {
                 nsave = opt$nsave, every = opt$every, l = opt$bootl, fraction = opt$fraction,
                 maxrows = opt$maxrows)
 
-        uwerrresults <- uwerr.cf(WL)
+        uwerrresults <- uwerr.cf(WL, S = opt$uwerrs, pl = opt$plotuwerr, main=paste("spatial y =", y))
 
         if (opt$scaletauint) {
                 ## multiply errors by 2*tauint
@@ -413,6 +418,7 @@ for (t in seq(1, Nt / 2, 1)) {
     if (opt$drawbootstrap) negatives[Ns / 2 + t] <- sum(WL$cf0 < 0)
 }
 listfits[[Ns/2 + Nt/2 + 1]] <- githash
+listtauint$S <- opt$uwerrs
 
 #write out results
 potential <- na.omit(potential)
@@ -470,7 +476,8 @@ filename <- sprintf(
 
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], S = 6, pl = TRUE)
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)],
+                S = opt$uwerrs, pl = opt$plotuwerr)
 nom <- floor(length(plaquettecolumn) / opt$every)
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
 
@@ -896,7 +903,8 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         xisingle = NA, dxisingle = NA,
         job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
         xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, lowlimpot = NA, aic = NA,
-        scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA, coulpart = NA, dcoulpart = NA)
+        scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA,
+        coulpart = NA, dcoulpart = NA, uwerrs = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -914,8 +922,8 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         bootl = opt$bootl, xirzero = differentxiresults[1], dxirzero = differentxiresults[2],
         xist = differentxiresults[3], dxist = differentxiresults[4],
         lowlim = opt$lowlim, lowlimpot=opt$lowlimpot, aic = opt$aic, scaletauint = opt$scaletauint,
-        puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot, 
-        coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3])
+        puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot,
+        coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3], uwerrs = opt$uwerrs)
 
 resultlist <- rbind(resultlist, newline)
 }

@@ -86,6 +86,10 @@ option_list <- list(
     make_option(c("--bootl"), type = "integer", default = 2,
     help = "block length in bootstrapping configurations [default %default]"),
 
+    make_option(c("--plotuwerr"), action = "store_true", default = FALSE,
+    help = "plot the results of the uwerr analysis of the effective masses [default %default]"),
+    make_option(c("--uwerrs"), type = "double", default = 6,
+    help = "parameter S used for the uwerr analysis [default %default]"),
     make_option(c("--plotonlymeff"), action = "store_true", default = FALSE,
     help = "The plots of the fitted meff are plotted
             seperately [default %default]"),
@@ -256,7 +260,7 @@ for (x in seq(1, Ns / 2, 1)) {
                 title = title, path = opt$respath, zerooffset = opt$zerooffset,
                 every = opt$every, nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
                 maxrows = opt$maxrows)
-        uwerrresults <- uwerr.cf(WL)
+        uwerrresults <- uwerr.cf(WL, S = opt$uwerrs, pl = opt$plotuwerr, main = paste("spatial x =", x))
         negatives[x] <- sum(WL$cf0 < 0)
 
         if (opt$scaletauint) {
@@ -343,7 +347,7 @@ for (x in seq(1, Ns / 2, 1)) {
                 path = opt$respath, zerooffset = opt$zerooffset, every = opt$every,
                 nsave = opt$nsave, l = opt$bootl, fraction = opt$fraction,
                 maxrows = opt$maxrows)
-        uwerrresults <- uwerr.cf(WL)
+        uwerrresults <- uwerr.cf(WL, S = opt$uwerrs, pl = opt$plotuwerr, main = paste("temporal x =", x))
         negatives[x] <- negatives[x] + sum(WL$cf0 < 0)
 
         if (opt$scaletauint) {
@@ -418,6 +422,7 @@ for (x in seq(1, Ns / 2, 1)) {
     if (opt$drawbootstrap) message(negatives[x], " correlators are negative for x = ", x)
 }
 listfits[[Ns + 1]] <- githash
+listtauint$S <- opt$uwerrs
 
 #write out results
 t1 <- -1 #opt$lowerboundmeff
@@ -477,7 +482,8 @@ filename <- sprintf(
 
 alldata <- read.table(filename)
 plaquettecolumn <- alldata[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
-plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)], S =6 , pl = TRUE)
+plaquettedata <- uwerrprimary(plaquettecolumn[seq(skip + 1, length(plaquettecolumn), opt$every)],
+        S = opt$uwerrs, pl = opt$plotuwerr)
 nom <- floor(length(plaquettecolumn))
 
 column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
@@ -771,11 +777,13 @@ plot(plaquettecolumn, main = "Thermalisation",
         xlab = sprintf("MCMC-steps/%d", opt$nsave), ylab = "P")
 }
 
+if (dofit) {
 # plot qqplots to see if xi and rzero are normally distributed
 try(qqnorm(fit.match$t[, 2], main = "qqplot of xi_ren"))
 try(qqline(fit.match$t[, 2]))
 try(qqnorm(bsrzero, main = "qqplot of r_0"))
 try(qqline(bsrzero))
+}
 
 
 if (dofit) {
@@ -796,7 +804,8 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     c = NA, rmin = NA, rmax = NA, Ns = NA, Nt = NA, nape = NA, alpha = NA,
     omit = NA, nom = NA, skip = NA, job = NA, hash = NA,
     every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, lowlimpot = NA, aic = NA,
-    scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA, coulpart = NA, dcoulpart = NA)
+    scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA, 
+    coulpart = NA, dcoulpart = NA, uwerrs = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -814,7 +823,7 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
                       bootl = opt$bootl, lowlim = opt$lowlim, lowlimpot = opt$lowlimpot, aic = opt$aic,
                       scaletauint = opt$scaletauint,
                       puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot, 
-                      coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3])
+                      coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3], uwerrs = opt$uwerrs)
 resultlist <- rbind(resultlist, newline)
 }
 
