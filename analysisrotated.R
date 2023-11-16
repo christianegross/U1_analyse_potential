@@ -116,10 +116,10 @@ opt <- args$options
 }
 
 if (TRUE) {
-# set some constants
-source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 # we have to use a custom installation of R to be able to change the parameter S in uwerr
 require("hadron", lib.loc="/hiskp4/gross/masterthesis/analyse/code/")
+# set some constants
+source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 githash <- printgitcommit(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip
