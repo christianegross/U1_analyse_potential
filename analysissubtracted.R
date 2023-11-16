@@ -653,6 +653,7 @@ for (bs in seq(1, bootsamples, 1)) {
 }
 
 maskmatch <- c(rep(FALSE, opt$lowlim), rep(TRUE, Ns / 2 - opt$lowlim - opt$omit), rep(FALSE, opt$omit))
+maskmatch <- maskmatch & maskc & maskf
 # print(cor(bsamples[, c(maskmatch, maskmatch)]))
 fit.match <- bootstrap.nlsfit(fn = matchpot, par = c(0.1, xi),
             y = yc, x = yf, bsamples = bsamples[, 1:Ns], mask = maskmatch)
@@ -826,7 +827,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
     omit = NA, nom = NA, skip = NA, job = NA, hash = NA,
     every = NA, tauint = NA, dtauint = NA, bootl = NA, lowlim = NA, lowlimpot = NA, aic = NA,
     scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA,
-    coulpart = NA, dcoulpart = NA, uwerrs = NA)
+    coulpart = NA, dcoulpart = NA, uwerrs = NA, puwst = NA, dpuwst = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
