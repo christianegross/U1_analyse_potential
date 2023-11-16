@@ -1061,7 +1061,7 @@ deteffmassaic <- function(effmass, start = 1, mindistance = 2, verbose = FALSE) 
                             m = NA, dm = NA, chisqr = NA, p = NA, weight = NA)
     index <- 1
     for (t1 in seq(start, ntimeslices - mindistance - 2)) {
-        for(t2 in seq(t1 + mindistance, ntimeslices - 2)) {
+        for (t2 in seq(t1 + mindistance, ntimeslices - 2)) {
             # cat("i = ", index, " t1 = ", t1, " t2 = ", t2, "\n")
             tmp <- try(fit.effectivemass(effmass, t1 = t1, t2 = t2, useCov = TRUE))
             if (!inherits(tmp, "try-error")) {
@@ -1084,6 +1084,10 @@ deteffmassaic <- function(effmass, start = 1, mindistance = 2, verbose = FALSE) 
         }
     }
     savefits <- savefits[-1, ]
+
+    # failsafe if no fit succeeds
+    if(length(savefits$index) == 0) return(list(FALSE, FALSE, FALSE, FALSE))
+
     savefits$weight <- savefits$weight / sum(savefits$weight)
     interval <- c(0.9 * min(bootstraps), 1.1 * max(bootstraps))
 
