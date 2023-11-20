@@ -512,6 +512,7 @@ for (i in seq(start, length(xis))){
    }
 
 
+
 # save and plot results for naive limits
 resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
