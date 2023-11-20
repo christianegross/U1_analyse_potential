@@ -54,7 +54,9 @@ option_list <- list(
     help = "if true, potential bootstrap samples are rescaled before analysis
         to take total error into account [default %default]"),
     make_option(c("--xisingle"), action = "store_true", default = FALSE,
-    help = "if true, continuum limit is fit in powers of xi instead of xi^2 [default %default]")
+    help = "if true, continuum limit is fit in powers of xi instead of xi^2 [default %default]"),
+    make_option(c("--xilong"), action = "store_true", default = FALSE,
+    help = "if true, use a list with more xis for the extrapolation [default %default]")
 
 )
 parser <- OptionParser(usage = "%prog [options]", option_list = option_list)
@@ -284,9 +286,11 @@ if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
+if(opt$xilong) xis <- c(1, 0.8, 2/3,, 8/15, 0.5, 4/9, 0.4, 1/3, 0.25)
 if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
 
 cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
+if(opt$xilong) cols <- c(1, 3, 4, 5, 6, 9, 10, 11, 12, 8)
 fitsrzero <- list(NULL)
 fitsplaquette <- list(NULL)
 fitsxi <- list(NULL)
