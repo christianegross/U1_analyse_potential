@@ -129,6 +129,10 @@ xis <- result$xiin
 result$betachosen <- rep(FALSE, length(xis))
 print(xis)
 
+# also read in data for spatial-temporal plaquette, later do extrapolation to continuum limit with parametric bootstrap
+# pst is only calculated for type normal
+if (opt$type == "normal") pst <- data.frame(pst = rep(NA, length(xis)), dpst = rep(NA, length(xis)))
+
 ## for each xi, check if there is a fixed beta that should be used.
 ## If yes, replace results for plaquette and xi_ren, and the mean for beta.
 ## assume the error for beta that was determined before, and draw paramteric bootstrapsamples from mean and sd
@@ -156,6 +160,8 @@ for (i in seq(1, length(xis))){
             result$xisimple[i] <- data$xicalc[j]
             result$dxiphys[i] <- data$dxicalc[j]
             result$betachosen[i] <- TRUE
+            if (opt$type == "normal")pst$pst[i] <- data$puwst[j]
+            if (opt$type == "normal")pst$dpst[i] <- data$dpuwst[j]
         }
     }
 }
@@ -189,6 +195,12 @@ if (result$dbeta[1] < 1e-8) {
     bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootreduced, c(opt$beta), c(1e-4))
 }
 
+# spatial-temporal plaquette
+if (opt$type == "normal") {
+    bsamplespst <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(bootreduced, 2 * length(xis)))
+    bsamplespst[, seq(1, length(xis))] <- array(parametric.bootstrap(bootreduced, pst$pst, pst$dpst, seed=1234), dim = c(bootreduced, length(xis)))
+    bsamplespst[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
+}
 
 # for each polynomial:
 # fitplaqnaive: xi=xi_input, p=p_meas -> neither beta nor xi reenormalized
@@ -208,6 +220,8 @@ xirenfit <- result$xisimple^2
 if(opt$xisingle) {
 xirenfit <- result$xisimple
 }
+
+fnexp <- function(par, x, boot.r, ...) par[1] + par[2] * exp(-x)
 
 pdf(sprintf("%s/plotsbetachosen%s.pdf", opt$respath, endnamewrite), title="")
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
@@ -255,6 +269,21 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
             type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
 
+# pst cont limit
+    if (opt$type == "normal") {
+        fitpst <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
+                x = xirenfit, y = pst$pst, bsamples = bsamplespst,
+                mask = maskfitcontlim))
+
+        try(plot(fitpst, main = sprintf("continuum limit pst: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
+            fitpst$t0[1], fitpst$se[1],
+            fitpst$chi / fitpst$dof, fitpst$Qval, i),
+            plot.range = c(-0.2, 1.2),
+            ylim = c(0.6, 1.1),
+            xlab = "xi_ren^2", ylab = "P_st", xaxs = "i", xlim = c(0, 1.05)))
+    }
+
+
 ## print if there were any errors in fitting
     if (inherits(fitplaq, "try-error")) {
         print(paste("There was an error with fitplaq for polynomial degree", i))
@@ -265,6 +294,21 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     i <- i + 1
 }
 resultspolynomial <- resultspolynomial[-1, ]
+
+if(opt$type == "normal") {
+
+        fitpst <- try(bootstrap.nlsfit(fnexp, c(pst$pst[1], 1-pst$pst[1]),
+                x = xirenfit, y = pst$pst, bsamples = bsamplespst,
+                mask = maskfitcontlim))
+
+        try(plot(fitpst, main = sprintf("continuum limit pst: %f + /-%f, chi = %f, p = %f",
+            fitpst$t0[1] + fitpst$t0[2], sqrt(fitpst$se[1]^2 + fitpst$se[2]^2),
+            fitpst$chi / fitpst$dof, fitpst$Qval),
+            plot.range = c(-0.2, 1.2),
+            ylim = c(0.6, 1.1),
+            xlab = "xi_ren^2", ylab = "P_st", xaxs = "i", xlim = c(0, 1.05)))
+
+}
 # write out result
 
 }
