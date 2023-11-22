@@ -223,7 +223,7 @@ xirenfit <- result$xisimple
 
 fnexp <- function(par, x, boot.r, ...) par[1] + par[2] * exp(-x)
 
-pdf(sprintf("%s/plotsbetachosen%s.pdf", opt$respath, endnamewrite), title="")
+pdf(sprintf("%s/plotsbetachosen%scont%d.pdf", opt$respath, endnamewrite, opt$indexfitcontlim), title = "")
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
     print(paste("Doing fits of polynomial degree", i))
 
