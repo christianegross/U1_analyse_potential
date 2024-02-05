@@ -117,6 +117,7 @@ if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 endnamewrite <- endname
 if (opt$xisingle) endnamewrite <- paste0(endname, "xisingle")
+if (opt$tadpole && opt$type == "normal") endnamewrite <- paste0(endnamewrite, "tadpole")
 
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
@@ -202,6 +203,18 @@ if (opt$type == "normal") {
     bsamplespst[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
 }
 
+## if tadpole: 
+## calculate average plaquette as 1/3(Pss+2*Pst)
+## boost beta by dividing it by fourth root of av plaquette
+
+if (opt$tadpole && opt$type=="normal"){
+    avP <- 1/3*(result$psimple + 2*pst$pst)
+    result$beta <- result$beta / (avP)^(0.25)
+    print(dim(bsamplescontlimitbeta))
+    print(dim(t(array(rep(avP, times=bootreduced), dim=c(length(avP), bootreduced)))))
+    bsamplescontlimitbeta[, seq(1, length(xis))] <- bsamplescontlimitbeta[, seq(1, length(xis))] / t(array(rep(avP, times=bootreduced), dim=c(length(avP), bootreduced)))
+}
+
 # for each polynomial:
 # fitplaqnaive: xi=xi_input, p=p_meas -> neither beta nor xi reenormalized
 # fitplaqnaivexiren: xi=xi_ren, p=p_meas -> beta not renormalized
@@ -269,7 +282,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
             type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
 
-# pst cont limit
+# pst cont limit, only plot, do not save
     if (opt$type == "normal") {
         fitpst <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = pst$pst, bsamples = bsamplespst,
@@ -281,6 +294,12 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
             plot.range = c(-0.2, 1.2),
             ylim = c(0.6, 1.1),
             xlab = "xi_ren^2", ylab = "P_st", xaxs = "i", xlim = c(0, 1.05)))
+
+    try(resultspolynomial <- rbind(resultspolynomial,
+            data.frame(degree = i, lim = tex.catwitherror(fitpst$t0[1],
+            fitpst$se[1], digits = 2, with.dollar = FALSE),
+            chi = fitpst$chi / fitpst$dof, p = fitpst$Qval,
+            type = "p_st", limplot = fitpst$t0[1], dlimplot = fitpst$se[1])))
     }
 
 
