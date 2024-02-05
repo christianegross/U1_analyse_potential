@@ -286,7 +286,7 @@ if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
 xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
-if(opt$xilong) xis <- c(1, 0.8, 2/3, 8/15, 0.5, 4/9, 0.4, 1/3, 0.25)
+if(opt$xilong) xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25, 0.2)
 if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
 
 cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
