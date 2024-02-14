@@ -891,6 +891,19 @@ differentxiresults <- c(mean(differentxis$xirzero), sd(differentxis$xirzero),
         mean(differentxis$xist), sd(differentxis$xist))
 
 
+
+# calculate spatil-temporal plaquette as W(x = 1, y = 0, t = 1)
+# with uwerr
+filenamest <- sprintf(
+            "%sresult2p1d.u1potential.rotated.Nt%d.Ns%d.b%f.xi%f.nape%d.alpha%ffinedistance",
+            opt$respath, Nt, Ns, beta, xi, nape, alpha)
+
+alldatast <- read.table(filenamest)
+plaquettecolumnst <- alldatast[, (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset]
+plaquettedatast <- uwerrprimary(plaquettecolumnst[seq(skip + 1, length(plaquettecolumnst), opt$every)],
+        S = opt$uwerrs, pl = opt$plotuwerr)
+
+
 }
 if (dofit) {
 
@@ -913,7 +926,7 @@ resultlist <- data.frame(xi = NA, beta = NA, xicalc = NA, dxicalc = NA,
         job = NA, hash = NA, every = NA, tauint = NA, dtauint = NA, bootl = NA,
         xirzero = NA, dxirzero = NA, xist = NA, dxist = NA, lowlim = NA, lowlimpot = NA, aic = NA,
         scaletauint = NA, puw = NA, dpuw = NA, errortotpot = NA,
-        coulpart = NA, dcoulpart = NA, uwerrs = NA)
+        coulpart = NA, dcoulpart = NA, uwerrs = NA, puwst = NA, dpuwst = NA)
 
 for (i in seq(1, max(1, length(rzeroofc$c)))) {
 newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
@@ -932,7 +945,8 @@ newline <- data.frame(xi = xi, beta = beta, xicalc = xicalc, dxicalc = dxicalc,
         xist = differentxiresults[3], dxist = differentxiresults[4],
         lowlim = opt$lowlim, lowlimpot=opt$lowlimpot, aic = opt$aic, scaletauint = opt$scaletauint,
         puw = plaquettedata$value, dpuw = plaquettedata$dvalue, errortotpot = opt$errortotpot,
-        coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3], uwerrs = opt$uwerrs)
+        coulpart = fit.resultscaled$t0[3], dcoulpart = fit.resultscaled$se[3], uwerrs = opt$uwerrs,
+        puwst = plaquettedatast$value, dpuwst = plaquettedatast$dvalue)
 
 resultlist <- rbind(resultlist, newline)
 }
