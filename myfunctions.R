@@ -744,7 +744,7 @@ getinterceptfromparams <- function(bsa, bsb, rzeroone, bootsamples = 500) {
 
 # polynomials of zero to fifth order, of a form that can be used by bootstrap.nlsfit
 fncon <- function(par, x, boot.r, ...){
-    return (par[1])
+    return (par[1] + 0 * x)
 }
 fnlin <- function (par, x, boot.r, ...) {
     return (par[1]  +  par[2] * x)
