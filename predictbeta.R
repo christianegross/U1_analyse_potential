@@ -217,7 +217,6 @@ arrayp <- arrayp[!nalist, ]
 bootsamples <- bootsamples - sum(nalist)
 
 arraypst <- parametric.bootstrap(boot.R = bootsamples, x = data$puwst, dx = data$dpuwst, seed = 123456)
-arraypst <- arraypst[!nalist, ]
 
 if (type == "slope") {
     data$xicalc <- apply(arrayxi, 2, mean, na.rm = F)
