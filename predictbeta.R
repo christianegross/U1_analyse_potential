@@ -132,7 +132,7 @@ data <- data[data$lowlim == opt$lowlimxi, ]
 data <- data[data$lowlimpot == opt$lowlimpot, ]
 }
 
-if (opt$omit >=0) {
+if (opt$omit >= 0) {
 data <- data[data$omit == opt$omit, ]
 }
 
@@ -499,7 +499,7 @@ print(result)
 
 
 # plot results to pdf
-pdf(sprintf("tikzplotallfits%scont%d.pdf", endname, opt$indexfitcontlim), title="")
+pdf(sprintf("tikzplotallfits%sranges.pdf", endname), title="")
 
 # result of all linear fits
 for (i in seq(start, length(xis))){
@@ -517,6 +517,17 @@ for (i in seq(start, length(xis))){
 resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
                     fitsp = fitsplaquette, githash = githash, nalist = nalist)
+
+
+
+namesave <- sprintf("%s/resultsrenormalization%s.csv", opt$respath, endname)
+write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
+
+namesave <- sprintf("%s/fitresultsrenormalization%s.csv", opt$respath, endname)
+write.table(fitresults, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
+
+namesave <- sprintf("%s/listresultsrenormalization%s.RData", opt$respath, endname)
+saveRDS(resultslist, file=namesave)
 
 
 if (TRUE) {
@@ -569,165 +580,208 @@ if (start != 1) {
 # for each: do fit to continuum limit, plot, add results to list and table
 # list: region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq, region 16-20 beta
 # na.omit removes entire row containing na
+# do this for all possible fits in the region lower=xis[1], upper=length(xis)-2
 
-fitspolynomial <- list()
-resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
-                    p = NA, type = NA, limplot = NA, dlimplot = NA)
+for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
+    for (uplimfit in seq(max(length(xis) - 2, lowlimfit + 2), length(xis))) {
+        print(paste("lowlim", lowlimfit, "uplim", uplimfit))
+        fitspolynomial <- list()
+        resultspolynomial <- data.frame(
+            degree = NA, lim = NA, chi = NA,
+            p = NA, type = NA, limplot = NA, dlimplot = NA
+        )
 
-xiinfit <- xis^2
-xinaivefit <- xirennaive^2
-xirenfit <- result$xisimple^2
-if(opt$xisingle) {
-xiinfit <- xis
-xinaivefit <- xirennaive
-xirenfit <- result$xisimple
-}
+        xiinfit <- xis^2
+        xinaivefit <- xirennaive^2
+        xirenfit <- result$xisimple^2
+        if (opt$xisingle) {
+            xiinfit <- xis
+            xinaivefit <- xirennaive
+            xirenfit <- result$xisimple
+        }
 
-maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
-i <- 1
-for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
-    print(paste("Doing fits of polynomial degree", i))
-    if (opt$naive) {
-    # naive xi and beta
-    fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
-                mask = maskfitcontlim))
-    fitspolynomial[[i]] <- fitplaqnaive
+        maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
+        i <- 1
+        for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
+            print(paste("Doing fits of polynomial degree", i))
+            if (opt$naive) {
+                # naive xi and beta
+                fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
+                    x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
+                    mask = seq(lowlimfit, uplimfit)
+                ))
+                fitspolynomial[[i]] <- fitplaqnaive
 
-    try(plot(fitplaqnaive, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-            fitplaqnaive$t0[1], fitplaqnaive$se[1],
-            fitplaqnaive$chi / fitplaqnaive$dof, fitplaqnaive$Qval, i),
-            plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
-            ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(na.omit(result$p))), xlab = "xi_in^2", ylab = "P"))
+                try(plot(fitplaqnaive,
+                    main = sprintf(
+                        "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        fitplaqnaive$t0[1], fitplaqnaive$se[1],
+                        fitplaqnaive$chi / fitplaqnaive$dof, fitplaqnaive$Qval, i, lowlimfit, uplimfit
+                    ),
+                    plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
+                    ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(na.omit(result$p))), xlab = "xi_in^2", ylab = "P"
+                ))
 
-    try(resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitplaqnaive$t0[1],
-            fitplaqnaive$se[1], digits = 2, with.dollar = FALSE),
-            chi = fitplaqnaive$chi / fitplaqnaive$dof, p = fitplaqnaive$Qval,
-            type = "naive", limplot = fitplaqnaive$t0[1],
-            dlimplot = fitplaqnaive$se[1])))
+                try(resultspolynomial <- rbind(
+                    resultspolynomial,
+                    data.frame(
+                        degree = i, lim = tex.catwitherror(fitplaqnaive$t0[1],
+                            fitplaqnaive$se[1],
+                            digits = 2, with.dollar = FALSE
+                        ),
+                        chi = fitplaqnaive$chi / fitplaqnaive$dof, p = fitplaqnaive$Qval,
+                        type = "naive", limplot = fitplaqnaive$t0[1],
+                        dlimplot = fitplaqnaive$se[1]
+                    )
+                ))
 
-# naive beta, xi renorm
-    fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-            x = xinaivefit, y = pnaive,
-            bsamples = bsamplescontlimitnaivexiren,
-            mask = maskfitcontlim))
-    fitspolynomial[[5 + i]] <- fitplaqnaivexiren
+                # naive beta, xi renorm
+                fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
+                    x = xinaivefit, y = pnaive,
+                    bsamples = bsamplescontlimitnaivexiren,
+                    mask = seq(lowlimfit, uplimfit)
+                ))
+                fitspolynomial[[5 + i]] <- fitplaqnaivexiren
 
-    try(plot(fitplaqnaivexiren, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-            fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
-            fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i),
-            plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
-            ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(na.omit(result$p))), xlab = "xi_ren^2", ylab = "P"))
+                try(plot(fitplaqnaivexiren,
+                    main = sprintf(
+                        "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
+                        fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i, lowlimfit, uplimfit
+                    ),
+                    plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
+                    ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(na.omit(result$p))), xlab = "xi_ren^2", ylab = "P"
+                ))
 
-    try(resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitplaqnaivexiren$t0[1],
-            fitplaqnaivexiren$se[1], digits = 2, with.dollar = FALSE),
-            chi = fitplaqnaivexiren$chi / fitplaqnaivexiren$dof,
-            p = fitplaqnaivexiren$Qval, type = "naivexiren",
-            limplot = fitplaqnaivexiren$t0[1], dlimplot = fitplaqnaivexiren$se[1])))
+                try(resultspolynomial <- rbind(
+                    resultspolynomial,
+                    data.frame(
+                        degree = i, lim = tex.catwitherror(fitplaqnaivexiren$t0[1],
+                            fitplaqnaivexiren$se[1],
+                            digits = 2, with.dollar = FALSE
+                        ),
+                        chi = fitplaqnaivexiren$chi / fitplaqnaivexiren$dof,
+                        p = fitplaqnaivexiren$Qval, type = "naivexiren",
+                        limplot = fitplaqnaivexiren$t0[1], dlimplot = fitplaqnaivexiren$se[1]
+                    )
+                ))
 
-## print if there was an error in fitting
-    if (inherits(fitplaqnaive, "try-error")){
-        print(paste("There was an error with fitplaqnaive for polynomial degree", i))
-    }
-    if (inherits(fitplaqnaivexiren, "try-error")){
-        print(paste("There was an error with fitplaqnaivexiren for polynomial degree", i))
-    }
-    }
+                ## print if there was an error in fitting
+                if (inherits(fitplaqnaive, "try-error")) {
+                    print(paste("There was an error with fitplaqnaive for polynomial degree", i))
+                }
+                if (inherits(fitplaqnaivexiren, "try-error")) {
+                    print(paste("There was an error with fitplaqnaivexiren for polynomial degree", i))
+                }
+            }
 
-# xi and beta renorm
-# print(attributes(na.omit(bsamplescontlimit))$na.action)
-    fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
+            # xi and beta renorm
+            # print(attributes(na.omit(bsamplescontlimit))$na.action)
+            fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-                mask = maskfitcontlim))
+                mask = seq(lowlimfit, uplimfit)
+            ))
 
-    if (!inherits(fitplaq, "try-error")) {
-    fitspolynomial[[10 + i]] <- fitplaq
+            if (!inherits(fitplaq, "try-error")) {
+                fitspolynomial[[10 + i]] <- fitplaq
 
-    plot(fitplaq, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-            fitplaq$t0[1], fitplaq$se[1],
-            fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
-            plot.range = c(-0.2, 1.2),
-            ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
-            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P")
+                plot(fitplaq,
+                    main = sprintf(
+                        "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        fitplaq$t0[1], fitplaq$se[1],
+                        fitplaq$chi / fitplaq$dof, fitplaq$Qval, i, lowlimfit, uplimfit
+                    ),
+                    plot.range = c(-0.2, 1.2),
+                    ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
+                    xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P"
+                )
 
-    resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
-            fitplaq$se[1], digits = 2, with.dollar = FALSE),
-            chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
-            type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]))
-    }
+                resultspolynomial <- rbind(
+                    resultspolynomial,
+                    data.frame(
+                        degree = i, lim = tex.catwitherror(fitplaq$t0[1],
+                            fitplaq$se[1],
+                            digits = 2, with.dollar = FALSE
+                        ),
+                        chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
+                        type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]
+                    )
+                )
+            }
 
-# beta cont limit
-    fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
+            # beta cont limit
+            fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = result$betasimple, bsamples = bsamplescontlimitbeta,
-                mask = maskfitcontlim))
-    fitspolynomial[[15 + i]] <- fitbeta
+                mask = seq(lowlimfit, uplimfit)
+            ))
+            fitspolynomial[[15 + i]] <- fitbeta
 
-    try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-            fitbeta$t0[1], fitbeta$se[1],
-            fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
-            plot.range = c(-0.2, 1.2),
-            ylim = c(1.3, 1.75),
-            xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)))
+            try(plot(fitbeta,
+                main = sprintf(
+                    "continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                    fitbeta$t0[1], fitbeta$se[1],
+                    fitbeta$chi / fitbeta$dof, fitbeta$Qval, i, lowlimfit, uplimfit
+                ),
+                plot.range = c(-0.2, 1.2),
+                ylim = c(1.3, 1.75),
+                xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)
+            ))
 
-    try(resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitbeta$t0[1],
-            fitbeta$se[1], digits = 2, with.dollar = FALSE),
-            chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
-            type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
+            try(resultspolynomial <- rbind(
+                resultspolynomial,
+                data.frame(
+                    degree = i, lim = tex.catwitherror(fitbeta$t0[1],
+                        fitbeta$se[1],
+                        digits = 2, with.dollar = FALSE
+                    ),
+                    chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
+                    type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1]
+                )
+            ))
 
-## print if there were any errors in fitting
-    if (inherits(fitplaq, "try-error")){
-        print(paste("There was an error with fitplaq for polynomial degree", i))
+            ## print if there were any errors in fitting
+            if (inherits(fitplaq, "try-error")) {
+                print(paste("There was an error with fitplaq for polynomial degree", i))
+            }
+            if (inherits(fitbeta, "try-error")) {
+                print(paste("There was an error with fitbeta for polynomial degree", i))
+            }
+            i <- i + 1
+        }
+        # plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+        # plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
+
+        resultspolynomial <- resultspolynomial[-1, ]
+        # write out result
+        print(resultspolynomial)
+
+
+        # write out results
+        # contains:
+        # result: data frame with xiin, beta, dbeta(renormalized), xiphys, dxiphys, p, dp, betasimple (renormed beta from intercept from mean values)
+        # fitresult: data frame with xiin, r0slope, r0intercept,  chir0, pr0,
+        #                        plaqslope, plaqintercept, chiplaq, pplaq,
+        #                        xislope, xiintercept, chixi, pxi,
+        #                       xiopt, betaopt, pop
+        # written out with tex.catwitherror
+        # resultspolynomial: dataframe with degree of polynomial, result of cont. lim. with catwitherror, chi and p of lim, type of lim, result of lim as two doubles
+        # resultlist: intercepts = beta_ren, xiphys, plaqren , fitsrzero, fitsxi, fitsp (results of linear interpolations), fitplaq, fitplaqnaive, fitplaqnaivexiren(cubic polynomial cont limits)
+        # fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
+        # print(fitresults)
+        # print(result)
+
+
+        fitspolynomial$githash <- githash
+        fitspolynomial$nalist <- nalist
+        if (opt$xisingle) endname <- paste0(endname, "xisingle")
+
+        namepol <- sprintf("%s/polynomial%slow%dup%d.csv", opt$respath, endname, lowlimfit, uplimfit)
+        write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+
+        namesave <- sprintf("%s/listpolynomialrenormalization%slow%dup%d.RData", opt$respath, endname, lowlimfit, uplimfit)
+        saveRDS(fitspolynomial, file = namesave)
+        # move all plots into subfolder
+        # system(sprintf("mv -v tikz* %s", opt$respath))
     }
-    if (inherits(fitbeta, "try-error")){
-        print(paste("There was an error with fitbeta for polynomial degree", i))
-    }
-    i <- i + 1
 }
-# plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
-# plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
-
-resultspolynomial <- resultspolynomial[-1, ]
-# write out result
-print(resultspolynomial)
-
 }
-
-# write out results
-# contains:
-# result: data frame with xiin, beta, dbeta(renormalized), xiphys, dxiphys, p, dp, betasimple (renormed beta from intercept from mean values)
-# fitresult: data frame with xiin, r0slope, r0intercept,  chir0, pr0,
-#                        plaqslope, plaqintercept, chiplaq, pplaq,
-#                        xislope, xiintercept, chixi, pxi,
-#                       xiopt, betaopt, pop
-# written out with tex.catwitherror
-# resultspolynomial: dataframe with degree of polynomial, result of cont. lim. with catwitherror, chi and p of lim, type of lim, result of lim as two doubles
-# resultlist: intercepts = beta_ren, xiphys, plaqren , fitsrzero, fitsxi, fitsp (results of linear interpolations), fitplaq, fitplaqnaive, fitplaqnaivexiren(cubic polynomial cont limits)
-# fitspolynomial: bootstrapnlsfit results of cont limit, region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq
-# print(fitresults)
-# print(result)
-
-fitspolynomial$githash <- githash
-fitspolynomial$nalist <- nalist
-
-namesave <- sprintf("%s/resultsrenormalization%s.csv", opt$respath, endname)
-write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
-
-namesave <- sprintf("%s/fitresultsrenormalization%s.csv", opt$respath, endname)
-write.table(fitresults, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
-
-namesave <- sprintf("%s/listresultsrenormalization%s.RData", opt$respath, endname)
-saveRDS(resultslist, file=namesave)
-
-if (opt$xisingle) endname <- paste0(endname, "xisingle")
-
-namepol <- sprintf("%s/polynomial%scont%d.csv", opt$respath, endname, opt$indexfitcontlim)
-write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
-
-namesave <- sprintf("%s/listpolynomialrenormalization%scont%d.RData", opt$respath, endname, opt$indexfitcontlim)
-saveRDS(fitspolynomial, file=namesave)
-# move all plots into subfolder
-# system(sprintf("mv -v tikz* %s", opt$respath))
