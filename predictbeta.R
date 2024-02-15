@@ -55,7 +55,7 @@ option_list <- list(
         to take total error into account [default %default]"),
     make_option(c("--xisingle"), action = "store_true", default = FALSE,
     help = "if true, continuum limit is fit in powers of xi instead of xi^2 [default %default]"),
-    make_option(c("--xilong"), action = "store_true", default = FALSE,
+    make_option(c("--xifix"), action = "store_true", default = FALSE,
     help = "if true, use a list with more xis for the extrapolation [default %default]")
 
 )
@@ -285,12 +285,12 @@ ylim <- c(max(rzeroone - 2 * opt$fitlim, min(data$r0 - data$dr0, na.rm = T)), mi
 if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
-xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25)
-if(opt$xilong) xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25, 0.2)
+if(opt$xifix) xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25, 0.2)
+print(sort(unique(as.numeric(format(data$xi, digits=6))), decreasing=TRUE))
+xis <- sort(unique(as.numeric(format(data$xi, digits=6))), decreasing=TRUE)
 if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
 
-cols <- c(1, 3, 4, 5, 6, 9, 10, 8)
-if(opt$xilong) cols <- c(1, 3, 4, 5, 6, 9, 10, 11, 12, 8)
+cols <- c(1, 3, 4, 5, 6, 9, 10, 11, 12, 8)
 fitsrzero <- list(NULL)
 fitsplaquette <- list(NULL)
 fitsxi <- list(NULL)
