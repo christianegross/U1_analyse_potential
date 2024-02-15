@@ -610,14 +610,17 @@ if (start != 1) {
 # na.omit removes entire row containing na
 # do this for all possible fits in the region lower=xis[1], upper=length(xis)-2
 
+        listfits <- list(fit = list(), lowlimfit = c(), uplimfit = c())
+        resultspolynomial <- data.frame(
+            degree = NA, lim = NA, chi = NA,
+            p = NA, type = NA, limplot = NA, dlimplot = NA, 
+            lowlimfit = NA, uplimfit = NA
+        )
+indexlim <- 1
 for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
     for (uplimfit in seq(max(length(xis) - 2, lowlimfit + 2), length(xis))) {
         print(paste("lowlim", lowlimfit, "uplim", uplimfit))
         fitspolynomial <- list()
-        resultspolynomial <- data.frame(
-            degree = NA, lim = NA, chi = NA,
-            p = NA, type = NA, limplot = NA, dlimplot = NA
-        )
 
         xiinfit <- xis^2
         xinaivefit <- xirennaive^2
@@ -643,12 +646,19 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
                 try(plot(fitplaqnaive,
                     main = sprintf(
-                        "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        "continuum limit plaquette: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
                         fitplaqnaive$t0[1], fitplaqnaive$se[1],
                         fitplaqnaive$chi / fitplaqnaive$dof, fitplaqnaive$Qval, i, lowlimfit, uplimfit
                     ),
                     plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
                     ylim = c((fitplaqnaive$t0[1] - fitplaqnaive$se[1]), max(na.omit(result$p))), xlab = "xi_in^2", ylab = "P"
+                ))
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitplaqnaive$x[fitplaqnaive$mask],
+                    dx = fitplaqnaive$dx[fitplaqnaive$mask],
+                    y = fitplaqnaive$y[fitplaqnaive$mask],
+                    dy = fitplaqnaive$dy[fitplaqnaive$mask]
                 ))
 
                 try(resultspolynomial <- rbind(
@@ -660,7 +670,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                         ),
                         chi = fitplaqnaive$chi / fitplaqnaive$dof, p = fitplaqnaive$Qval,
                         type = "naive", limplot = fitplaqnaive$t0[1],
-                        dlimplot = fitplaqnaive$se[1]
+                        dlimplot = fitplaqnaive$se[1], lowlimfit = lowlimfit, uplimfit = uplimfit
                     )
                 ))
 
@@ -674,12 +684,20 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
                 try(plot(fitplaqnaivexiren,
                     main = sprintf(
-                        "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        "continuum limit plaquette: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
                         fitplaqnaivexiren$t0[1], fitplaqnaivexiren$se[1],
                         fitplaqnaivexiren$chi / fitplaqnaivexiren$dof, fitplaqnaivexiren$Qval, i, lowlimfit, uplimfit
                     ),
                     plot.range = c(-0.2, 1.2), xaxs = "i", xlim = c(0, 1.05),
                     ylim = c((fitplaqnaivexiren$t0[1] - fitplaqnaivexiren$se[1]), max(na.omit(result$p))), xlab = "xi_ren^2", ylab = "P"
+                ))
+
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitplaqnaivexiren$x[fitplaqnaivexiren$mask],
+                    dx = fitplaqnaivexiren$dx[fitplaqnaivexiren$mask],
+                    y = fitplaqnaivexiren$y[fitplaqnaivexiren$mask],
+                    dy = fitplaqnaivexiren$dy[fitplaqnaivexiren$mask]
                 ))
 
                 try(resultspolynomial <- rbind(
@@ -691,7 +709,8 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                         ),
                         chi = fitplaqnaivexiren$chi / fitplaqnaivexiren$dof,
                         p = fitplaqnaivexiren$Qval, type = "naivexiren",
-                        limplot = fitplaqnaivexiren$t0[1], dlimplot = fitplaqnaivexiren$se[1]
+                        limplot = fitplaqnaivexiren$t0[1], dlimplot = fitplaqnaivexiren$se[1],
+                        lowlimfit = lowlimfit, uplimfit = uplimfit
                     )
                 ))
 
@@ -714,17 +733,23 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             if (!inherits(fitplaq, "try-error")) {
                 fitspolynomial[[10 + i]] <- fitplaq
 
-                plot(fitplaq,
+                try(plot(fitplaq,
                     main = sprintf(
-                        "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        "continuum limit plaquette: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
                         fitplaq$t0[1], fitplaq$se[1],
                         fitplaq$chi / fitplaq$dof, fitplaq$Qval, i, lowlimfit, uplimfit
                     ),
                     plot.range = c(-0.2, 1.2),
                     ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
                     xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P"
-                )
-
+                ))
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitplaq$x[fitplaq$mask],
+                    dx = fitplaq$dx[fitplaq$mask],
+                    y = fitplaq$y[fitplaq$mask],
+                    dy = fitplaq$dy[fitplaq$mask]
+                ))
                 resultspolynomial <- rbind(
                     resultspolynomial,
                     data.frame(
@@ -733,7 +758,8 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                             digits = 2, with.dollar = FALSE
                         ),
                         chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
-                        type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]
+                        type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1],
+                        lowlimfit = lowlimfit, uplimfit = uplimfit
                     )
                 )
             }
@@ -747,7 +773,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
             try(plot(fitbeta,
                 main = sprintf(
-                    "continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                    "continuum limit beta: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
                     fitbeta$t0[1], fitbeta$se[1],
                     fitbeta$chi / fitbeta$dof, fitbeta$Qval, i, lowlimfit, uplimfit
                 ),
@@ -755,6 +781,13 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 ylim = c(1.3, 1.75),
                 xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)
             ))
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitbeta$x[fitbeta$mask],
+                    dx = fitbeta$dx[fitbeta$mask],
+                    y = fitbeta$y[fitbeta$mask],
+                    dy = fitbeta$dy[fitbeta$mask]
+                ))
 
             try(resultspolynomial <- rbind(
                 resultspolynomial,
@@ -764,7 +797,8 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                         digits = 2, with.dollar = FALSE
                     ),
                     chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
-                    type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1]
+                    type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1],
+                    lowlimfit = lowlimfit, uplimfit = uplimfit
                 )
             ))
 
@@ -780,7 +814,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
                 plot(fitplaqst,
                     main = sprintf(
-                        "continuum limit temporal plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        "continuum limit temporal plaquette: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
                         fitplaqst$t0[1], fitplaqst$se[1],
                         fitplaqst$chi / fitplaqst$dof, fitplaqst$Qval, i, lowlimfit, uplimfit
                     ),
@@ -788,6 +822,13 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                     ylim = c(min(na.omit(result$pst)), (fitplaqst$t0[1] - fitplaqst$se[1])),
                     xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P_st"
                 )
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitplaqst$x[fitplaqst$mask],
+                    dx = fitplaqst$dx[fitplaqst$mask],
+                    y = fitplaqst$y[fitplaqst$mask],
+                    dy = fitplaqst$dy[fitplaqst$mask]
+                ))
 
                 resultspolynomial <- rbind(
                     resultspolynomial,
@@ -797,7 +838,8 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                             digits = 2, with.dollar = FALSE
                         ),
                         chi = fitplaqst$chi / fitplaqst$dof, p = fitplaqst$Qval,
-                        type = "p_st", limplot = fitplaqst$t0[1], dlimplot = fitplaqst$se[1]
+                        type = "p_st", limplot = fitplaqst$t0[1], dlimplot = fitplaqst$se[1],
+                        lowlimfit = lowlimfit, uplimfit = uplimfit
                     )
                 )
             }
@@ -815,9 +857,13 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             i <- i + 1
             }
         }
-        # plotwitherror(x=result$xiphys^2, y=result$beta, dy=apply(bsamplescontlimitbeta[, seq(1, length(xis))], 2, sd), dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
-        # plotwitherror(x=result$xiphys^2, y=result$p, dy=result$dp, dx=apply(bsamplescontlimitbeta[, seq(length(xis)+1, 2*length(xis))], 2, sd))
-
+        listfits$fits[[indexlim]] <- fitspolynomial
+        listfits$lowlimfit[indexlim] <- lowlimfit
+        listfits$uplimfit[indexlim] <- uplimfit
+        indexlim <- indexlim + 1
+    }
+}
+}
         resultspolynomial <- resultspolynomial[-1, ]
         # write out result
         print(resultspolynomial)
@@ -838,17 +884,15 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
         # print(result)
 
 
-        fitspolynomial$githash <- githash
-        fitspolynomial$nalist <- nalist
-        if (opt$xisingle) endname <- paste0(endname, "xisingle")
 
-        namepol <- sprintf("%s/polynomial%slow%dup%d.csv", opt$respath, endname, lowlimfit, uplimfit)
-        write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+listfits$githash <- githash
+listfits$nalist <- nalist
+if (opt$xisingle) endname <- paste0(endname, "xisingle")
 
-        namesave <- sprintf("%s/listpolynomialrenormalization%slow%dup%d.RData", opt$respath, endname, lowlimfit, uplimfit)
-        saveRDS(fitspolynomial, file = namesave)
-        # move all plots into subfolder
-        # system(sprintf("mv -v tikz* %s", opt$respath))
-    }
-}
-}
+namepol <- sprintf("%s/polynomial%s.csv", opt$respath, endname)
+write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
+
+namesave <- sprintf("%s/listpolynomialrenormalization%s.RData", opt$respath, endname)
+saveRDS(listfits, file = namesave)
+# move all plots into subfolder
+# system(sprintf("mv -v tikz* %s", opt$respath))
