@@ -610,13 +610,17 @@ if (start != 1) {
 # na.omit removes entire row containing na
 # do this for all possible fits in the region lower=xis[1], upper=length(xis)-2
 
-        listfits <- list(fit = list(), lowlimfit = c(), uplimfit = c())
+        listfits <- list(fits = list(), lowlimfit = c(), uplimfit = c())
         resultspolynomial <- data.frame(
             degree = NA, lim = NA, chi = NA,
             p = NA, type = NA, limplot = NA, dlimplot = NA, 
             lowlimfit = NA, uplimfit = NA
         )
 indexlim <- 1
+
+# listnames <- c("naive", "xirennaive", "plaq", "beta", "p_st")
+listnames <- paste0(rep(c("naive", "xirennaive", "plaq", "beta", "p_st"), each=5), seq(1, 5))
+
 for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
     for (uplimfit in seq(max(length(xis) - 2, lowlimfit + 2), length(xis))) {
         print(paste("lowlim", lowlimfit, "uplim", uplimfit))
@@ -642,7 +646,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                     x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
                     mask = maskfitcontlim
                 ))
-                fitspolynomial[[i]] <- fitplaqnaive
+                fitspolynomial[[listnames[i]]] <- fitplaqnaive
 
                 try(plot(fitplaqnaive,
                     main = sprintf(
@@ -680,7 +684,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                     bsamples = bsamplescontlimitnaivexiren,
                     mask = maskfitcontlim
                 ))
-                fitspolynomial[[5 + i]] <- fitplaqnaivexiren
+                fitspolynomial[[listnames[5 + i]]] <- fitplaqnaivexiren
 
                 try(plot(fitplaqnaivexiren,
                     main = sprintf(
@@ -731,7 +735,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             ))
 
             if (!inherits(fitplaq, "try-error")) {
-                fitspolynomial[[10 + i]] <- fitplaq
+                fitspolynomial[[listnames[10 + i]]] <- fitplaq
 
                 try(plot(fitplaq,
                     main = sprintf(
@@ -769,7 +773,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 x = xirenfit, y = result$betasimple, bsamples = bsamplescontlimitbeta,
                 mask = maskfitcontlim
             ))
-            fitspolynomial[[15 + i]] <- fitbeta
+            fitspolynomial[[listnames[15 + i]]] <- fitbeta
 
             try(plot(fitbeta,
                 main = sprintf(
@@ -810,7 +814,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             ))
 
             if (!inherits(fitplaq, "try-error")) {
-                fitspolynomial[[20 + i]] <- fitplaqst
+                fitspolynomial[[listnames[20 + i]]] <- fitplaqst
 
                 plot(fitplaqst,
                     main = sprintf(
