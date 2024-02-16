@@ -631,7 +631,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             xirenfit <- result$xisimple
         }
 
-        maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
+        maskfitcontlim <- seq(lowlimfit, uplimfit)
         i <- 1
         for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
             if (uplimfit - lowlimfit > i) {
@@ -640,7 +640,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 # naive xi and beta
                 fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                     x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
-                    mask = seq(lowlimfit, uplimfit)
+                    mask = maskfitcontlim
                 ))
                 fitspolynomial[[i]] <- fitplaqnaive
 
@@ -678,7 +678,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                     x = xinaivefit, y = pnaive,
                     bsamples = bsamplescontlimitnaivexiren,
-                    mask = seq(lowlimfit, uplimfit)
+                    mask = maskfitcontlim
                 ))
                 fitspolynomial[[5 + i]] <- fitplaqnaivexiren
 
@@ -727,7 +727,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             # print(attributes(na.omit(bsamplescontlimit))$na.action)
             fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-                mask = seq(lowlimfit, uplimfit)
+                mask = maskfitcontlim
             ))
 
             if (!inherits(fitplaq, "try-error")) {
@@ -767,7 +767,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             # beta cont limit
             fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = result$betasimple, bsamples = bsamplescontlimitbeta,
-                mask = seq(lowlimfit, uplimfit)
+                mask = maskfitcontlim
             ))
             fitspolynomial[[15 + i]] <- fitbeta
 
@@ -806,7 +806,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             # print(attributes(na.omit(bsamplescontlimit))$na.action)
             fitplaqst <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$pstsimple, bsamples = bsamplescontlimitst,
-                mask = seq(lowlimfit, uplimfit)
+                mask = maskfitcontlim
             ))
 
             if (!inherits(fitplaq, "try-error")) {
