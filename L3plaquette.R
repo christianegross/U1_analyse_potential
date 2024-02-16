@@ -50,9 +50,8 @@ if (input$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, input$e
 
 
 S <-  opt$sparam
-Nt <-  c(16, 20, 24, 32, 40, 48, 64)
-therm16 <-  c(500, 500, 500, 500, 500, 1000, 2000)
-therm3 <-  c(1333, 1333, 1333, 1333, 2666, 5333, 10666)
+Nt <-  c(16, 20, 24, 32, 40, 48, 64, 80)
+therm3 <-  c(1333, 1333, 1333, 1333, 2666, 5333, 10666, 15000)
 
 # xiconststr <- ""
 # if (input$xiconst) xiconststr <- "xiconst"
@@ -73,7 +72,7 @@ Punbiased <- c()
 
 pdf(sprintf("L3%s.pdf", endname), title = "")
 
-for (i in seq(1, 7)) {
+for (i in seq(1, 8)) {
     print(i)
     betaname <- paste0("xi", i, "beta")
     if (i==1) betaname <- "beta"
@@ -93,7 +92,7 @@ for (i in seq(1, 7)) {
 
 }
 
-names(list3) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7")
+names(list3) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7", "xi8")
 list3[["plaquette"]] <- P3
 list3$Punbiased <- Punbiased
 list3$githash <- githash
@@ -102,7 +101,7 @@ saveRDS(object = list3, file = sprintf("plaquetteL3%s.RData", endname))
 
 ## check for normal distribution
 
-for (i in seq(1, 7)) {
+for (i in seq(1, 8)) {
     shapiro3 <- shapiro.test(x = P3[, i])
     print(shapiro3)
     qqnorm(y = P3[, i], main = paste("L = 3, xi", i, shapiro3$p.value))
