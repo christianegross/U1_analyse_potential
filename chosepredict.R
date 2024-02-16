@@ -118,6 +118,8 @@ if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$error
 endnamewrite <- endname
 if (opt$xisingle) endnamewrite <- paste0(endname, "xisingle")
 
+
+
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 bootreduced <- opt$bootsamples - sum(resultslist$nalist)
@@ -131,7 +133,6 @@ print(xis)
 
 # also read in data for spatial-temporal plaquette, later do extrapolation to continuum limit with parametric bootstrap
 # pst is only calculated for type normal
-if (opt$type == "normal") pst <- data.frame(pst = rep(NA, length(xis)), dpst = rep(NA, length(xis)))
 
 ## for each xi, check if there is a fixed beta that should be used.
 ## If yes, replace results for plaquette and xi_ren, and the mean for beta.
@@ -151,6 +152,7 @@ for (i in seq(1, length(xis))){
             resultslist[["plaqren"]][, i] <- readin[, 1]
             resultslist[["xiphys"]][, i] <- readin[, 2]
             resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = bootreduced, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
+            resultslist[["plaqrenst"]][, i] <- parametric.bootstrap(boot.R = bootreduced, x=data$puwst[j], dx=data$dpuwst[j], seed=123456)
             result$beta[i] <- opt[[betafix]]
             result$betasimple[i] <- opt[[betafix]]
             result$p[i] <- data$p[j]
@@ -160,8 +162,9 @@ for (i in seq(1, length(xis))){
             result$xisimple[i] <- data$xicalc[j]
             result$dxiphys[i] <- data$dxicalc[j]
             result$betachosen[i] <- TRUE
-            if (opt$type == "normal")pst$pst[i] <- data$puwst[j]
-            if (opt$type == "normal")pst$dpst[i] <- data$dpuwst[j]
+            result$pst[i] <- data$puwst[j]
+            result$pstsimple[i] <- data$puwst[j]
+            result$dpst[i] <- data$dpuwst[j]
         }
     }
 }
@@ -175,6 +178,8 @@ bsamplescontlimit <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(boo
 bsamplescontlimitnaive <- array(rep(NA, bootreduced * (length(xis))), dim = c(bootreduced, length(xis)))
 bsamplescontlimitnaivexiren <- array(rep(NA, 2 * bootreduced * (length(xis))), dim = c(bootreduced, 2 * length(xis)))
 bsamplescontlimitbeta <- array(rep(NA, 2 * bootreduced * (length(xis))), dim = c(bootreduced, 2 * length(xis)))
+bsamplespst <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(bootreduced, 2 * length(xis)))
+
 pnaive <- c()
 xirennaive <- c()
 
@@ -187,20 +192,26 @@ bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiph
 bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
 bsamplescontlimitbeta[, seq(1, length(xis))] <- resultslist[["intercepts"]][, seq(1, length(xis))]
 if (opt$xisingle) {
-bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]
-bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]
+    bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]
+    bsamplescontlimitbeta[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]
 }
+bsamplespst[, seq(1, length(xis))] <- resultslist[["plaqrenst"]]
+bsamplespst[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
+
 
 if (result$dbeta[1] < 1e-8) {
     bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootreduced, c(opt$beta), c(1e-4))
 }
 
-# spatial-temporal plaquette
-if (opt$type == "normal") {
-    bsamplespst <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(bootreduced, 2 * length(xis)))
-    bsamplespst[, seq(1, length(xis))] <- array(parametric.bootstrap(bootreduced, pst$pst, pst$dpst, seed=1234), dim = c(bootreduced, length(xis)))
-    bsamplespst[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
-}
+
+
+namesave <- sprintf("%s/resultsrenormalizationbetachosen%s.csv", opt$respath, endnamewrite)
+write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
+
+resultslist$githash <- githash
+namesave <- sprintf("%s/listresultsrenormalizationbetachosen%s.RData", opt$respath, endnamewrite)
+saveRDS(resultslist, file=namesave)
+
 
 
 # for each polynomial:
@@ -211,87 +222,133 @@ if (opt$type == "normal") {
 # list: region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq, region 16-20 beta
 # na.omit removes entire row containing na
 
-fitspolynomial <- list()
-resultspolynomial <- data.frame(degree = NA, lim = NA, chi = NA,
-                    p = NA, type = NA, limplot = NA, dlimplot = NA)
+        listfits <- list(fits = list(), lowlimfit = c(), uplimfit = c())
+        resultspolynomial <- data.frame(
+            degree = NA, lim = NA, chi = NA,
+            p = NA, type = NA, limplot = NA, dlimplot = NA, 
+            lowlimfit = NA, uplimfit = NA
+        )
 
-maskfitcontlim <- seq(opt$indexfitcontlim, length(xis))
+listnames <- paste0(rep(c("plaq", "beta", "p_st"), each=5), seq(1, 5))
+indexlim <- 1
+for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
+    for (uplimfit in seq(max(length(xis) - 2, lowlimfit + 2), length(xis))) {
+        print(paste("lowlim", lowlimfit, "uplim", uplimfit))
+        fitspolynomial <- list()
+
+maskfitcontlim <- seq(lowlimfit, uplimfit)
 i <- 1
 xirenfit <- result$xisimple^2
 if(opt$xisingle) {
 xirenfit <- result$xisimple
 }
 
-fnexp <- function(par, x, boot.r, ...) par[1] + par[2] * exp(-x)
-
 pdf(sprintf("%s/plotsbetachosen%scont%d.pdf", opt$respath, endnamewrite, opt$indexfitcontlim), title = "")
-for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
+for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
+            if (uplimfit - lowlimfit > i) {
+        fitspolynomial <- list()
     print(paste("Doing fits of polynomial degree", i))
 
-# xi and beta renorm
-# print(attributes(na.omit(bsamplescontlimit))$na.action)
+    # xi and beta renorm
+    # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
-                x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-                mask = maskfitcontlim))
+        x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
+        mask = maskfitcontlim
+    ))
 
     if (!inherits(fitplaq, "try-error")) {
-    fitspolynomial[[i]] <- fitplaq
+        fitspolynomial[[listnames[i]]] <- fitplaq
 
-    plot(fitplaq, main = sprintf("continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-            fitplaq$t0[1], fitplaq$se[1],
-            fitplaq$chi / fitplaq$dof, fitplaq$Qval, i),
+        plot(fitplaq,
+            main = sprintf(
+                "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
+                fitplaq$t0[1], fitplaq$se[1],
+                fitplaq$chi / fitplaq$dof, fitplaq$Qval, i
+            ),
             plot.range = c(-0.2, 1.2),
             ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
-            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P")
+            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P"
+        )
 
-    resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitplaq$t0[1],
-            fitplaq$se[1], digits = 2, with.dollar = FALSE),
-            chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
-            type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1]))
+        resultspolynomial <- rbind(
+            resultspolynomial,
+            data.frame(
+                degree = i, lim = tex.catwitherror(fitplaq$t0[1],
+                    fitplaq$se[1],
+                    digits = 2, with.dollar = FALSE
+                ),
+                chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
+                type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1],
+                        lowlimfit = lowlimfit, uplimfit = uplimfit
+            )
+        )
     }
 
-# beta cont limit
+    # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
-                mask = maskfitcontlim))
-    fitspolynomial[[5 + i]] <- fitbeta
+        x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
+        mask = maskfitcontlim
+    ))
+    fitspolynomial[[listnames[5 + i]]] <- fitbeta
 
-    try(plot(fitbeta, main = sprintf("continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
+    try(plot(fitbeta,
+        main = sprintf(
+            "continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitbeta$t0[1], fitbeta$se[1],
-            fitbeta$chi / fitbeta$dof, fitbeta$Qval, i),
-            plot.range = c(-0.2, 1.2),
-            ylim = c(1.3, 1.75),
-            xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)))
+            fitbeta$chi / fitbeta$dof, fitbeta$Qval, i
+        ),
+        plot.range = c(-0.2, 1.2),
+        ylim = c(1.3, 1.75),
+        xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)
+    ))
 
-    try(resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitbeta$t0[1],
-            fitbeta$se[1], digits = 2, with.dollar = FALSE),
+    try(resultspolynomial <- rbind(
+        resultspolynomial,
+        data.frame(
+            degree = i, lim = tex.catwitherror(fitbeta$t0[1],
+                fitbeta$se[1],
+                digits = 2, with.dollar = FALSE
+            ),
             chi = fitbeta$chi / fitbeta$dof, p = fitbeta$Qval,
-            type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1])))
+            type = "beta", limplot = fitbeta$t0[1], dlimplot = fitbeta$se[1],
+                        lowlimfit = lowlimfit, uplimfit = uplimfit
+        )
+    ))
 
-# pst cont limit, only plot, do not save
-    if (opt$type == "normal") {
-        fitpst <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
-                x = xirenfit, y = pst$pst, bsamples = bsamplespst,
-                mask = maskfitcontlim))
+    # pst cont limit, only plot, do not save
+    fitpst <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
+        x = xirenfit, y = result$pst, bsamples = bsamplespst,
+        mask = maskfitcontlim
+    ))
 
-        try(plot(fitpst, main = sprintf("continuum limit pst: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
+    try(plot(fitpst,
+        main = sprintf(
+            "continuum limit pst: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
             fitpst$t0[1], fitpst$se[1],
-            fitpst$chi / fitpst$dof, fitpst$Qval, i),
-            plot.range = c(-0.2, 1.2),
-            ylim = c(0.6, 1.1),
-            xlab = "xi_ren^2", ylab = "P_st", xaxs = "i", xlim = c(0, 1.05)))
+            fitpst$chi / fitpst$dof, fitpst$Qval, i
+        ),
+        plot.range = c(-0.2, 1.2),
+        ylim = c(0.6, 1.1),
+        xlab = "xi_ren^2", ylab = "P_st", xaxs = "i", xlim = c(0, 1.05)
+    ))
 
-    try(resultspolynomial <- rbind(resultspolynomial,
-            data.frame(degree = i, lim = tex.catwitherror(fitpst$t0[1],
-            fitpst$se[1], digits = 2, with.dollar = FALSE),
+    try(resultspolynomial <- rbind(
+        resultspolynomial,
+        data.frame(
+            degree = i, lim = tex.catwitherror(fitpst$t0[1],
+                fitpst$se[1],
+                digits = 2, with.dollar = FALSE
+            ),
             chi = fitpst$chi / fitpst$dof, p = fitpst$Qval,
-            type = "p_st", limplot = fitpst$t0[1], dlimplot = fitpst$se[1])))
-    }
+            type = "p_st", limplot = fitpst$t0[1], dlimplot = fitpst$se[1],
+                        lowlimfit = lowlimfit, uplimfit = uplimfit
+        )
+    ))
+
+    fitspolynomial[[listnames[10 + i]]] <- fitpst
 
 
-## print if there were any errors in fitting
+    ## print if there were any errors in fitting
     if (inherits(fitplaq, "try-error")) {
         print(paste("There was an error with fitplaq for polynomial degree", i))
     }
@@ -299,27 +356,16 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)){
         print(paste("There was an error with fitbeta for polynomial degree", i))
     }
     i <- i + 1
+        listfits$fits[[indexlim]] <- fitspolynomial
+        listfits$lowlimfit[indexlim] <- lowlimfit
+        listfits$uplimfit[indexlim] <- uplimfit
+        indexlim <- indexlim + 1
 }
-resultspolynomial <- resultspolynomial[-1, ]
-
-if(opt$type == "normal") {
-
-        fitpst <- try(bootstrap.nlsfit(fnexp, c(pst$pst[1], 1-pst$pst[1]),
-                x = xirenfit, y = pst$pst, bsamples = bsamplespst,
-                mask = maskfitcontlim))
-
-        try(plot(fitpst, main = sprintf("continuum limit pst: %f + /-%f, chi = %f, p = %f",
-            fitpst$t0[1] + fitpst$t0[2], sqrt(fitpst$se[1]^2 + fitpst$se[2]^2),
-            fitpst$chi / fitpst$dof, fitpst$Qval),
-            plot.range = c(-0.2, 1.2),
-            ylim = c(0.6, 1.1),
-            xlab = "xi_ren^2", ylab = "P_st", xaxs = "i", xlim = c(0, 1.05)))
-
+    }
 }
-# write out result
-
 }
-
+        resultspolynomial <- resultspolynomial[-1, ]
+}
 # write out results
 # contains:
 # result: data frame with xiin, beta, dbeta(renormalized), xiphys, dxiphys, p, dp, betasimple (renormed beta from intercept from mean values)
@@ -335,17 +381,10 @@ if(opt$type == "normal") {
 # print(result)
 
 fitspolynomial$githash <- githash
-resultslist$githash <- githash
 
 namepol <- sprintf("%s/polynomialbetachosen%scont%d.csv", opt$respath, endnamewrite, opt$indexfitcontlim)
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
-
-namesave <- sprintf("%s/resultsrenormalizationbetachosen%s.csv", opt$respath, endnamewrite)
-write.table(result, file=namesave, col.names = TRUE, row.names = FALSE, append = FALSE)
-
-namesave <- sprintf("%s/listresultsrenormalizationbetachosen%s.RData", opt$respath, endnamewrite)
-saveRDS(resultslist, file=namesave)
 
 namesave <- sprintf("%s/listpolynomialrenormalizationbetachosen%scont%d.RData", opt$respath, endnamewrite, opt$indexfitcontlim)
 saveRDS(fitspolynomial, file=namesave)
