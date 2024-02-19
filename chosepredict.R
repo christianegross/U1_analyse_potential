@@ -356,12 +356,12 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
         print(paste("There was an error with fitbeta for polynomial degree", i))
     }
     i <- i + 1
+}
+    }
         listfits$fits[[indexlim]] <- fitspolynomial
         listfits$lowlimfit[indexlim] <- lowlimfit
         listfits$uplimfit[indexlim] <- uplimfit
         indexlim <- indexlim + 1
-}
-    }
 }
 }
         resultspolynomial <- resultspolynomial[-1, ]
