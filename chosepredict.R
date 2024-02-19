@@ -387,6 +387,6 @@ write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
 namesave <- sprintf("%s/listpolynomialrenormalizationbetachosen%scont%d.RData", opt$respath, endnamewrite, opt$indexfitcontlim)
-saveRDS(fitspolynomial, file=namesave)
+saveRDS(listfits, file=namesave)
 
 

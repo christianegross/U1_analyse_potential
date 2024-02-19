@@ -288,7 +288,7 @@ if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
 if(opt$xifix) xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25, 0.2)
-print(sort(unique(as.numeric(format(data$xi, digits=6))), decreasing=TRUE))
+
 xis <- sort(unique(as.numeric(format(data$xi, digits=6))), decreasing=TRUE)
 if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
 
@@ -540,7 +540,6 @@ resultslist <- list(intercepts = intercepts, xiphys = xiphys, plaqren = plaqren,
                     fitsrzero = fitsrzero, fitsxi = fitsxi,
                     fitsp = fitsplaquette, fitspst = fitsplaquettest, githash = githash, nalist = nalist)
 
-print(plaqrenst[1, ])
 
 
 
@@ -618,7 +617,6 @@ if (start != 1) {
         )
 indexlim <- 1
 
-# listnames <- c("naive", "xirennaive", "plaq", "beta", "p_st")
 listnames <- paste0(rep(c("naive", "xirennaive", "plaq", "beta", "p_st"), each=5), seq(1, 5))
 
 for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
@@ -754,7 +752,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                     y = fitplaq$y[fitplaq$mask],
                     dy = fitplaq$dy[fitplaq$mask]
                 ))
-                resultspolynomial <- rbind(
+                try(resultspolynomial <- rbind(
                     resultspolynomial,
                     data.frame(
                         degree = i, lim = tex.catwitherror(fitplaq$t0[1],
@@ -764,7 +762,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                         chi = fitplaq$chi / fitplaq$dof, p = fitplaq$Qval,
                         type = "plaq", limplot = fitplaq$t0[1], dlimplot = fitplaq$se[1],
                         lowlimfit = lowlimfit, uplimfit = uplimfit
-                    )
+                    ))
                 )
             }
 
@@ -816,7 +814,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             if (!inherits(fitplaq, "try-error")) {
                 fitspolynomial[[listnames[20 + i]]] <- fitplaqst
 
-                plot(fitplaqst,
+                try(plot(fitplaqst,
                     main = sprintf(
                         "continuum limit temporal plaquette: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
                         fitplaqst$t0[1], fitplaqst$se[1],
@@ -825,7 +823,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                     plot.range = c(-0.2, 1.2),
                     ylim = c(min(na.omit(result$pst)), (fitplaqst$t0[1] - fitplaqst$se[1])),
                     xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P_st"
-                )
+                ))
                 try(plotwitherror(
                     rep = TRUE, col = "red",
                     x = fitplaqst$x[fitplaqst$mask],
@@ -834,7 +832,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                     dy = fitplaqst$dy[fitplaqst$mask]
                 ))
 
-                resultspolynomial <- rbind(
+                try(resultspolynomial <- rbind(
                     resultspolynomial,
                     data.frame(
                         degree = i, lim = tex.catwitherror(fitplaqst$t0[1],
@@ -845,7 +843,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                         type = "p_st", limplot = fitplaqst$t0[1], dlimplot = fitplaqst$se[1],
                         lowlimfit = lowlimfit, uplimfit = uplimfit
                     )
-                )
+                ))
             }
 
             ## print if there were any errors in fitting
