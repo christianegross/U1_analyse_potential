@@ -246,7 +246,6 @@ xirenfit <- result$xisimple
 pdf(sprintf("%s/plotsbetachosen%scont%d.pdf", opt$respath, endnamewrite, opt$indexfitcontlim), title = "")
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
             if (uplimfit - lowlimfit > i) {
-        fitspolynomial <- list()
     print(paste("Doing fits of polynomial degree", i))
 
     # xi and beta renorm
