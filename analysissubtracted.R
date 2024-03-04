@@ -498,6 +498,10 @@ column <- (opt$zerooffset + Ns / 2) * opt$zerooffset + 1 + opt$zerooffset
 plaquettecf <- readloopfilecfonecolumn(file = filename, skip = skip,
         column = column, every = opt$every)
 bootl <- max(opt$bootl, 4 * plaquettedata$tauint^2)
+if(bootl > 0.5*(length(plaquettecolumn)-skip)) {
+    print("requested blocklength is too large!")
+    bootl <- 0.5*(length(plaquettecolumn)-skip)
+}
 plaquettecf <- bootstrap.cf(plaquettecf,
                 boot.R = bootsamples, boot.l = bootl)
 
