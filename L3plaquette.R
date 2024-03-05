@@ -69,6 +69,10 @@ list3 <- list()
 P3 <- array(NA, dim = c(input$bootsamples, length(Nt)))
 Punbiased <- c()
 
+list3st <- list()
+P3st <- array(NA, dim = c(input$bootsamples, length(Nt)))
+Pstunbiased <- c()
+
 
 pdf(sprintf("L3%s.pdf", endname), title = "")
 
@@ -77,18 +81,33 @@ for (i in seq(1, 8)) {
     betaname <- paste0("xi", i, "beta")
     if (i==1) betaname <- "beta"
     beta <- input[betaname]
-    filengthame3 <-  sprintf("%s/result2p1d.u1potential.Nt%d.Ns3.b%f.xi%f.nape0.alpha1.000000nonplanar", opt$datapath, Nt[i], beta, 16 / Nt[i])
-    data3 <-  readloopfilecfonecolumn(file = filengthame3, path = "", skip = therm3[i], column = 6, memsafe = TRUE)
+    filename3 <-  sprintf("%s/result2p1d.u1potential.Nt%d.Ns3.b%f.xi%f.nape0.alpha1.000000nonplanar", opt$datapath, Nt[i], beta, 16 / Nt[i])
+    
+    ## spatial-spatial-plaquette
+    data3 <-  readloopfilecfonecolumn(file = filename3, path = "", skip = therm3[i], column = 6, memsafe = TRUE)
     uwerr3 <-  uwerrprimary(data3$cf[, 1], S = S)
     summary(uwerr3)
-    plot(x = seq(1, length(data3$cf[, 1])), y = data3$cf[, 1], main = paste("L = 3, T = ", Nt[i]))
-    plot(uwerr3, main = paste("L = 3, T = ", Nt[i]))
+    plot(x = seq(1, length(data3$cf[, 1])), y = data3$cf[, 1], main = paste("L = 3, T = ", Nt[i], "spatial-spatial"))
+    plot(uwerr3, main = paste("L = 3, T = ", Nt[i], "spatial-spatial"))
     bootl <- ceiling(4 * uwerr3$tauint^2)
     plaquettecf <- bootstrap.cf(data3,
                 boot.R = input$bootsamples, boot.l = bootl)
     list3[[i]] <-  list(uwerr = uwerr3, cf = plaquettecf, beta = beta)
     P3[, i] <- plaquettecf$cf.tsboot$t[, 1]
     Punbiased[i] <- uwerr3$value
+    
+    ## spatial-temporal-plaquette
+    data3st <-  readloopfilecfonecolumn(file = filename3, path = "", skip = therm3[i], column = 18, memsafe = TRUE)
+    uwerr3st <-  uwerrprimary(data3st$cf[, 1], S = S)
+    summary(uwerr3st)
+    plot(x = seq(1, length(data3st$cf[, 1])), y = data3st$cf[, 1], main = paste("L = 3, T = ", Nt[i], "temporal-spatial"))
+    plot(uwerr3st, main = paste("L = 3, T = ", Nt[i], "temporal-spatial"))
+    bootl <- ceiling(4 * uwerr3st$tauint^2)
+    plaquettestcf <- bootstrap.cf(data3st,
+                boot.R = input$bootsamples, boot.l = bootl)
+    list3st[[i]] <-  list(uwerr = uwerr3st, cf = plaquettestcf, beta = beta)
+    P3st[, i] <- plaquettestcf$cf.tsboot$t[, 1]
+    Pstunbiased[i] <- uwerr3st$value
 
 }
 
@@ -97,15 +116,25 @@ list3[["plaquette"]] <- P3
 list3$Punbiased <- Punbiased
 list3$githash <- githash
 
-saveRDS(object = list3, file = sprintf("plaquetteL3%s.RData", endname))
+names(list3st) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7", "xi8")
+list3st[["plaquette"]] <- P3st
+list3st$Punbiased <- Pstunbiased
+list3st$githash <- githash
+
+
+saveRDS(object = list(spatial = list3, temporal = list3st), file = sprintf("plaquetteL3%s.RData", endname))
 
 ## check for normal distribution
 
 for (i in seq(1, 8)) {
     shapiro3 <- shapiro.test(x = P3[, i])
     print(shapiro3)
-    qqnorm(y = P3[, i], main = paste("L = 3, xi", i, shapiro3$p.value))
+    qqnorm(y = P3[, i], main = paste("L = 3, xi", i, shapiro3$p.value, "spatial-spatial"))
     qqline(y = P3[, i])
+    shapiro3 <- shapiro.test(x = P3st[, i])
+    print(shapiro3)
+    qqnorm(y = P3st[, i], main = paste("L = 3, xi", i, shapiro3$p.value, "spatial-spatial"))
+    qqline(y = P3st[, i])
 }
 
 
