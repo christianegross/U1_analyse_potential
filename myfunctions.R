@@ -178,7 +178,7 @@ calcplotWloopsideways <- function (file, skip, Ns, yt, bootsamples,
     WL <- readloopfilecfrotated(file = file, path = path, skip = skip,
             Nsmax = Ns * fraction, yt = yt, zerooffset = zerooffset, every = every, maxrows = maxrows)
 
-    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l, sim = sim)
+    WL <- jackknife.cf(WL, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n",
             title, (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
     plot(WL, log = "y", xlab = "x/a_s", ylab = "C(x)",
@@ -208,7 +208,7 @@ calcplotWloopnormalspatial <- function (file, skip, Ns, x, bootsamples,
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, path=path, Nytmax = Ns * fraction, x = x,
                 Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
-    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
+    WL <- jackknife.cf(WL, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
 
@@ -237,7 +237,7 @@ calcplotWloopnormaltemporal <- function (file, skip, Ns, Nt, x, bootsamples,
     # l: median blocking size for bootstrap
     WL <- readloopfilecfsub(file = file, skip = skip, path=path, Nytmax = Nt * fraction, x = x,
                     Nsmax = Ns * fraction, zerooffset = zerooffset, every = every, maxrows = maxrows)
-    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
+    WL <- jackknife.cf(WL, boot.l = l)
     title <- sprintf("%s, %d configs\n used every %d, boot.l = %d\n", title,
                     (length(WL$cf[, 1]) + skip) * nsave, nsave * every, l)
    plot(WL, log = "y", xlab = "t/a_s", ylab = "C(t)",
@@ -265,7 +265,7 @@ calcplotWloopsmall <- function (filename, skip, Nsmax, Ntmax,
     # additionally plots lines signifying half the lattice extent
     WL <- readloopfilecfsmall(file = filename, skip = skip,
                     Nsmax = Nsmax, x = x, y = y, Ntmax = Ntmax, start = start, maxrows = maxrows)
-    WL <- bootstrap.cf(WL, boot.R = bootsamples, boot.l = l)
+    WL <- jackknife.cf(WL, boot.l = l)
     title <- sprintf("%s%d configs, skipped %d", title,
             (length(WL$cf[, 1]) + skip - 1) * nsave, skip * nsave)
     try(plot(WL, log = "y", xlab = "t/a_t", ylab = "C(x)",

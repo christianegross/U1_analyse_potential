@@ -495,8 +495,7 @@ if(bootl > 0.5*(length(plaquettecolumn)-skip)) {
     print("requested blocklength is too large!")
     bootl <- 0.5*(length(plaquettecolumn)-skip)
 }
-plaquettecf <- bootstrap.cf(plaquettecf,
-                boot.R = bootsamples, boot.l = bootl)
+plaquettecf <- jackknife.cf(plaquettecf, boot.l = bootl)
 
 # coarse potential
 # read in data points, bootstrap samples:
