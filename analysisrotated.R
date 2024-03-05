@@ -105,7 +105,7 @@ option_list <- list(
     help = "extra string for ending of fit analysis [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
-    default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
+    default = "/hiskp4/gross/masterthesis/analyse/code/analysewithjackknife/",
 #~     make_option(c("--myfunctions"), type = "character", default = "myfunctions.R",
     help = "path to where additional functions are stored,
             relative to folder where script is executed [default %default]")
