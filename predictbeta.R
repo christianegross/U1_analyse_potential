@@ -811,7 +811,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 mask = maskfitcontlim
             ))
 
-            if (!inherits(fitplaq, "try-error")) {
+            if (!inherits(fitplaqst, "try-error")) {
                 fitspolynomial[[listnames[20 + i]]] <- fitplaqst
 
                 try(plot(fitplaqst,

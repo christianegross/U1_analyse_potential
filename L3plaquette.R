@@ -50,8 +50,8 @@ if (input$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, input$e
 
 
 S <-  opt$sparam
-Nt <-  c(16, 20, 24, 32, 40, 48, 64, 80)
-therm3 <-  c(1333, 1333, 1333, 1333, 2666, 5333, 10666, 15000)
+Nt <-  c(16, 20, 24, 32, 40, 48, 64, 80, 96)
+therm3 <-  c(1333, 1333, 1333, 1333, 2666, 5333, 10666, 15000, 15000)
 
 # xiconststr <- ""
 # if (input$xiconst) xiconststr <- "xiconst"
@@ -76,7 +76,7 @@ Pstunbiased <- c()
 
 pdf(sprintf("L3%s.pdf", endname), title = "")
 
-for (i in seq(1, 8)) {
+for (i in seq(1, 9)) {
     print(i)
     betaname <- paste0("xi", i, "beta")
     if (i==1) betaname <- "beta"
@@ -111,12 +111,12 @@ for (i in seq(1, 8)) {
 
 }
 
-names(list3) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7", "xi8")
+names(list3) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7", "xi8", "xi9")
 list3[["plaquette"]] <- P3
 list3$Punbiased <- Punbiased
 list3$githash <- githash
 
-names(list3st) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7", "xi8")
+names(list3st) <- c("xi1", "xi2", "xi3", "xi4", "xi5", "xi6", "xi7", "xi8", "xi9")
 list3st[["plaquette"]] <- P3st
 list3st$Punbiased <- Pstunbiased
 list3st$githash <- githash
@@ -126,7 +126,7 @@ saveRDS(object = list(spatial = list3, temporal = list3st), file = sprintf("plaq
 
 ## check for normal distribution
 
-for (i in seq(1, 8)) {
+for (i in seq(1, 9)) {
     shapiro3 <- shapiro.test(x = P3[, i])
     print(shapiro3)
     qqnorm(y = P3[, i], main = paste("L = 3, xi", i, shapiro3$p.value, "spatial-spatial"))
