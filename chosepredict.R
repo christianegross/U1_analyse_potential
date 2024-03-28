@@ -231,6 +231,7 @@ saveRDS(resultslist, file=namesave)
 
 listnames <- paste0(rep(c("plaq", "beta", "p_st"), each=5), seq(1, 5))
 indexlim <- 1
+pdf(sprintf("%s/plotsbetachosen%scont%d.pdf", opt$respath, endnamewrite, opt$indexfitcontlim), title = "")
 for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
     for (uplimfit in seq(max(length(xis) - 2, lowlimfit + 2), length(xis))) {
         print(paste("lowlim", lowlimfit, "uplim", uplimfit))
@@ -243,7 +244,6 @@ if(opt$xisingle) {
 xirenfit <- result$xisimple
 }
 
-pdf(sprintf("%s/plotsbetachosen%scont%d.pdf", opt$respath, endnamewrite, opt$indexfitcontlim), title = "")
 for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
             if (uplimfit - lowlimfit > i) {
     print(paste("Doing fits of polynomial degree", i))
@@ -258,16 +258,24 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     if (!inherits(fitplaq, "try-error")) {
         fitspolynomial[[listnames[i]]] <- fitplaq
 
-        plot(fitplaq,
-            main = sprintf(
-                "continuum limit plaquette: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-                fitplaq$t0[1], fitplaq$se[1],
-                fitplaq$chi / fitplaq$dof, fitplaq$Qval, i
-            ),
-            plot.range = c(-0.2, 1.2),
-            ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
-            xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P"
-        )
+      
+                try(plot(fitplaq,
+                    main = sprintf(
+                        "continuum limit plaquette: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                        fitplaq$t0[1], fitplaq$se[1],
+                        fitplaq$chi / fitplaq$dof, fitplaq$Qval, i, lowlimfit, uplimfit
+                    ),
+                    plot.range = c(-0.2, 1.2),
+                    ylim = c((fitplaq$t0[1] - fitplaq$se[1]), max(na.omit(result$p))),
+                    xaxs = "i", xlim = c(0, 1), xlab = "xi_ren^2", ylab = "P"
+                ))
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitplaq$x[fitplaq$mask],
+                    dx = fitplaq$dx[fitplaq$mask],
+                    y = fitplaq$y[fitplaq$mask],
+                    dy = fitplaq$dy[fitplaq$mask]
+                ))
 
         resultspolynomial <- rbind(
             resultspolynomial,
@@ -290,16 +298,24 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     ))
     fitspolynomial[[listnames[5 + i]]] <- fitbeta
 
-    try(plot(fitbeta,
-        main = sprintf(
-            "continuum limit beta: %f + /-%f, chi = %f, p = %f,\ndegree of polynomial:%d",
-            fitbeta$t0[1], fitbeta$se[1],
-            fitbeta$chi / fitbeta$dof, fitbeta$Qval, i
-        ),
-        plot.range = c(-0.2, 1.2),
-        ylim = c(1.3, 1.75),
-        xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)
-    ))
+            try(plot(fitbeta,
+                main = sprintf(
+                    "continuum limit beta: %4f + /-%4f, chi = %4f, p = %4f,\ndegree of polynomial:%d\nlowlim fit: %d, uplim fit: %d",
+                    fitbeta$t0[1], fitbeta$se[1],
+                    fitbeta$chi / fitbeta$dof, fitbeta$Qval, i, lowlimfit, uplimfit
+                ),
+                plot.range = c(-0.2, 1.2),
+                ylim = c(1.3, 1.75),
+                xlab = "xi_ren^2", ylab = "beta_ren", xaxs = "i", xlim = c(0, 1.05)
+            ))
+                try(plotwitherror(
+                    rep = TRUE, col = "red",
+                    x = fitbeta$x[fitbeta$mask],
+                    dx = fitbeta$dx[fitbeta$mask],
+                    y = fitbeta$y[fitbeta$mask],
+                    dy = fitbeta$dy[fitbeta$mask]
+                ))
+
 
     try(resultspolynomial <- rbind(
         resultspolynomial,
