@@ -168,6 +168,7 @@ if (opt$errortotpot && opt$aic) {
 data$r0 <- data$r0 * factorrzero
 
 nom <- length(data$beta)
+rzeroone <- data$r0[data$beta == opt$beta & data$xi == 1]
 
 # read in bootstrapsamples
 bootsamples <- opt$bootsamples
@@ -204,7 +205,10 @@ for (i in seq(1, nom)) {
     arrayrzero[, i] <- result[, 1] * factorrzero
     arrayp[, i] <- result[, 2]
     arrayxi[, i] <- result[, 3]
-    nalist <- nalist | is.na(result[, 1]) | is.na(result[, 2]) | is.na(result[, 3])
+    ## only take nas into account if data will be used for fit
+    if(abs(rzeroone - data$r0[i]) < opt$fitlim) {
+        nalist <- nalist | is.na(result[, 1]) | is.na(result[, 2]) | is.na(result[, 3])
+    }
     if (sum(is.na(result)) > 0) print(sum(is.na(result)))
 }
 print(sum(nalist))
