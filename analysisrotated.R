@@ -971,4 +971,18 @@ saveRDS(resultssummary, file = nameresults)
 
 }
 
+if(dofit) {
+# plot those potentials that resulted in a value of NA for r0
+for (i in seq(bootsamples)){
+        if(is.na(bsrzero[i])) {
+                print(i)
+                plot(x=bsamples[i, (((Ns+Nt)/2)+1):(Ns+Nt)], y=bsamples[i, 1:((Ns+Nt)/2)], main=sprintf("index %d pars %f %f %f", i, fit.resultscaled$t[i, 1], fit.resultscaled$t[i, 2], fit.resultscaled$t[i, 3]))
+                points(x=bsamples[i, (((Ns+Nt)/2)+1):(Ns+Nt/2)], y=bsamples[i, 1:(Ns/2)], col="red")
+                lines(x=seq(0.01, 10, length.out=1000), 
+                y=fnpot(par=fit.resultscaled$t[i, ], x=seq(0.01, 10, length.out=1000), boot.r=0))
+                legend("topleft", legend=c("temporal", "spatial"), col=c(1, 2), pch=c(1, 1))
+        }
+}
+}
+
 message(warnings())
