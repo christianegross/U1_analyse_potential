@@ -234,6 +234,12 @@ if (type == "sidewaysstring" || type == "normalstring") {
     
 }
 
+## remove samples that contain a NA anywhere
+arrayxi[nalist, ] <- NA
+arrayrzero[nalist, ] <- NA
+arrayp[nalist, ] <- NA
+arraypst[nalist, ] <- NA
+
 
 # set up parameters for plotting, initialize output file
 fontsize <- 2.6
@@ -371,25 +377,40 @@ print(paste("start=", start))
 for (i in seq(start, length(xis))) {
     mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
+    err <- apply(arrayrzero[, mask], 2, sd, na.rm=T)
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
-                            data$beta[mask], arrayrzero[, mask], na.rm=TRUE))
+                            data$beta[mask], arrayrzero[, mask], na.rm=TRUE, 
+                            dy = err[1:length(data$beta[mask])], 
+                            dx = err[(1:length(data$beta[mask])) + length(data$beta[mask])]))
     # cat("\n\nxi=", xis[i], "rzero\n")
     # summary(fitsrzero[[i]])
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
     # print(removed)
+    err <- apply(arrayp[, mask], 2, sd, na.rm=T)
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
-                            data$beta[mask], arrayp[, mask], na.rm=TRUE))
+                            data$beta[mask], arrayp[, mask], na.rm=TRUE, 
+                            dy = err[1:length(data$beta[mask])], 
+                            dx = err[(1:length(data$beta[mask])) + length(data$beta[mask])]))
+    err <- apply(arraypst[, mask], 2, sd, na.rm=T)
     fitsplaquettest[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$puwst[mask],
-                            data$beta[mask], arraypst[, mask], na.rm=TRUE))
+                            data$beta[mask], arraypst[, mask], na.rm=TRUE, 
+                            dy = err[1:length(data$beta[mask])], 
+                            dx = err[(1:length(data$beta[mask])) + length(data$beta[mask])]))
     # cat("\n\nxi=", xis[i], "plaq\n")
     # summary(fitsplaquette[[i]])
     if (opt$xiconst) {
+        err <- apply(arrayxi[, mask], 2, sd, na.rm=T)
         fitsxi[[i]] <- try(bootstrap.nlsfit(fncon, c(1), data$xicalc[mask],
-                            data$beta[mask], arrayxi[, mask], success.infos = 1:4, na.rm=TRUE))
+                            data$beta[mask], arrayxi[, mask], success.infos = 1:4, na.rm=TRUE, 
+                            dy = err[1:length(data$beta[mask])], 
+                            dx = err[(1:length(data$beta[mask])) + length(data$beta[mask])]))
 
     } else {
+        err <- apply(arrayxi[, mask], 2, sd, na.rm=T)
         fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
-                            data$beta[mask], arrayxi[, mask], success.infos = 1:4, na.rm=TRUE))
+                            data$beta[mask], arrayxi[, mask], success.infos = 1:4, na.rm=TRUE, 
+                            dy = err[1:length(data$beta[mask])], 
+                            dx = err[(1:length(data$beta[mask])) + length(data$beta[mask])]))
     }
     # cat("\n\nxi=", xis[i], "xiphys\n")
     # summary(fitsxi[[i]])
@@ -639,10 +660,12 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             print(paste("Doing fits of polynomial degree", i))
             if (opt$naive) {
                 # naive xi and beta
+                err <- apply(bsamplescontlimitnaive, 2, sd, na.rm=T)
                 fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                     x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
-                    mask = maskfitcontlim, na.rm=TRUE
-                ))
+                    mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(pnaive)])
+                )
                 fitspolynomial[[listnames[i]]] <- fitplaqnaive
 
                 try(plot(fitplaqnaive,
@@ -676,10 +699,13 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 ))
 
                 # naive beta, xi renorm
+                err <- apply(bsamplescontlimitnaivexiren, 2, sd, na.rm=T)
                 fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                     x = xinaivefit, y = pnaive,
                     bsamples = bsamplescontlimitnaivexiren,
-                    mask = maskfitcontlim, na.rm=TRUE
+                    mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(pnaive)], 
+                            dx = err[(1:length(pnaive)) + length(pnaive)]
                 ))
                 fitspolynomial[[listnames[5 + i]]] <- fitplaqnaivexiren
 
@@ -726,9 +752,12 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
             # xi and beta renorm
             # print(attributes(na.omit(bsamplescontlimit))$na.action)
+            err <- apply(bsamplescontlimit, 2, sd, na.rm=T)
             fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-                mask = maskfitcontlim, na.rm=TRUE
+                mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(xirenfit)], 
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
             ))
 
             if (!inherits(fitplaq, "try-error")) {
@@ -766,9 +795,12 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             }
 
             # beta cont limit
+            err <- apply(bsamplescontlimitbeta, 2, sd, na.rm=T)
             fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = result$betasimple, bsamples = bsamplescontlimitbeta,
-                mask = maskfitcontlim, na.rm=TRUE
+                mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(xirenfit)], 
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
             ))
             fitspolynomial[[listnames[15 + i]]] <- fitbeta
 
@@ -805,9 +837,12 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
             # xi and beta renorm, spatial-temporal plaquette
             # print(attributes(na.omit(bsamplescontlimit))$na.action)
+            err <- apply(bsamplescontlimitst, 2, sd, na.rm=T)
             fitplaqst <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$pstsimple, bsamples = bsamplescontlimitst,
-                mask = maskfitcontlim, na.rm=TRUE
+                mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(xirenfit)], 
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
             ))
 
             if (!inherits(fitplaqst, "try-error")) {

@@ -166,6 +166,12 @@ for (i in seq(1, length(xis))){
         }
     }
 }
+## remove samples that contain a NA anywhere
+            resultslist[["plaqren"]][resultslist$nalist, ] <- NA
+            resultslist[["xiphys"]][resultslist$nalist, ] <- NA
+            resultslist[["intercepts"]][resultslist$nalist, ] <- NA
+            resultslist[["plaqrenst"]][resultslist$nalist, ] <- NA
+            
 
 print(options)
 print(result)
@@ -239,9 +245,12 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
 
     # xi and beta renorm
     # print(attributes(na.omit(bsamplescontlimit))$na.action)
+    err <- apply(bsamplescontlimit, 2, sd, na.rm=T)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
         x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-        mask = maskfitcontlim, na.rm=TRUE
+        mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(xirenfit)], 
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
     ))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -281,9 +290,12 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     }
 
     # beta cont limit
+    err <- apply(bsamplescontlimitbeta, 2, sd, na.rm=T)
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
         x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
-        mask = maskfitcontlim, na.rm=TRUE
+        mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(xirenfit)], 
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
     ))
     fitspolynomial[[listnames[5 + i]]] <- fitbeta
 
@@ -320,9 +332,12 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     ))
 
     # pst cont limit, only plot, do not save
+    err <- apply(bsamplespst, 2, sd, na.rm=T)
     fitpst <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
         x = xirenfit, y = result$pst, bsamples = bsamplespst,
-        mask = maskfitcontlim, na.rm=TRUE
+        mask = maskfitcontlim, na.rm=TRUE, 
+                            dy = err[1:length(xirenfit)], 
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
     ))
 
     try(plot(fitpst,
