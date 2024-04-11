@@ -214,19 +214,14 @@ for (i in seq(1, nom)) {
 print(sum(nalist))
 # stop if there are too many NAs in the data
 stopifnot(sum(nalist) < 0.1*opt$bootsamples)
-# remove all NAs from dataset, save this list to be able to remove the same bootstrapsample from other observables
-arrayrzero <- arrayrzero[!nalist, ]
-arrayxi <- arrayxi[!nalist, ]
-arrayp <- arrayp[!nalist, ]
-bootsamples <- bootsamples - sum(nalist)
 
 arraypst <- parametric.bootstrap(boot.R = bootsamples, x = data$puwst, dx = data$dpuwst, seed = 123456)
 
 if (type == "slope") {
-    data$xicalc <- apply(arrayxi, 2, mean, na.rm = F)
-    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = F)
-    data$r0 <- apply(arrayrzero, 2, mean, na.rm = F)
-    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = F)
+    data$xicalc <- apply(arrayxi, 2, mean, na.rm = T)
+    data$dxicalc <- apply(arrayxi, 2, sd, na.rm = T)
+    data$r0 <- apply(arrayrzero, 2, mean, na.rm = T)
+    data$dr0 <- apply(arrayrzero, 2, sd, na.rm = T)
     data$xi <- data$xiin
     try(data[c("xiin", "ratio", "dratio", "st", "dst", "chipot", "icslope", "dicslope", "icpot", "dicpot", "logpot", "dlogpot", "ratioslope", "dratioslope", "ratiopot", "dratiopot", "rzero", "drzero", "puw", "dpuw", "job")] <- NULL)
     # print(data)
@@ -377,24 +372,24 @@ for (i in seq(start, length(xis))) {
     mask <- abs(data$xi - xis[i]) < 0.01 & abs(data$r0 - data$r0[maskone]) < opt$fitlim #&data$c == -1.65
     maskplot <- abs(data$xi - xis[i]) < 0.01 #& data$c == -1.65
     fitsrzero[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$r0[mask],
-                            data$beta[mask], na.omit(arrayrzero[, mask])))
+                            data$beta[mask], arrayrzero[, mask], na.rm=TRUE))
     # cat("\n\nxi=", xis[i], "rzero\n")
     # summary(fitsrzero[[i]])
     removed <- attributes(na.omit(arrayrzero[, mask]))$na.action
     # print(removed)
     fitsplaquette[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$p[mask],
-                            data$beta[mask], na.omit(arrayp[, mask])))
+                            data$beta[mask], arrayp[, mask], na.rm=TRUE))
     fitsplaquettest[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$puwst[mask],
-                            data$beta[mask], na.omit(arraypst[, mask])))
+                            data$beta[mask], arraypst[, mask], na.rm=TRUE))
     # cat("\n\nxi=", xis[i], "plaq\n")
     # summary(fitsplaquette[[i]])
     if (opt$xiconst) {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fncon, c(1), data$xicalc[mask],
-                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
+                            data$beta[mask], arrayxi[, mask], success.infos = 1:4, na.rm=TRUE))
 
     } else {
         fitsxi[[i]] <- try(bootstrap.nlsfit(fnlin, c(1, 1), data$xicalc[mask],
-                            data$beta[mask], na.omit(arrayxi[, mask]), success.infos = 1:4))
+                            data$beta[mask], arrayxi[, mask], success.infos = 1:4, na.rm=TRUE))
     }
     # cat("\n\nxi=", xis[i], "xiphys\n")
     # summary(fitsxi[[i]])
@@ -406,19 +401,19 @@ for (i in seq(start, length(xis))) {
                 dy = data$dr0[maskplot], col = cols[i], pch = cols[i], cex = fontsize, rep = TRUE))
         interceptsimple[i] <- (rzeroone - fitsrzero[[i]]$t0[1]) / fitsrzero[[i]]$t0[2]
         interceptintermediate <- getintercept(fitsrzero[[i]], arrayrzero[, maskone], bootsamples = length(fitsrzero[[i]]$t[, 1]))
-        intercepts[, i] <- fillexceptna(removed, interceptintermediate)
+        intercepts[, i] <- interceptintermediate
 
         # cannot use predict, because taking the sd of all means underestimates the error, for each intercept have to take the appropriate boot
         prediction <- predictwithxerror.bootstrapfit(fitsplaquette[[i]], interceptintermediate)
-        plaqren[, i] <- fillexceptna(removed, prediction$boot)
+        plaqren[, i] <- prediction$boot
         prediction <- predictwithxerror.bootstrapfit(fitsplaquettest[[i]], interceptintermediate)
-        plaqrenst[, i] <- fillexceptna(removed, prediction$boot)
+        plaqrenst[, i] <- prediction$boot
         prediction <- predictwithxerror.bootstrapfit(fitsxi[[i]], interceptintermediate)
 
         if (opt$xiconst) {
             xiphys[, i] <- fitsxi[[i]]$t[, 1]
         } else {
-            xiphys[, i] <- fillexceptna(removed, prediction$boot)
+            xiphys[, i] <- prediction$boot
         }
 
         xisimple[i] <- fitsxi[[i]]$fn(par = fitsxi[[i]]$t0, x = interceptsimple[i], boot.r = 0)
@@ -503,12 +498,12 @@ box(bty = "o")
 tikz.finalize(tikzfile)
 
 # make a dataframe of results
-result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = F),
-                    dbeta = apply(intercepts, 2, sd, na.rm = F),
-                    xiphys = apply(xiphys, 2, mean, na.rm = F),
-                    dxiphys = apply(xiphys, 2, sd, na.rm = F),
-                    p = apply(plaqren, 2, mean, na.rm = F), dp = apply(plaqren, 2, sd, na.rm = F),
-                    pst = apply(plaqrenst, 2, mean, na.rm = F), dpst = apply(plaqrenst, 2, sd, na.rm = F))
+result <- data.frame(xiin = xis, beta = apply(intercepts, 2, mean, na.rm = T),
+                    dbeta = apply(intercepts, 2, sd, na.rm = T),
+                    xiphys = apply(xiphys, 2, mean, na.rm = T),
+                    dxiphys = apply(xiphys, 2, sd, na.rm = T),
+                    p = apply(plaqren, 2, mean, na.rm = T), dp = apply(plaqren, 2, sd, na.rm = T),
+                    pst = apply(plaqrenst, 2, mean, na.rm = T), dpst = apply(plaqrenst, 2, sd, na.rm = T))
 # result$xiphys[result$xiin == 1] <- data$xicalc[data$xi == 1]
 # result$dxiphys[result$xiin == 1] <- data$dxicalc[data$xi == 1]
 result <- cbind(result, data.frame(betasimple = interceptsimple, xisimple = xisimple, psimple = psimple, pstsimple = pstsimple))
@@ -646,7 +641,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 # naive xi and beta
                 fitplaqnaive <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                     x = xiinfit, y = pnaive, bsamples = bsamplescontlimitnaive,
-                    mask = maskfitcontlim
+                    mask = maskfitcontlim, na.rm=TRUE
                 ))
                 fitspolynomial[[listnames[i]]] <- fitplaqnaive
 
@@ -684,7 +679,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                 fitplaqnaivexiren <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                     x = xinaivefit, y = pnaive,
                     bsamples = bsamplescontlimitnaivexiren,
-                    mask = maskfitcontlim
+                    mask = maskfitcontlim, na.rm=TRUE
                 ))
                 fitspolynomial[[listnames[5 + i]]] <- fitplaqnaivexiren
 
@@ -733,7 +728,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             # print(attributes(na.omit(bsamplescontlimit))$na.action)
             fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-                mask = maskfitcontlim
+                mask = maskfitcontlim, na.rm=TRUE
             ))
 
             if (!inherits(fitplaq, "try-error")) {
@@ -773,7 +768,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             # beta cont limit
             fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
                 x = xirenfit, y = result$betasimple, bsamples = bsamplescontlimitbeta,
-                mask = maskfitcontlim
+                mask = maskfitcontlim, na.rm=TRUE
             ))
             fitspolynomial[[listnames[15 + i]]] <- fitbeta
 
@@ -812,7 +807,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
             # print(attributes(na.omit(bsamplescontlimit))$na.action)
             fitplaqst <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
                 x = xirenfit, y = result$pstsimple, bsamples = bsamplescontlimitst,
-                mask = maskfitcontlim
+                mask = maskfitcontlim, na.rm=TRUE
             ))
 
             if (!inherits(fitplaqst, "try-error")) {

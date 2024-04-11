@@ -122,7 +122,7 @@ if (opt$xisingle) endnamewrite <- paste0(endname, "xisingle")
 
 print(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
-bootreduced <- opt$bootsamples - sum(resultslist$nalist)
+# opt$bootsamples <- opt$bootsamples ## - sum(resultslist$nalist)
 
 namesave <- sprintf("%s/resultsrenormalization%s.csv", as.character(opt$respath), endname)
 result <- read.table(file = namesave, header = TRUE)
@@ -147,12 +147,10 @@ for (i in seq(1, length(xis))){
                         Nt = data$Nt[j], xi = data$xi[j], columns = c(1, 1),
                         names = c("bsp", "bsxicalc"), filename = filenameres,
                         end = end)
-            # remove the bootstrapsamples that had an NA somewhere in the prediction to keep the total number of samples consistent
-            readin <- readin[!resultslist$nalist, ]
             resultslist[["plaqren"]][, i] <- readin[, 1]
             resultslist[["xiphys"]][, i] <- readin[, 2]
-            resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = bootreduced, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
-            resultslist[["plaqrenst"]][, i] <- parametric.bootstrap(boot.R = bootreduced, x=data$puwst[j], dx=data$dpuwst[j], seed=123456)
+            resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
+            resultslist[["plaqrenst"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=data$puwst[j], dx=data$dpuwst[j], seed=123456)
             result$beta[i] <- opt[[betafix]]
             result$betasimple[i] <- opt[[betafix]]
             result$p[i] <- data$p[j]
@@ -174,18 +172,12 @@ print(result)
 
 if (TRUE) {
 # empty containers for result
-bsamplescontlimit <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(bootreduced, 2 * length(xis)))
-bsamplescontlimitnaive <- array(rep(NA, bootreduced * (length(xis))), dim = c(bootreduced, length(xis)))
-bsamplescontlimitnaivexiren <- array(rep(NA, 2 * bootreduced * (length(xis))), dim = c(bootreduced, 2 * length(xis)))
-bsamplescontlimitbeta <- array(rep(NA, 2 * bootreduced * (length(xis))), dim = c(bootreduced, 2 * length(xis)))
-bsamplespst <- array(rep(NA, bootreduced * (2 * length(xis))), dim = c(bootreduced, 2 * length(xis)))
+bsamplescontlimit <- array(rep(NA, opt$bootsamples * (2 * length(xis))), dim = c(opt$bootsamples, 2 * length(xis)))
+bsamplescontlimitbeta <- array(rep(NA, 2 * opt$bootsamples * (length(xis))), dim = c(opt$bootsamples, 2 * length(xis)))
+bsamplespst <- array(rep(NA, opt$bootsamples * (2 * length(xis))), dim = c(opt$bootsamples, 2 * length(xis)))
 
-pnaive <- c()
-xirennaive <- c()
 
-# fill up containers: naive indicates no renormalized values (of beta) are used for fit
-# naive: no renormalization at all
-# naivexiren: use renormalized xi, but leave beta fixed
+# fill up containers: 
 # beta: take continuum limit for beta(xi) as well
 bsamplescontlimit[, seq(1, length(xis))] <- resultslist[["plaqren"]]
 bsamplescontlimit[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^2
@@ -200,7 +192,7 @@ bsamplespst[, seq(length(xis) + 1, 2 * length(xis))] <- resultslist[["xiphys"]]^
 
 
 if (result$dbeta[1] < 1e-8) {
-    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(bootreduced, c(opt$beta), c(1e-4))
+    bsamplescontlimitbeta[, 1] <- parametric.bootstrap(opt$bootsamples, c(opt$beta), c(1e-4))
 }
 
 
@@ -215,11 +207,8 @@ saveRDS(resultslist, file=namesave)
 
 
 # for each polynomial:
-# fitplaqnaive: xi=xi_input, p=p_meas -> neither beta nor xi reenormalized
-# fitplaqnaivexiren: xi=xi_ren, p=p_meas -> beta not renormalized
 # fitplaq: xi=xi_ren, p=p_interpolated -> xi and beta renormalized
 # for each: do fit to continuum limit, plot, add results to list and table
-# list: region 1-5 fitplaqnaive, region 6-10 fitplaqnaivexiren, region 11-15 fitplaq, region 16-20 beta
 # na.omit removes entire row containing na
 
         listfits <- list(fits = list(), lowlimfit = c(), uplimfit = c())
@@ -252,7 +241,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     # print(attributes(na.omit(bsamplescontlimit))$na.action)
     fitplaq <- try(bootstrap.nlsfit(fun, rep(1, i + 1),
         x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
-        mask = maskfitcontlim
+        mask = maskfitcontlim, na.rm=TRUE
     ))
 
     if (!inherits(fitplaq, "try-error")) {
@@ -294,7 +283,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     # beta cont limit
     fitbeta <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
         x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
-        mask = maskfitcontlim
+        mask = maskfitcontlim, na.rm=TRUE
     ))
     fitspolynomial[[listnames[5 + i]]] <- fitbeta
 
@@ -333,7 +322,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
     # pst cont limit, only plot, do not save
     fitpst <- try(bootstrap.nlsfit(fun, rep(0.1, i + 1),
         x = xirenfit, y = result$pst, bsamples = bsamplespst,
-        mask = maskfitcontlim
+        mask = maskfitcontlim, na.rm=TRUE
     ))
 
     try(plot(fitpst,
