@@ -400,7 +400,7 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
 # print(result)
 
 listfits$githash <- githash
-listfits$nalist <- nalist
+listfits$nalist <- resultslist$nalist
 
 namepol <- sprintf("%s/polynomialbetachosen%scont%d.csv", opt$respath, endnamewrite, opt$indexfitcontlim)
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
