@@ -149,7 +149,8 @@ for (i in seq(1, length(xis))){
                         end = end)
             resultslist[["plaqren"]][, i] <- readin[, 1]
             resultslist[["xiphys"]][, i] <- readin[, 2]
-            resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
+            # resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
+            resultslist[["intercepts"]][, i] <- resultslist[["intercepts"]][, i] - result$betasimple[i] + opt[[betafix]]
             resultslist[["plaqrenst"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=data$puwst[j], dx=data$dpuwst[j], seed=123456)
             result$beta[i] <- opt[[betafix]]
             result$betasimple[i] <- opt[[betafix]]
@@ -253,8 +254,8 @@ for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
                             dx = err[(1:length(xirenfit)) + length(xirenfit)]
     ))
 
-    if (!inherits(fitplaq, "try-error")) {
         fitspolynomial[[listnames[i]]] <- fitplaq
+    if (!inherits(fitplaq, "try-error")) {
 
       
                 try(plot(fitplaq,

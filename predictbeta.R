@@ -760,8 +760,8 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                             dx = err[(1:length(xirenfit)) + length(xirenfit)]
             ))
 
-            if (!inherits(fitplaq, "try-error")) {
                 fitspolynomial[[listnames[10 + i]]] <- fitplaq
+            if (!inherits(fitplaq, "try-error")) {
 
                 try(plot(fitplaq,
                     main = sprintf(
@@ -845,8 +845,8 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
                             dx = err[(1:length(xirenfit)) + length(xirenfit)]
             ))
 
-            if (!inherits(fitplaqst, "try-error")) {
                 fitspolynomial[[listnames[20 + i]]] <- fitplaqst
+            if (!inherits(fitplaqst, "try-error")) {
 
                 try(plot(fitplaqst,
                     main = sprintf(
