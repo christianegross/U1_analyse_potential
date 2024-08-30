@@ -60,6 +60,8 @@ option_list <- list(
     make_option(c("--errortotpot"), action = "store_true", default = FALSE,
     help = "if true, potential bootstrap samples are rescaled before analysis
         to take total error into account [default %default]"),
+    make_option(c("--mindistance"), type = "integer", default = 2,
+    help = "(minimum number of points)-1 used in the AIC algorithm for finding effective masses [default %default]"),
 
     make_option(c("--analyse"), action = "store_true", default = FALSE,
     help = "if true, correlators and effective masses
@@ -306,7 +308,7 @@ for (x in seq(1, Ns / 2, 1)) {
             ylim = WL.effmasslist[[2]]))
     }
     if (opt$aic) {
-        effmass <- deteffmassaic(WL)
+        effmass <- deteffmassaic(WL, mindistance = opt$mindistance)
         # failsafe if all fits failed
         if (length(effmass[[2]]) > 1){
             plot(effmass$effmass, xlab="y/a_s", ylab="meff", main=title)
@@ -399,7 +401,7 @@ for (x in seq(1, Ns / 2, 1)) {
             ylim = WL.effmasslist[[2]]))
     }
     if (opt$aic) {
-        effmass <- deteffmassaic(WL)
+        effmass <- deteffmassaic(WL, mindistance = opt$mindistance)
         # failsafe if all fits failed
         if (length(effmass[[2]]) > 1){
             plot(effmass$effmass, xlab="t/a_t", ylab="meff", main=title)
@@ -789,6 +791,7 @@ for (i in seq(1, length(rzeroofc$c))) {
 #plot thermalisation
 plot(plaquettecolumn, main = "Thermalisation",
         xlab = sprintf("MCMC-steps/%d", opt$nsave), ylab = "P")
+abline(v=skip)
 }
 
 if (dofit) {

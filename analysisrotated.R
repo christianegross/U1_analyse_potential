@@ -59,6 +59,8 @@ option_list <- list(
     make_option(c("--lowlimpot"), type = "integer", default = -1,
     help = "points lower than this are not used
             for determining r_0, if negative, the same as lowlim [default %default]"),
+    make_option(c("--mindistance"), type = "integer", default = 2,
+    help = "(minimum number of points)-1 used in the AIC algorithm for finding effective masses [default %default]"),
 
     make_option(c("--aic"), action = "store_true", default = FALSE,
     help = "if true, effective masses are determined with weighting
@@ -297,7 +299,7 @@ for (y in seq(1, Ns / 2, 1)) {
     }
 
     if (opt$aic) {
-        effmass <- deteffmassaic(WL)
+        effmass <- deteffmassaic(WL, mindistance = opt$mindistance)
         # failsafe if all fits failed
         if (length(effmass[[2]]) > 1){
             plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
@@ -396,7 +398,7 @@ for (t in seq(1, Nt / 2, 1)) {
             ylim = WL.effmasslist[[2]]))
     }
     if (opt$aic) {
-        effmass <- deteffmassaic(WL)
+        effmass <- deteffmassaic(WL, mindistance = opt$mindistance)
         # failsafe if all fits failed
         if (length(effmass[[2]]) > 1){
             plot(effmass$effmass, xlab="x/a_s", ylab="meff", main=title)
@@ -861,6 +863,7 @@ legend(legend = c("spatial", "temporal"), col = c(2, 1), pch = c(2, 1), x = "top
 #plot thermalisation
 plot(plaquettecolumn, main = "Thermalisation",
         xlab = sprintf("MCMC-steps / %d", opt$nsave), ylab = "P")
+abline(v=skip)
 
 # plot qqplots to see if xi and rzero are normally distributed
 try(qqnorm(xibootsamples, main = "qqplot of xi_ren"))
