@@ -34,7 +34,7 @@ option_list <- list(
     help = "for the fit to the contlim, only xi with index larger than this are used [default %default]"),
     make_option(c("--lowlimxi"), type = "integer", default = 1,
     help = "points lower than this are not used to determine xi [default %default]"),
-    make_option(c("--lowlimpot"), type = "double", default = -1,
+    make_option(c("--lowlimpot"), type = "integer", default = -1,
     help = "points lower than this are not used to determine the potential and r0. If negative, the same as lowlimxi [default %default]"),
     make_option(c("--fitlim"), type = "double", default = 0.3,
     help = "how much may the value of r0 deviate from the xi=1 value to still be considered? [default %default]"),
@@ -123,13 +123,13 @@ data <- read.table(dataname, header = TRUE, sep = " ")
 if (type == "sideways" || type == "sidewaysstring") {
 data <- data[data$c == opt$crzero, ]
 data <- data[data$lowlim == opt$lowlimxi, ]
-data <- data[abs(data$lowlimpot - opt$lowlimpot) < 1e-3, ]
+data <- data[data$lowlimpot == opt$lowlimpot, ]
 }
 
 if (type == "normal" || type == "normalstring") {
 data <- data[data$c == opt$crzero, ]
 data <- data[data$lowlim == opt$lowlimxi, ]
-data <- data[abs(data$lowlimpot - opt$lowlimpot) < 1e-3, ]
+data <- data[data$lowlimpot == opt$lowlimpot, ]
 }
 
 if (opt$omit >= 0) {
@@ -183,15 +183,15 @@ for (i in seq(1, nom)) {
                     i, data$beta[i], data$Ns[i], data$Nt[i], data$xi[i])
     print(string)
     if (type == "normal" || type == "sideways") {
-    if (opt$crzero == -1.65) end <- sprintf("omit%dllxi%dllr0%.3f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], end2)
-    if (opt$crzero != -1.65) end <- sprintf("omit%dllxi%dllr0%.3fc%.2f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], opt$crzero, end2)
+    if (opt$crzero == -1.65) end <- sprintf("omit%dllxi%dllr0%d%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], end2)
+    if (opt$crzero != -1.65) end <- sprintf("omit%dllxi%dllr0%dc%.2f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], opt$crzero, end2)
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsrzeros", "bsp", "bsxicalc"), filename = filenameres, end = end)
     }    
     if (type == "normalstring" || type == "sidewaysstring") {
-    if (opt$crzero == -1.65) end <- sprintf("omit%dllxi%dllr0%.3f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], end2)
-    if (opt$crzero != -1.65) end <- sprintf("omit%dllxi%dllr0%.3fc%.2f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], opt$crzero, end2)
+    if (opt$crzero == -1.65) end <- sprintf("omit%dllxi%dllr0%d%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], end2)
+    if (opt$crzero != -1.65) end <- sprintf("omit%dllxi%dllr0%dc%.2f%s", data$omit[i], data$lowlim[i], data$lowlimpot[i], opt$crzero, end2)
     result <- readinbootstrapsamples(beta = data$beta[i], Ns = data$Ns[i],
                     Nt = data$Nt[i], xi = data$xi[i], columns = c(1, 1, 1),
                     names = c("bsst", "bsp", "bsxicalc"), filename = filenameres, end = end)
@@ -254,7 +254,7 @@ packages <- c("\\usepackage{tikz}",
 
 xiconststr <- ""
 if (opt$xiconst) xiconststr <- "xiconst"
-endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%.3ffl%.2f", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot, opt$fitlim)
+endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%dfl%.2f", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot, opt$fitlim)
 if(opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)

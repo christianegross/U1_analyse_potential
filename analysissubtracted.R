@@ -38,7 +38,7 @@ option_list <- list(
     make_option(c("--lowlim"), type = "integer", default = 1,
     help = "points lower than this are not used
             for determining xi [default %default]"),
-    make_option(c("--lowlimpot"), type = "double", default = -1,
+    make_option(c("--lowlimpot"), type = "integer", default = -1,
     help = "points lower than this are not used
             for determining r_0, if negative, the same as lowlim [default %default]"),
     make_option(c("-a", "--alpha"), type = "double", default = 1.0,
@@ -161,9 +161,9 @@ rmax <- opt$rmax
 endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbootl%dusecov%d", Nt, Ns, beta, xi, opt$bootl, opt$usecov)
 if (opt$smearing) endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbootl%dusecov%d", Nt, Ns, beta, xi, nape, alpha, opt$bootl, opt$usecov)
 
-endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dllxi%dllr0%.3f",
+endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fbs%domit%dllxi%dllr0%d",
                     Nt, Ns, beta, xi, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
-if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dllxi%dllr0%.3f",
+if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domit%dllxi%dllr0%d",
                     Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
 
 
