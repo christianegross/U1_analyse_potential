@@ -329,6 +329,9 @@ deteffmass <- function (WL.effmass, yt, t1, t2, isspatial, usecov = FALSE) {
             newline <- data.frame(R = yt, m = NA,
                     dm = NA, space = isspatial, p = NA, chi = NA)
         }
+    } else {
+        newline <- data.frame(R = yt, m = NA,
+                dm = NA, space = isspatial, p = NA, chi = NA)
     }
     return(list(WL.effmass, ylim, newline))
 }
@@ -431,7 +434,7 @@ pointsxyerr <- function (x, y, dx, dy, arlength = 0.02, ...) {
 }
 
 errorpolygon <- function (X, fitresult, col.p, col.band = "gray",
-                        polygon = TRUE, arlength = 0.1, pch = 1, ...) {
+                        polygon = TRUE, arlength = 0.1, pch = 1, mask=rep(T, length(fitresult$x)), ...) {
     # like plot of bootstrapfit, but with rep = TRUE
     prediction <- predict(fitresult, X)
     if (missing(pch)) {
@@ -440,12 +443,12 @@ errorpolygon <- function (X, fitresult, col.p, col.band = "gray",
         p.pch <- pch
     }
     if (fitresult$errormodel == "yerrors") {
-      limits <- pointsyerr(x = fitresult$x, y = fitresult$y,
-            dy = fitresult$dy, col = col.p, pch = p.pch,
+      limits <- pointsyerr(x = fitresult$x[mask], y = fitresult$y[mask],
+            dy = fitresult$dy[mask], col = col.p, pch = p.pch,
             arlength = arlength, ...)
     } else {
-      limits <- pointsxyerr(x = fitresult$x, y = fitresult$y,
-            dy = fitresult$dy, dx = fitresult$dx, col = col.p,
+      limits <- pointsxyerr(x = fitresult$x[mask], y = fitresult$y[mask],
+            dy = fitresult$dy[mask], dx = fitresult$dx[mask], col = col.p,
             pch = p.pch, arlength = arlength, ...)
     }
    ylim <- limits$ylim

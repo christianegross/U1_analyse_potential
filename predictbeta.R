@@ -292,12 +292,12 @@ ylim <- c(max(rzeroone - 2 * opt$fitlim, min(data$r0 - data$dr0, na.rm = T)), mi
 if (size > 1) { xlim <- c(1.45, 1.75)}
 
 # set input anisotropies that were considered, container for results
-if(opt$xifix) xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25, 0.2)
 
 xis <- sort(unique(as.numeric(format(data$xi, digits=6))), decreasing=TRUE)
+if(opt$xifix) xis <- c(1, 0.8, 2/3, 0.5, 0.4, 1/3, 0.25, 0.2)
 if(opt$indexfitcontlim >= length(xis)) stop(paste("indexfitcontlim is too large! Maximum", length(xis)-1))
 
-cols <- c(1, 3, 4, 5, 6, 9, 10, 11, 12, 8)
+cols <- c(1, 3, 4, 5, 6, 9, 10, 11, 12, 8, 21, 22, 23, 24, 25)
 fitsrzero <- list(NULL)
 fitsplaquette <- list(NULL)
 fitsplaquettest <- list(NULL)
@@ -640,7 +640,7 @@ indexlim <- 1
 listnames <- paste0(rep(c("naive", "xirennaive", "plaq", "beta", "p_st"), each=5), seq(1, 5))
 
 for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
-    for (uplimfit in seq(max(length(xis) - 2, lowlimfit + 2), length(xis))) {
+    for (uplimfit in seq(max(length(xis) - 3, lowlimfit + 2), length(xis))) {
         print(paste("lowlim", lowlimfit, "uplim", uplimfit))
         fitspolynomial <- list()
 
