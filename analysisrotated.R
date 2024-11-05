@@ -105,6 +105,8 @@ option_list <- list(
     help = "type of effective mass [default %default]"),
     make_option(c("--extra"), type = "character", default = "",
     help = "extra string for ending of fit analysis [default %default]"),
+    make_option(c("--ncpus"), type = "integer", default = 1,
+    help = "cpus to use for drawing the bootstrapsamples [default %default]"),
 
     make_option(c("--myfunctions"), type = "character",
     default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
@@ -122,6 +124,12 @@ if (TRUE) {
 require("hadron", lib.loc="/hiskp4/gross/masterthesis/analyse/code/")
 # set some constants
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
+if(opt$ncpus>1) {
+    require("boot")
+    options("boot.parallel"="multicore")
+    options("boot.ncpus"=opt$ncpus)
+    print(options())
+}
 githash <- printgitcommit(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip

@@ -113,6 +113,8 @@ option_list <- list(
 
     make_option(c("--extra"), type = "character", default = "",
     help = "extra string for ending of fit analysis [default %default]"),
+    make_option(c("--ncpus"), type = "integer", default = 1,
+    help = "cpus to use for drawing the bootstrapsamples [default %default]"),
     make_option(c("--myfunctions"), type = "character",
     default = "/hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/",
     help = "path to where additional functions are stored,
@@ -128,6 +130,12 @@ if (TRUE) {
 # we have to use a custom installation of R to be able to change the parameter S in uwerr
 require("hadron", lib.loc="/hiskp4/gross/masterthesis/analyse/code/")
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
+if(opt$ncpus>1) {
+    require("boot")
+    options("boot.parallel"="multicore")
+    options("boot.ncpus"=opt$ncpus)
+    print(options())
+}
 githash <- printgitcommit(opt$myfunctions)
 beta <- opt$beta
 skip <- opt$skip
