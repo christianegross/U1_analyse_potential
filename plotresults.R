@@ -36,13 +36,13 @@ errorpolygon <- function (X, fitresult, col.p, col.band = "gray",
         p.pch <- pch
     }
     if (fitresult$errormodel == "yerrors") {
-      plotwitherror(x = fitresult$x, y = fitresult$y,
+      pointsyerr(x = fitresult$x, y = fitresult$y,
             dy = fitresult$dy, col = col.p, pch = p.pch,
-            rep = TRUE, ...)
+            ...)
     } else {
-      plotwitherror(x = fitresult$x, y = fitresult$y,
+      pointsxyerr(x = fitresult$x, y = fitresult$y,
             dy = fitresult$dy, dx = fitresult$dx, col = col.p,
-            pch = p.pch, rep = TRUE, ...)
+            pch = p.pch, ...)
     }
    ylim <- c(fitresult$fn(fitresult$t0, X[1], 0), fitresult$fn(fitresult$t0, X[length(X)], 0))
 
@@ -84,6 +84,7 @@ plotresultwithcircles <- function(file, fitlim = 0.3, betalist, radius = 0.005,
     stopifnot(outputformat == "pdf" || outputformat == "png" || outputformat == "none")
     # set graphical parameters
     cols <- c(1, 3, 4, 5, 6, 9, 10, 8, 7)
+    pchs <- cols
     fontsize <- 2.6
     distance <- 3.5
     linewidth <- 2 * fontsize
@@ -124,8 +125,9 @@ plotresultwithcircles <- function(file, fitlim = 0.3, betalist, radius = 0.005,
     # plot circles
     for (i in seq(2, length(betalist))) {
         errorpolygon(X = seq(0.9*xlim[1], 1.1*xlim[2], length = 1000), fitresult = data[[i]],
-                col.p = cols[i], pch = cols[i], col.band="grey", cex = fontsize, lwd = linewidth)
-        drawcircle(x = betalist[i], y = data[[i]]$y[abs(data[[i]]$x - betalist[i]) < 1e-4][1], radius = radius, aspectratio = aspectratio, col = cols[i], cex = fontsize, lwd = linewidth)
+                col.p = cols[i], pch = pchs[i], col.band="grey", cex = fontsize, lwd = linewidth)
+        drawcircle(x = betalist[i], y = data[[i]]$y[abs(data[[i]]$x - betalist[i]) < 1e-4][1], 
+        radius = radius, aspectratio = aspectratio, col = cols[i], cex = fontsize, lwd = linewidth)
     }
     legend(x = legendpos, legend = c("1.00", "0.80", "0.67", "0.50", "0.40", "0.33", "0.25", "0.20", "0.17"),
             col = cols[1:9], pch = cols[1:9], title = "$\\xi_\\text{in} = $", 
@@ -147,16 +149,16 @@ plotresultwithcircles <- function(file, fitlim = 0.3, betalist, radius = 0.005,
 # plotresultwithcircles(file = "~/Documents/masterthesis/more_measurements/limitaic/contlim/listresultsrenormalizationsidewaysbeta1.700000omit0xiconstllxi1llr00fl0.30aicscaletauintetp0.RData", 
 #     fitlim = 0.3, betalist = c(1.70, 1.6, 1.56, 1.49, 1.47, 1.44, 1.42), outputformat = "none")
 # dev.off()
-try(plotresultwithcircles(file = sprintf("~/Documents/masterthesis/more_measurements/limitaic/contlim/listresultsrenormalizationnormalbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", 0, 0), 
-    fitlim = 0.3, betalist = c(1.65, 1.6, 1.56, 1.49, 1.48, 1.44, 1.42), outputformat = "pdf", 
-    title = "", outputname="normalb1.65omit0etp0", legendpos = "bottomright", tikzsize = 300))
+# try(plotresultwithcircles(file = sprintf("~/Documents/masterthesis/more_measurements/limitaic/contlim/listresultsrenormalizationnormalbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", 0, 0), 
+#     fitlim = 0.3, betalist = c(1.65, 1.6, 1.56, 1.49, 1.48, 1.44, 1.42), outputformat = "pdf", 
+#     title = "", outputname="normalb1.65omit0etp0", legendpos = "bottomright", tikzsize = 300))
        
 if(TRUE){
 stringmode <- FALSE
 fitlim <- 0.3
 if(stringmode) fitlim <- 0.03
 
-if(!stringmode) pdf("plotallpointslist_tauint.pdf", width=mmtoinches(500), height = mmtoinches(500*0.65), title="")
+if(!stringmode) pdf("plotallpointslist_tauint_more_stat_xi0.17.pdf", width=mmtoinches(500), height = mmtoinches(500*0.65), title="")
 if(stringmode) pdf("plotallpointslist_strings.pdf", width=mmtoinches(500), height = mmtoinches(500*0.65), title="")
 # sideways, beta=1.65
 betalist <- list(
@@ -171,7 +173,7 @@ for (etp in c(0, 1)){
         # if(!stringmode) resfile <- sprintf("~/Documents/masterthesis/more_measurements/limitaic/contlim/listresultsrenormalizationsidewaysbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
         if(!stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationsidewaysbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
         if(stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationsidewaysstringbeta1.650000omit%dxiconstllxi1llr00fl0.03aicscaletauintetp%d.RData", omit, etp)
-        # try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("sideways beta 1.65 omit", omit, "total error used", etp)))
+        try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("sideways beta 1.65 omit", omit, "total error used", etp)))
         i <- i+1
         # print(i)
     }
@@ -188,15 +190,15 @@ for (etp in c(0, 1)){
     for (omit in c(0, 1)) {
         if(!stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationnormalbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
         if(stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationnormalstringbeta1.650000omit%dxiconstllxi1llr00fl0.03aicscaletauintetp%d.RData", omit, etp)
-        # try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("normal beta 1.65 omit", omit, "total error used", etp)))
+        try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("normal beta 1.65 omit", omit, "total error used", etp)))
         i <- i+1
         # print(i)
     }
 }
-i <- 1
-print(par("cex"))
-if(!stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationnormalbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
-try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "pdf", title = "", outputname="plotr0ofbetapapernormal1.65o0e0"))
+# i <- 2
+# print(par("cex"))
+# if(!stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationnormalbeta1.650000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
+# try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "pdf", title = "", outputname="plotr0ofbetapapernormal1.65o1e0"))
         
 
 # sideways, beta=1.70
@@ -211,7 +213,7 @@ for (etp in c(0, 1)){
     for (omit in c(0, 1)) {
         if(!stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationsidewaysbeta1.700000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
         if(stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationsidewaysstringbeta1.700000omit%dxiconstllxi1llr00fl0.03aicscaletauintetp%d.RData", omit, etp)
-        # try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("sideways beta 1.70 omit", omit, "total error used", etp)))
+        try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("sideways beta 1.70 omit", omit, "total error used", etp)))
         i <- i+1
         # print(i)
     }
@@ -228,10 +230,12 @@ for (etp in c(0, 1)){
     for (omit in c(0, 1)) {
         if(!stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationnormalbeta1.700000omit%dxiconstllxi1llr00fl0.30aicscaletauintetp%d.RData", omit, etp)
         if(stringmode) resfile <- sprintf("~/mnt_qbig/listresultsrenormalizationnormalstringbeta1.700000omit%dxiconstllxi1llr00fl0.03aicscaletauintetp%d.RData", omit, etp)
-        # try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("normal beta 1.70 omit", omit, "total error used", etp)))
+        try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "none", title = paste("normal beta 1.70 omit", omit, "total error used", etp)))
+        # try(plotresultwithcircles(file = resfile, fitlim = fitlim, betalist = betalist[[i]], outputformat = "pdf", title = "", 
+            # outputname=sprintf("plotr0ofbetapapernormal1.70o%de%d", omit, etp)))
         i <- i+1
         # print(i)
     }
-}
+}  
 dev.off()
 }
