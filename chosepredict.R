@@ -240,7 +240,7 @@ if(opt$xisingle) {
 xirenfit <- result$xisimple
 }
 
-for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
+for (fun in c(fnlin, fnpar, fncub)) {
             if (uplimfit - lowlimfit > i) {
     print(paste("Doing fits of polynomial degree", i))
 

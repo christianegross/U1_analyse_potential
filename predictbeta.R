@@ -655,7 +655,7 @@ for (lowlimfit in seq(opt$indexfitcontlim, length(xis) - 2)) {
 
         maskfitcontlim <- seq(lowlimfit, uplimfit)
         i <- 1
-        for (fun in c(fnlin, fnpar, fncub, fnqar, fnqin)) {
+        for (fun in c(fnlin, fnpar, fncub)) {
             if (uplimfit - lowlimfit > i) {
             print(paste("Doing fits of polynomial degree", i))
             if (opt$naive) {
