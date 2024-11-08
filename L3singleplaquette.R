@@ -57,6 +57,10 @@ if (TRUE) {
             action = "store_true", default = FALSE,
             help = "Is xi different to L/T? [default %default]"
         ),
+        make_option(c("--shapiro"),
+            action = "store_true", default = FALSE,
+            help = "do shapiro test of data (test for normal distribution) [default %default]"
+        ),
         make_option(c("--respath"),
             type = "character", default = "",
             help = "path to where the resultfiles are stored [default %default]"
@@ -96,7 +100,7 @@ if (opt$xidiff) {
 nape <- opt$nape
 alpha <- opt$alpha
 
-endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%f", Nt, Ns, beta, xi)
+endinganalysis <- sprintf("Nt%dNs%dbeta%fxi%fbs%d", Nt, Ns, beta, xi, bootsamples)
 if (opt$smearing) {
     endinganalysis <- sprintf(
         "Nt%dNs%dbeta%fxi%fnape%dalpha%f",
@@ -119,5 +123,26 @@ bootl <- ceiling(4 * uwerr3$tauint^2)
 plaquettecf <- bootstrap.cf(data3,
     boot.R = bootsamples, boot.l = bootl
 )
-res <- list(uwerr = uwerr3, cf = plaquettecf, opt = opt, githash = githash)
+
+names(plaquettecf)
+names(plaquettecf$cf)
+names(plaquettecf$cf.tsboot)
+plaquettecf$cf.tsboot$t[, 1]
+
+if(opt$shapiro) {
+shapiro3 <- shapiro.test(x = plaquettecf$cf.tsboot$t[, 1])
+print(shapiro3)
+
+qqnorm(y = plaquettecf$cf.tsboot$t[, 1], main = paste("L = 3, xi", xi, "beta", beta, format(x=shapiro3$p.value, digits=3), "spatial-spatial bootstrap"))
+qqline(y = plaquettecf$cf.tsboot$t[, 1])
+qqnorm(y = plaquettecf$cf[, 1], main = paste("L = 3, xi", xi, "beta", beta, format(x=shapiro3$p.value, digits=3), "spatial-spatial original"))
+qqline(y = plaquettecf$cf[, 1])
+res <- list(uwerr = uwerr3, cf = plaquettecf, opt = opt, githash = githash, shapiro=shapiro3)
+} else {
+qqnorm(y = plaquettecf$cf.tsboot$t[, 1], main = paste("L = 3, xi", xi, "beta", beta, "spatial-spatial bootstrap"))
+qqline(y = plaquettecf$cf.tsboot$t[, 1])
+qqnorm(y = plaquettecf$cf[, 1], main = paste("L = 3, xi", xi, "beta", beta, "spatial-spatial original"))
+qqline(y = plaquettecf$cf[, 1])
+res <- list(uwerr = uwerr3, cf = plaquettecf, opt = opt, githash = githash, shapiro=FALSE)
+}
 saveRDS(res, sprintf("%s/plaqsingle%s.RData", opt$plotpath, endinganalysis))
