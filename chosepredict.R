@@ -117,6 +117,7 @@ if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 endnamewrite <- endname
 if (opt$xisingle) endnamewrite <- paste0(endname, "xisingle")
+if (opt$xiinter) endnamewrite <- paste0(endname, "xiinter")
 
 
 
@@ -148,7 +149,7 @@ for (i in seq(1, length(xis))){
                         names = c("bsp", "bsxicalc"), filename = filenameres,
                         end = end)
             resultslist[["plaqren"]][, i] <- readin[, 1]
-            resultslist[["xiphys"]][, i] <- readin[, 2]
+            if (!opt$xiinter) resultslist[["xiphys"]][, i] <- readin[, 2]
             # resultslist[["intercepts"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=opt[[betafix]], dx=result$dbeta[i], seed=123456)
             resultslist[["intercepts"]][, i] <- resultslist[["intercepts"]][, i] - result$betasimple[i] + opt[[betafix]]
             resultslist[["plaqrenst"]][, i] <- parametric.bootstrap(boot.R = opt$bootsamples, x=data$puwst[j], dx=data$dpuwst[j], seed=123456)
@@ -157,9 +158,9 @@ for (i in seq(1, length(xis))){
             result$p[i] <- data$p[j]
             result$psimple[i] <- data$p[j]
             result$dp[i] <- data$dp[j]
-            result$xiphys[i] <- data$xicalc[j]
-            result$xisimple[i] <- data$xicalc[j]
-            result$dxiphys[i] <- data$dxicalc[j]
+            if (!opt$xiinter) result$xiphys[i] <- data$xicalc[j]
+            if (!opt$xiinter) result$xisimple[i] <- data$xicalc[j]
+            if (!opt$xiinter) result$dxiphys[i] <- data$dxicalc[j]
             result$betachosen[i] <- TRUE
             result$pst[i] <- data$puwst[j]
             result$pstsimple[i] <- data$puwst[j]
@@ -251,7 +252,8 @@ for (fun in c(fnlin, fnpar, fncub)) {
         x = xirenfit, y = result$psimple, bsamples = bsamplescontlimit,
         mask = maskfitcontlim, na.rm=TRUE, 
                             dy = err[1:length(xirenfit)], 
-                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)], 
+                            maxiter=opt$maxiter
     ))
 
         fitspolynomial[[listnames[i]]] <- fitplaq
@@ -296,7 +298,8 @@ for (fun in c(fnlin, fnpar, fncub)) {
         x = xirenfit, y = result$beta, bsamples = bsamplescontlimitbeta,
         mask = maskfitcontlim, na.rm=TRUE, 
                             dy = err[1:length(xirenfit)], 
-                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)], 
+                            maxiter=opt$maxiter
     ))
     fitspolynomial[[listnames[5 + i]]] <- fitbeta
 
@@ -338,7 +341,8 @@ for (fun in c(fnlin, fnpar, fncub)) {
         x = xirenfit, y = result$pst, bsamples = bsamplespst,
         mask = maskfitcontlim, na.rm=TRUE, 
                             dy = err[1:length(xirenfit)], 
-                            dx = err[(1:length(xirenfit)) + length(xirenfit)]
+                            dx = err[(1:length(xirenfit)) + length(xirenfit)], 
+                            maxiter=opt$maxiter
     ))
 
     try(plot(fitpst,
@@ -403,11 +407,11 @@ for (fun in c(fnlin, fnpar, fncub)) {
 listfits$githash <- githash
 listfits$nalist <- resultslist$nalist
 
-namepol <- sprintf("%s/polynomialbetachosen%scont%d.csv", opt$respath, endnamewrite, opt$indexfitcontlim)
+namepol <- sprintf("%s/polynomialbetachosen%scont%dmaxiter%d.csv", opt$respath, endnamewrite, opt$indexfitcontlim, opt$maxiter)
 write.table(resultspolynomial, namepol, col.names = TRUE, row.names = FALSE)
 print(resultspolynomial)
 
-namesave <- sprintf("%s/listpolynomialrenormalizationbetachosen%scont%d.RData", opt$respath, endnamewrite, opt$indexfitcontlim)
+namesave <- sprintf("%s/listpolynomialrenormalizationbetachosen%scont%dmaxiter%d.RData", opt$respath, endnamewrite, opt$indexfitcontlim, opt$maxiter)
 saveRDS(listfits, file=namesave)
 
 
