@@ -141,6 +141,8 @@ print(xis)
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist[["plaqsmall"]] <- array(NA, dim = c(opt$bootsamples, length(xis)))
 result$psmall <- rep(NA, nrow(result))
+result$rzero <- rep(NA, nrow(result))
+result$drzero <- rep(NA, nrow(result))
 
 # also read in data for spatial-temporal plaquette, later do extrapolation to continuum limit with parametric bootstrap
 # pst is only calculated for type normal
@@ -175,6 +177,8 @@ for (i in seq(1, length(xis))) {
             if (!opt$xiinter) result$xisimple[i] <- data$xicalc[j]
             if (!opt$xiinter) result$dxiphys[i] <- data$dxicalc[j]
             result$betachosen[i] <- TRUE
+            result$rzero[i] <- data$r0[j]
+            result$drzero[i] <- data$dr0[j]
             resultslist[["plaqsmall"]][, i] <- tmpplaqsmall$cf$cf.tsboot$t[, 1]
         }
     }

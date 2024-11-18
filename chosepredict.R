@@ -130,6 +130,8 @@ result <- read.table(file = namesave, header = TRUE)
 
 xis <- result$xiin
 result$betachosen <- rep(FALSE, length(xis))
+result$rzero <- rep(NA, length(xis))
+result$drzero <- rep(NA, length(xis))
 print(xis)
 
 # also read in data for spatial-temporal plaquette, later do extrapolation to continuum limit with parametric bootstrap
@@ -165,6 +167,8 @@ for (i in seq(1, length(xis))){
             result$pst[i] <- data$puwst[j]
             result$pstsimple[i] <- data$puwst[j]
             result$dpst[i] <- data$dpuwst[j]
+            result$rzero[i] <- data$r0[j]
+            result$drzero[i] <- data$dr0[j]
         }
     }
 }
