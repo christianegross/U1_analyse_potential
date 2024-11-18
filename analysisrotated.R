@@ -606,14 +606,14 @@ listmeff <- NA
 # print(cor(bsamplesc[, maskc]))
 
 fit.resultcoarse <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yc, xc,
-                                        bsamplesc, mask = maskc, CovMatrix = NULL)
+                                        bsamplesc, mask = maskc)
 filenamecoarse <- sprintf("%sfitresultcoarsesideways%s.RData", opt$plotpath, endingdofit)
 
 saveRDS(fit.resultcoarse, file = filenamecoarse)
 
 # print(cor(bsamplesf[, maskf]))
 fit.resultfine <- bootstrap.nlsfit(fnpot, c(0.2, 0.2, 0.2), yf, xf,
-                                    bsamplesf, mask = maskf, CovMatrix = NULL)
+                                    bsamplesf, mask = maskf)
 filenamefine <- sprintf("%sfitresultfinesideways%s.RData", opt$plotpath, endingdofit)
 saveRDS(fit.resultfine, file = filenamefine)
 
@@ -753,7 +753,7 @@ title <- sprintf("beta = %f, xi = %f +/-%f, (2+1)D, Ns = %d\n
 # fit and save overall potential
 # print(cor(bsamples))
 fit.resultscaled <- bootstrap.nlsfit(fnpot, c(0.1, 0.13, 0.05),
-                    y, x, bsamples, mask = mask, CovMatrix = NULL)
+                    y, x, bsamples, mask = mask)
 filenamescaled <- sprintf(
             "%sfitresultscaledsideways%s.RData",
             opt$plotpath, endingdofit)
