@@ -134,7 +134,7 @@ if (opt$mode == "all") {
     stop(paste("incorrect mode given, you gave", opt$mode))
 }
 
-res <- list(etp0b1.70 = list(), etp1b1.70 = list(), etp0b1.65 = list(), etp1b1.65 = list(), list(opt = opt, degrees = degrees, uplim = uplim, lowlim = lowlim))
+res <- list(list(opt = opt, degrees = degrees, uplim = uplim, lowlim = lowlim))
 
 restable <- data.frame(
     beta = c(), etp = c(), omit = c(), pot = c(), degree = c(), lowlim = c(), uplim = c(), contlim = c(), dcontlim = c(),

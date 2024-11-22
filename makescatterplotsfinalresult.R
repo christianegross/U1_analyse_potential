@@ -1,82 +1,9 @@
 library("hadron")
 
 source("~/Documents/masterthesis/analyse_potential/myfunctions.R")
+source("~/Documents/masterthesis/analyse_potential/matchwithellipse.R")
 
-if (FALSE) {
-    for (mode in c("all", "xi0.20", "xi0.19", "xi0.18")) {
-        pdf(sprintf("res%s.pdf", mode), title = "")
-        print(mode)
-        plaq <- read.table(sprintf("%s/contlimittypeplaqmode%snotaveraged.csv", "plotstikz", mode))
-        plaqsmall <- read.table(sprintf("%s/contlimittypeplaqsmallmode%snotaveraged.csv", "plotstikz", mode))
-        beta <- read.table(sprintf("%s/contlimittypebetamode%snotaveraged.csv", "plotstikz", mode))
-        plaqaveraged <- read.table(sprintf("%s/contlimittypeplaqmode%saveraged.csv", "plotstikz", mode))
-        plaqsmallaveraged <- read.table(sprintf("%s/contlimittypeplaqsmallmode%saveraged.csv", "plotstikz", mode))
-        betaaveraged <- read.table(sprintf("%s/contlimittypebetamode%saveraged.csv", "plotstikz", mode))
-        number <- length(plaq$beta) / 2
-        # print(dim(plaq))
-        # print(dim(beta))
-        # print(dim(plaqsmall))
-        # print(data.frame(x = beta$contlim[beta$etp==1], y = plaq$contlim[beta$etp==1],
-        #     dx = array(c(beta$dcontlim[beta$etp==0], sqrt(beta$dcontlimspread[beta$etp==1]^2 - beta$dcontlim[beta$etp==0]^2)), dim=c(number, 2)),
-        #     dy = array(c(plaq$dcontlim[plaq$etp==0], sqrt(plaq$dcontlimspread[plaq$etp==1]^2 - plaq$dcontlim[plaq$etp==0]^2)), dim=c(number, 2))))
-        # print(names(beta))
-        # print(names(plaq))
-        # print(range(beta$contlim + beta$dcontlim, beta$contlim - beta$dcontlim))
-        # print(range(plaqsmall$contlim + plaqsmall$dcontlim, plaq$contlim - plaq$dcontlim))
-        # print(beta)
-        # print(plaq)
-        plotwitherror(
-            x = beta$contlim[beta$etp == 1], y = plaq$contlim[beta$etp == 1],
-            dx = array(c(beta$dcontlim[beta$etp == 0], sqrt(beta$dcontlim[beta$etp == 1]^2 - beta$dcontlim[beta$etp == 0]^2)), dim = c(number, 2)),
-            dy = array(c(plaq$dcontlim[plaq$etp == 0], sqrt(plaq$dcontlim[plaq$etp == 1]^2 - plaq$dcontlim[plaq$etp == 0]^2)), dim = c(number, 2)),
-            errsum.method = "quadrature",
-            xlim = range(beta$contlim + beta$dcontlim, beta$contlim - beta$dcontlim),
-            ylim = range(plaqsmall$contlim + plaqsmall$dcontlim, plaq$contlim - plaq$dcontlim),
-            col = ifelse(plaq$beta[beta$etp == 1] == 1.65, 1, 2),
-            xlab = "beta", ylab = "P"
-        )
-        # print(data.frame(x = beta$contlim[beta$etp==1], y = plaqsmall$contlim[beta$etp==1],
-        #     dx = array(c(beta$dcontlim[beta$etp==0], sqrt(beta$dcontlim[beta$etp==1]^2 - beta$dcontlim[beta$etp==0]^2)), dim=c(number, 2)),
-        #     dy = array(c(plaqsmall$dcontlim[plaqsmall$etp==0], sqrt(plaqsmall$dcontlim[plaqsmall$etp==1]^2 - plaqsmall$dcontlim[plaqsmall$etp==0]^2)), dim=c(number, 2))))
-        plotwitherror(
-            x = beta$contlim[beta$etp == 1], y = plaqsmall$contlim[beta$etp == 1],
-            dx = array(c(beta$dcontlim[beta$etp == 0], sqrt(beta$dcontlim[beta$etp == 1]^2 - beta$dcontlim[beta$etp == 0]^2)), dim = c(number, 2)),
-            dy = array(c(plaqsmall$dcontlim[plaqsmall$etp == 0], sqrt(plaqsmall$dcontlim[plaqsmall$etp == 1]^2 - plaqsmall$dcontlim[plaqsmall$etp == 0]^2)), dim = c(number, 2)),
-            errsum.method = "quadrature",
-            col = ifelse(plaqsmall$beta[beta$etp == 1] == 1.65, 1, 2),
-            pch = 2, rep = T
-        )
-        par(lwd = 3)
-        # print(data.frame(
-        #     x = betaaveraged$contlim[betaaveraged$etp==1], y = plaqaveraged$contlim[betaaveraged$etp==1],
-        #     dx = array(c(betaaveraged$dcontlim[betaaveraged$etp==0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp==1]^2 - betaaveraged$dcontlim[betaaveraged$etp==0]^2)), dim=c(2, 2)),
-        #     dy = array(c(plaqaveraged$dcontlim[plaqaveraged$etp==0], sqrt(plaqaveraged$dcontlimspread[plaqaveraged$etp==1]^2 - plaqaveraged$dcontlim[plaqaveraged$etp==0]^2)), dim=c(2, 2))))
-        plotwitherror(
-            x = betaaveraged$contlim[betaaveraged$etp == 1], y = plaqaveraged$contlim[betaaveraged$etp == 1],
-            dx = array(c(betaaveraged$dcontlim[betaaveraged$etp == 0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp == 1]^2 - betaaveraged$dcontlim[betaaveraged$etp == 0]^2)), dim = c(2, 2)),
-            dy = array(c(plaqaveraged$dcontlim[plaqaveraged$etp == 0], sqrt(plaqaveraged$dcontlimspread[plaqaveraged$etp == 1]^2 - plaqaveraged$dcontlim[plaqaveraged$etp == 0]^2)), dim = c(2, 2)),
-            errsum.method = "quadrature",
-            col = ifelse(plaqaveraged$beta[beta$etp == 1] == 1.65, 1, 2),
-            rep = T, lwd = 3, cex = 3
-        )
-        # print(data.frame( x = betaaveraged$contlim[betaaveraged$etp==1], y = plaqsmallaveraged$contlim[betaaveraged$etp==1],
-        #     dx = array(c(betaaveraged$dcontlim[betaaveraged$etp==0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp==1]^2 - betaaveraged$dcontlim[betaaveraged$etp==0]^2)), dim=c(2, 2)),
-        #     dy = array(c(plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp==0], sqrt(plaqsmallaveraged$dcontlimspread[plaqsmallaveraged$etp==1]^2 - plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp==0]^2)), dim=c(2, 2))))
-        plotwitherror(
-            x = betaaveraged$contlim[betaaveraged$etp == 1], y = plaqsmallaveraged$contlim[betaaveraged$etp == 1],
-            dx = array(c(betaaveraged$dcontlim[betaaveraged$etp == 0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp == 1]^2 - betaaveraged$dcontlim[betaaveraged$etp == 0]^2)), dim = c(2, 2)),
-            dy = array(c(plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp == 0], sqrt(plaqsmallaveraged$dcontlimspread[plaqsmallaveraged$etp == 1]^2 - plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp == 0]^2)), dim = c(2, 2)),
-            errsum.method = "quadrature",
-            col = ifelse(plaqsmallaveraged$beta[beta$etp == 1] == 1.65, 1, 2),
-            rep = T, lwd = 3, cex = 3, pch = 2
-        )
-        par(lwd = 1)
-    }
-}
-
-
-
-hamiltoniandata <- read.table("/home/gross/Documents/masterthesis/more_measurements/hamiltonian/interpolate_ham.csv", header=T)
+hamiltoniandata <- read.table("/home/gross/Documents/masterthesis/more_measurements/hamiltonian/interpolate_ham.csv", header = T)
 modes <- c("all", "xi0.20", "xi0.19", "xi0.18")
 types <- c("plaq", "beta", "plaqinter", "betainter", "plaqsmall", "ratio")
 
@@ -112,9 +39,9 @@ cols <- c("black", "red", "blue", "darkgreen")
 pchs <- c(21, 22, 23, 24)
 
 errtypes <- list(
-    AIC = list(mean = "contlimAIC", sd = "dcontlimAIC", spread = "dcontlimspreadAIC"),
-    error = list(mean = "contlimerror", sd = "dcontlimerror", spread = "dcontlimspreaderror"),
-    unweighted = list(mean = "contlimunweighted", sd = "dcontlimunweighted", spread = "dcontlimspreadunweighted")
+    AIC = list(mean = "contlimAIC", sd = "dcontlimAIC", spread = "dcontlimspreadAIC", bs = "bsAIC", bsspread = "bsAICspread"),
+    error = list(mean = "contlimerror", sd = "dcontlimerror", spread = "dcontlimspreaderror", bs = "bserror", bsspread = "bserrorspread"),
+    unweighted = list(mean = "contlimunweighted", sd = "dcontlimunweighted", spread = "dcontlimspreadunweighted", bs = "bsunweighted", bsspread = "bsunweightedspread")
 )
 for (xiinter in c(T, F)) {
     for (err in c("AIC", "error", "unweighted")) {
@@ -133,21 +60,11 @@ for (xiinter in c(T, F)) {
         )
         for (mode_index in seq_along(modes)) {
             mode <- modes[mode_index]
-            print(errtypes[[err]]$mean)
+            # print(errtypes[[err]]$mean)
             # print(names(averagedrestable))
             plaqmask <- averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$mode == mode
             plaqsmallmask <- averagedrestable$type == "plaqsmall" & averagedrestable$xiinter == xiinter & averagedrestable$mode == mode
             betamask <- averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$mode == mode
-            # print(averagedrestable[plaqmask, ])
-            # print(array(c(averagedrestable[, errtypes[[err]]$sd][plaqmask & averagedrestable$etp == 0],
-            #     sqrt(averagedrestable[, errtypes[[err]]$sd][plaqmask & averagedrestable$etp == 1]^2 - averagedrestable[, errtypes[[err]]$sd][plaqmask & averagedrestable$etp == 0]^2)),
-            #     dim=c(2, 2)))
-            # print(data.frame(
-            #     x = averagedrestable[, errtypes[[err]]$mean][plaqmask & averagedrestable$etp == 1],
-            #     y = averagedrestable[, errtypes[[err]]$mean][betamask & averagedrestable$etp == 1],
-            #     dx=array(c(averagedrestable[, errtypes[[err]]$sd][plaqmask & averagedrestable$etp == 0],
-            #     sqrt(averagedrestable[, errtypes[[err]]$sd][plaqmask & averagedrestable$etp == 1]^2 - averagedrestable[, errtypes[[err]]$sd][plaqmask & averagedrestable$etp == 0]^2)),
-            #     dim=c(2, 2))))
             plotwitherror(
                 y = averagedrestable[, errtypes[[err]]$mean][plaqmask & averagedrestable$etp == 1],
                 x = averagedrestable[, errtypes[[err]]$mean][betamask & averagedrestable$etp == 1],
@@ -193,50 +110,90 @@ for (xiinter in c(T, F)) {
                 rep = T, errsum.method = "quadrature"
             )
         }
-        points(x=hamiltoniandata$lowerx, y=hamiltoniandata$lower, type="o")
+        points(x = hamiltoniandata$lowerx, y = hamiltoniandata$lower, type = "o")
         legend("topleft", legend = c(modes, "H"), col = c(cols, "black"), pch = c(pchs, 1))
     }
 }
 
 
-# pdf(sprintf("rescombined_old.pdf"), title = "")
-# modes <- c("all", "xi0.20", "xi0.19", "xi0.18")
-# cols <- c("black", "red", "blue", "darkgreen")
-# pchs <- c(21, 22, 23, 24)
-# for(xiinter in c(T, F)) {
-# plot(NA, xlim=c(1.35, 1.5), ylim=c(0.58, 0.68), xlab="beta", ylab="P", main=paste("xiinter", xiinter))
-# for (index in seq_along(modes)) {
-#     mode <- modes[index]
-#     print(mode)
-#     plaqaveraged <- read.table(sprintf("%s/contlimittypeplaqmode%s%saveraged.csv", "plotstikz", mode, ifelse(xiinter, "xiinter", "")))
-#     plaqsmallaveraged <- read.table(sprintf("%s/contlimittypeplaqsmallmode%s%saveraged.csv", "plotstikz", mode,ifelse(xiinter, "xiinter", "")))
-#     betaaveraged <- read.table(sprintf("%s/contlimittypebetamode%s%saveraged.csv", "plotstikz", mode,ifelse(xiinter, "xiinter", "")))
-#     # print(data.frame(
-#     #     x = betaaveraged$contlim[betaaveraged$etp==1], y = plaqaveraged$contlim[betaaveraged$etp==1],
-#     #     dx = array(c(betaaveraged$dcontlim[betaaveraged$etp==0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp==1]^2 - betaaveraged$dcontlim[betaaveraged$etp==0]^2)), dim=c(2, 2)),
-#     #     dy = array(c(plaqaveraged$dcontlim[plaqaveraged$etp==0], sqrt(plaqaveraged$dcontlimspread[plaqaveraged$etp==1]^2 - plaqaveraged$dcontlim[plaqaveraged$etp==0]^2)), dim=c(2, 2))))
-#     plotwitherror(
-#         x = betaaveraged$contlim[betaaveraged$etp==1], y = plaqaveraged$contlim[betaaveraged$etp==1],
-#         dx = array(c(betaaveraged$dcontlim[betaaveraged$etp==0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp==1]^2 - betaaveraged$dcontlim[betaaveraged$etp==0]^2)), dim=c(2, 2)),
-#         dy = array(c(plaqaveraged$dcontlim[plaqaveraged$etp==0], sqrt(plaqaveraged$dcontlimspread[plaqaveraged$etp==1]^2 - plaqaveraged$dcontlim[plaqaveraged$etp==0]^2)), dim=c(2, 2)),
-#         errsum.method = "quadrature",
-#         col = cols[index], pch=pchs[index], bg=cols[index],
-#         rep = T
-#     )
-#     # print(data.frame( x = betaaveraged$contlim[betaaveraged$etp==1], y = plaqsmallaveraged$contlim[betaaveraged$etp==1],
-#     #     dx = array(c(betaaveraged$dcontlim[betaaveraged$etp==0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp==1]^2 - betaaveraged$dcontlim[betaaveraged$etp==0]^2)), dim=c(2, 2)),
-#     #     dy = array(c(plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp==0], sqrt(plaqsmallaveraged$dcontlimspread[plaqsmallaveraged$etp==1]^2 - plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp==0]^2)), dim=c(2, 2))))
-#     plotwitherror(
-#         x = betaaveraged$contlim[betaaveraged$etp==1], y = plaqsmallaveraged$contlim[betaaveraged$etp==1],
-#         dx = array(c(betaaveraged$dcontlim[betaaveraged$etp==0], sqrt(betaaveraged$dcontlimspread[betaaveraged$etp==1]^2 - betaaveraged$dcontlim[betaaveraged$etp==0]^2)), dim=c(2, 2)),
-#         dy = array(c(plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp==0], sqrt(plaqsmallaveraged$dcontlimspread[plaqsmallaveraged$etp==1]^2 - plaqsmallaveraged$dcontlim[plaqsmallaveraged$etp==0]^2)), dim=c(2, 2)),
-#         errsum.method = "quadrature",
-#         col = cols[index], pch=pchs[index], bg=cols[index],
-#         rep = T
-#     )
-# }
-# legend("topleft", legend=modes, col=cols, pch=pchs)
-# }
+warnings()
 
+
+resbs <- list(beta = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3)))
+data <- data.frame(
+    betacontlim = c(), dbetacontlim = c(),
+    plaq3contlim = c(), dplaq3contlim = c(),
+    plaq16contlim = c(), dplaq16contlim = c(),
+    betaiso = c(), mode = c(), xiinter = c(), spread = c(), errtype = c()
+)
+index <- 1
+bsnames <- c()
+for (err in c("AIC", "error", "unweighted")) {
+    for (mode in modes) {
+        for (xiinter in c(T, F)) {
+            for (etp in c(1, 0)) {
+                data <- rbind(data, data.frame(
+                    betacontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    dbetacontlim = averagedrestable[, errtypes[[err]]$sd][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    plaq3contlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "plaqsmall" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    dplaq3contlim = averagedrestable[, errtypes[[err]]$sd][averagedrestable$mode == mode & averagedrestable$type == "plaqsmall" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    plaq16contlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    dplaq16contlim = averagedrestable[, errtypes[[err]]$sd][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    betaiso = c(1.65, 1.7), mode = mode, xiinter = xiinter, spread = F, errtype = err, etp = etp
+                ))
+                data <- rbind(data, data.frame(
+                    betacontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    dbetacontlim = averagedrestable[, errtypes[[err]]$spread][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    plaq3contlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "plaqsmall" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    dplaq3contlim = averagedrestable[, errtypes[[err]]$spread][averagedrestable$mode == mode & averagedrestable$type == "plaqsmall" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    plaq16contlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    dplaq16contlim = averagedrestable[, errtypes[[err]]$spread][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    betaiso = c(1.65, 1.7), mode = mode, xiinter = xiinter, spread = T, errtype = err, etp = etp
+                ))
+
+
+
+                tmp <- try(readRDS(sprintf("%s/contlimittype%smode%s%saveraged.RData", "plotstikz", "beta", mode, ifelse(xiinter, "xiinter", ""))))
+                resbs$beta[, 4 * index - 3] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]]
+                resbs$beta[, 4 * index - 2] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]
+                resbs$beta[, 4 * index - 1] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]]
+                resbs$beta[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
+                tmp <- try(readRDS(sprintf("%s/contlimittype%smode%s%saveraged.RData", "plotstikz", "plaqsmall", mode, ifelse(xiinter, "xiinter", ""))))
+                resbs$plaq3[, 4 * index - 3] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]]
+                resbs$plaq3[, 4 * index - 2] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]
+                resbs$plaq3[, 4 * index - 1] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]]
+                resbs$plaq3[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
+                bsnames <- append(bsnames, paste0("errmode", err, "mode", mode, "xiinter", xiinter, "etp", etp, "beta", rep(c(1.65, 1.7), 2), "spread", c(F, F, T, T)))
+                index <- index + 1
+            }
+        }
+    }
+}
+
+indices <- data.frame(uprange = 45, lowrange = 35, bsindex = seq_along(data$betaiso), resindex = seq_along(data$betaiso))
+# data
+# indices
+mask <- seq_along(data$betaiso)
+# mask <- 60:96
+indices$resindex[mask] <- seq_along(mask)
+indices$bsindex[mask] <- seq_along(mask)
+resellipse <- getmatchingellipse(data = data[mask, ], bsdata = resbs[, mask], hamres = hamiltoniandata, indices = indices[mask, ], verbose = F)
+resellipse$mode <- data$mode[mask]
+resellipse$xiinter <- data$xiinter[mask]
+resellipse$spread <- data$spread[mask]
+resellipse$errtype <- data$errtype[mask]
+resellipse$etp <- data$etp[mask]
+resellipse
+# bsnames
+saveRDS(list(data = data, bs = resbs, resellipse = resellipse, bsnames = bsnames), file = "plotstikz/ellipseparameters.RData")
+
+data <- data[mask, ]
+
+listellipse <- split(cbind(resellipse, data), f = seq(nrow(resellipse)))
+pdf("plotellipse_prettypicture.pdf")
+plot(NA, xlim = c(1.35, 1.52), ylim = c(0.6, 0.67))
+plotlims <- lapply(listellipse, FUN = function(x) draw_ellipse_general(meanx = x$betacontlim, meany = x$plaq3contlim, radx = x$dbetacontlim, rady = x$dplaq3contlim, phi = x$theta, nstd = x$devstd, rep = T, cex = 0.01, points = 5000))
+# plotwitherror(x = data$betacontlim, y = data$plaq3contlim, dy = data$dplaq3contlim, dx = data$dbetacontlim, col = "blue", rep = T)
+points(x = hamiltoniandata$lowerx, y = hamiltoniandata$lower, type = "o", col = "red")
 
 warnings()
