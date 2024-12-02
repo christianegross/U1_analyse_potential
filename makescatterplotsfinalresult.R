@@ -119,7 +119,7 @@ for (xiinter in c(T, F)) {
 warnings()
 
 
-resbs <- list(beta = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3)))
+resbs <- list(beta = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3)))
 data <- data.frame(
     betacontlim = c(), dbetacontlim = c(),
     plaq3contlim = c(), dplaq3contlim = c(),
@@ -163,6 +163,11 @@ for (err in c("AIC", "error", "unweighted")) {
                 resbs$plaq3[, 4 * index - 2] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]
                 resbs$plaq3[, 4 * index - 1] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]]
                 resbs$plaq3[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
+                tmp <- try(readRDS(sprintf("%s/contlimittype%smode%s%saveraged.RData", "plotstikz", "plaq", mode, ifelse(xiinter, "xiinter", ""))))
+                resbs$plaq16[, 4 * index - 3] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]]
+                resbs$plaq16[, 4 * index - 2] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]
+                resbs$plaq16[, 4 * index - 1] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]]
+                resbs$plaq16[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
                 bsnames <- append(bsnames, paste0("errmode", err, "mode", mode, "xiinter", xiinter, "etp", etp, "beta", rep(c(1.65, 1.7), 2), "spread", c(F, F, T, T)))
                 index <- index + 1
             }
@@ -188,6 +193,9 @@ resellipsemean
 data$medianplaq3 <- apply(resbs$plaq3, MARGIN = 2, FUN = median, na.rm = T)
 data$q16plaq3 <- data$medianplaq3 - apply(resbs$plaq3, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
 data$q84plaq3 <- apply(resbs$plaq3, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianplaq3
+data$medianplaq16 <- apply(resbs$plaq16, MARGIN = 2, FUN = median, na.rm = T)
+data$q16plaq16 <- data$medianplaq16 - apply(resbs$plaq16, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
+data$q84plaq16 <- apply(resbs$plaq16, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianplaq16
 data$medianbeta <- apply(resbs$beta, MARGIN = 2, FUN = median, na.rm = T)
 data$q16beta <- data$medianbeta - apply(resbs$beta, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
 data$q84beta <- apply(resbs$beta, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianbeta
