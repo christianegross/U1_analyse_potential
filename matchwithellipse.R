@@ -65,6 +65,7 @@ findrootellipse <- function(m, n, r, xc, yc, theta = pi / 4, tol = 1e-12, max = 
 ## std: how large the ellipse should be in terms of standard deviations
 ## choose whether error bars, rectanfle around ellipse should be drawn
 ## shifted by 45°
+## Draw confidence ellipse based on https://stackoverflow.com/a/41821484 and  https://matplotlib.org/stable/gallery/statistics/confidence_ellipse.html, which is based on https://carstenschelp.github.io/2018/09/14/Plot_Confidence_Ellipse_001.html.
 
 draw_ellipse <- function(x, y,
                          meanx = mean(x), meany = mean(y),
@@ -169,58 +170,67 @@ getmatchingbeta <- function(finalresult, interpolation) {
 # bsdata: beta, plaq3
 # hamres: a, b, lowerx, upperx, with a and b giving the interpolation a*x+b in that interval
 # indices: uprange, lowrange, bsindex, resindex
-getmatchingellipse <- function(data, bsdata, hamres, indices, verbose=F) {
-  res <- data.frame(betaiso = c(), devstd = c(), root = c(), x0 = c(), y0 = c(), segment = c(), radx = c(), rady = c(), theta = c(), cor = c(), index=c())
+
+# Ellipse angle taken from https://demonstrations.wolfram.com/EllipseRepresentingTheConfidenceRegionOfACovarianceMatrix/, https://web2.ba.infn.it/~pompili//teaching/data_analysis_lab/Glen_Cowan_Statistical_Data_Analysis_1998.pdf.
+getmatchingellipse <- function(data, bsdata, hamres, indices, verbose = F) {
+  res <- data.frame(betaiso = c(), devstd = c(), root = c(), x0 = c(), y0 = c(), segment = c(), radx = c(), rady = c(), theta = c(), cor = c(), index = c())
 
   for (i in seq_along(indices$uprange)) {
-    if(verbose) print(data[i, ])
-    
-  resbs$beta[, indices$bsindex[i]][is.na(resbs$plaq3[, indices$bsindex[i]])] <- NA
-  resbs$plaq3[, indices$bsindex[i]][is.na(resbs$beta[, indices$bsindex[i]])] <- NA
-  ## calculate covariance matrix to set ellipse parameters
-  cor <- cor(
-    x = na.omit(resbs$beta[, indices$bsindex[i]]),
-    y = na.omit(resbs$plaq3[, indices$bsindex[i]])
-  )
-  xrad <- data$dbetacontlim[indices$resindex[i]]
-  yrad <- data$dplaq3contlim[indices$resindex[i]]
-  theta <- 0.5 * atan(2 * cor * xrad * yrad / (xrad^2 - yrad^2))
-  ## calculate minimum distance for several line segmants, but only use the line segment if the touching point is on it.
-  if (xrad < yrad) theta <- theta - pi / 2
-  for (j in seq(indices$lowrange[i], indices$uprange[i])) {
-    root <- findrootellipse(
-      m = hamres$a[j], n = hamres$b[j],
-      r = xrad / yrad,
-      xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
-      theta = theta, tol = 1e-6
+    if (verbose) print(data[i, ])
+
+    resbs$beta[, indices$bsindex[i]][is.na(resbs$plaq3[, indices$bsindex[i]])] <- NA
+    resbs$plaq3[, indices$bsindex[i]][is.na(resbs$beta[, indices$bsindex[i]])] <- NA
+    ## calculate covariance matrix to set ellipse parameters
+    cor <- cor(
+      x = na.omit(resbs$beta[, indices$bsindex[i]]),
+      y = na.omit(resbs$plaq3[, indices$bsindex[i]])
     )
-    dat <- tangent_general(
-      m = hamres$a[j], n = hamres$b[j],
-      r = xrad / yrad,
-      xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
-      a = root, theta = theta
-    )
-    if (dat$x0 > hamres$lowerx[j] && dat$x0 < hamres$upperx[j]) {
-      newline <- data.frame(
-        betaiso = data$betaiso[indices$resindex[i]], devstd = root / xrad, root = root,
-        x0 = dat$x0, y0 = dat$y0, segment = j, radx = dat$radx, rady = dat$rady, theta = theta, cor = cor, index=i
+    xrad <- data$dbetacontlim[indices$resindex[i]]
+    yrad <- data$dplaq3contlim[indices$resindex[i]]
+    theta <- 0.5 * atan(2 * cor * xrad * yrad / (xrad^2 - yrad^2))
+    ## calculate minimum distance for several line segmants, but only use the line segment if the touching point is on it.
+    if (xrad < yrad) theta <- theta - pi / 2
+    for (j in seq(indices$lowrange[i], indices$uprange[i])) {
+      root <- findrootellipse(
+        m = hamres$a[j], n = hamres$b[j],
+        r = xrad / yrad,
+        xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
+        theta = theta, tol = 1e-6
       )
-      if(verbose) print(i)
-      if(verbose) print(newline)
+      dat <- tangent_general(
+        m = hamres$a[j], n = hamres$b[j],
+        r = xrad / yrad,
+        xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
+        a = root, theta = theta
+      )
+      if (dat$x0 > hamres$lowerx[j] && dat$x0 < hamres$upperx[j]) {
+        newline <- data.frame(
+          betaiso = data$betaiso[indices$resindex[i]], devstd = root / xrad, root = root,
+          x0 = dat$x0, y0 = dat$y0, segment = j, radx = dat$radx, rady = dat$rady, theta = theta, cor = cor, index = i
+        )
+        if (verbose) print(i)
+        if (verbose) print(newline)
+        res <- rbind(res, newline)
+      }
+    }
+    # check correlation
+    # check relation between radii and area/sigma
+    # If there is a match with two line segments, choose the one with the smaller distance
+    if (length(res$index[res$index == i]) > 1) {
+      minindex <- which.min(res$devstd[res$index == i])
+      doubleentries <- rep(T, length(res$index[res$index == i]))
+      doubleentries[minindex] <- F
+      if (verbose) print(paste("double results, keep index", minindex))
+      res[res$index == i, ][doubleentries, ] <- NA
+      res <- na.omit(res)
+    } else if (length(res$index[res$index == i]) == 0) {
+      print(paste("no result found for index", i))
+      newline <- data.frame(
+        betaiso = data$betaiso[indices$resindex[i]], devstd = "NA", root = "NA",
+        x0 = "NA", y0 = "NA", segment = "NA", radx = "NA", rady = "NA", theta = theta, cor = cor, index = i
+      )
       res <- rbind(res, newline)
     }
-  }
-  # If there is a match with two line segments, choose the one with the smaller distance
-  if (length(res$index[res$index==i]) > 1) {
-    minindex <- which.min(res$devstd[res$index==i])
-    doubleentries <- rep(T, length(res$index[res$index==i]))
-    doubleentries[minindex] <- F
-    if(verbose) print(paste("double results, keep index", minindex))
-    res[res$index==i, ][doubleentries, ] <- NA
-    res <- na.omit(res)
-  } else if (length(res$index[res$index==i]) == 0){
-    print(paste("no result found for index", i))
-  }
   }
   na.omit(res)
 }

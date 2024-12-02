@@ -119,13 +119,13 @@ if (opt$mode == "all") {
     uplim <- c(10, 8, 8, 8, 9, 9, 9, 10, 10, 10)
     lowlim <- c(1, 5, 4, 3, 6, 5, 4, 7, 6, 5)
 } else if (opt$mode == "xi0.20") {
-    degrees <- c(1, 2)
-    uplim <- c(8, 8)
-    lowlim <- c(4, 3)
+    degrees <- c(1, 1, 2)
+    uplim <- c(8, 8, 8)
+    lowlim <- c(5, 4, 3)
 } else if (opt$mode == "xi0.19") {
-    degrees <- c(1, 2)
-    uplim <- c(9, 9)
-    lowlim <- c(6, 4)
+    degrees <- c(1, 1, 2)
+    uplim <- c(9, 9, 9)
+    lowlim <- c(6, 5, 4)
 } else if (opt$mode == "xi0.18") {
     degrees <- c(1, 1, 2)
     uplim <- c(10, 10, 10)
@@ -154,7 +154,7 @@ if (file.exists(filename)) indexNAlist <- readRDS(sprintf("%s/nalistmode%s%s.RDa
 localnalist <- c()
 problemnames <- c()
 
-for (beta in c(1.70, 1.65)) {
+for (beta in c(1.65, 1.70)) {
     for (etp in c(0, 1)) {
         myweight <- c()
         myerrorweight <- c()
@@ -233,7 +233,8 @@ for (beta in c(1.70, 1.65)) {
 
         # unweighted
         meanunweighted <- sum(mymean) / length(mymean[mymean != 0])
-        bsunweighted <- apply(bs, MARGIN = 1, FUN = mean)
+        weightunweighted <- ifelse(myweight==0, 0, 1/length(mymean[mymean != 0]))
+        bsunweighted <- apply(MARGIN = 1, FUN = sum, X = sweep(x = bs, MARGIN = 2, STATS = weightunweighted, FUN = "*"))
         sdunweighted <- sd(bsunweighted, na.rm = T)
         sdunweightedspread <- sqrt(sdunweighted^2 + sum((mymean - meanunweighted)^2 * ifelse(myweight == 0, 0, 1)) / length(mymean[mymean != 0]))
 
@@ -322,6 +323,13 @@ for (beta in c(1.70, 1.65)) {
             x = "top", pch = c(1, NA, NA, NA, NA, NA, NA), col = c(1, 1, 1, 1, 2, "blue", "darkgreen"), lty = c(NA, 1, 2, 3, 1, 1, 1),
             legend = c("data", "mean", "sd", "sd + spread", "AIC", "error", "unweighted"), ncol = 4
         )
+    }
+}
+
+for(name in c("etp1b1.65", "etp1b1.7", "etp0b1.65", "etp0b1.7")) {
+    for(sample in c("bsAIC", "bsAICspread", "bserror", "bserrorspread", "bsunweighted", "bsunweightedspread")) {
+        qqnorm(y=res[[name]][[sample]], main=paste(name, sample))
+        qqline(y=res[[name]][[sample]])
     }
 }
 

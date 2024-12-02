@@ -174,22 +174,47 @@ indices <- data.frame(uprange = 45, lowrange = 35, bsindex = seq_along(data$beta
 # data
 # indices
 mask <- seq_along(data$betaiso)
-# mask <- 60:96
+# mask <- 100:125
 indices$resindex[mask] <- seq_along(mask)
 indices$bsindex[mask] <- seq_along(mask)
-resellipse <- getmatchingellipse(data = data[mask, ], bsdata = resbs[, mask], hamres = hamiltoniandata, indices = indices[mask, ], verbose = F)
-resellipse$mode <- data$mode[mask]
-resellipse$xiinter <- data$xiinter[mask]
-resellipse$spread <- data$spread[mask]
-resellipse$errtype <- data$errtype[mask]
-resellipse$etp <- data$etp[mask]
-resellipse
+resellipsemean <- getmatchingellipse(data = data[mask, ], bsdata = resbs[, mask], hamres = hamiltoniandata, indices = indices[mask, ], verbose = F)
+resellipsemean$mode <- data$mode[mask]
+resellipsemean$xiinter <- data$xiinter[mask]
+resellipsemean$spread <- data$spread[mask]
+resellipsemean$errtype <- data$errtype[mask]
+resellipsemean$etp <- data$etp[mask]
+resellipsemean
+
+data$medianplaq3 <- apply(resbs$plaq3, MARGIN = 2, FUN = median, na.rm = T)
+data$q16plaq3 <- data$medianplaq3 - apply(resbs$plaq3, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
+data$q84plaq3 <- apply(resbs$plaq3, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianplaq3
+data$medianbeta <- apply(resbs$beta, MARGIN = 2, FUN = median, na.rm = T)
+data$q16beta <- data$medianbeta - apply(resbs$beta, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
+data$q84beta <- apply(resbs$beta, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianbeta
+data$cor <- diag(cor(resbs$plaq3, resbs$beta, use = "na.or.complete"))
 # bsnames
-saveRDS(list(data = data, bs = resbs, resellipse = resellipse, bsnames = bsnames), file = "plotstikz/ellipseparameters.RData")
+head(data)
+
+## repeat the ellipse parameters with median and quantiles
+
+
+resellipsemedian <- getmatchingellipse(
+    data = data.frame(betacontlim=data$medianbeta, dbetacontlim=data$q16beta, plaq3contlim=data$medianplaq3, dplaq3contlim=data$q84plaq3, betaiso=data$betaiso)[mask, ],
+    bsdata = resbs[, mask], hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
+)
+dim(resellipsemedian)
+resellipsemedian$mode <- data$mode[mask]
+resellipsemedian$xiinter <- data$xiinter[mask]
+resellipsemedian$spread <- data$spread[mask]
+resellipsemedian$errtype <- data$errtype[mask]
+resellipsemedian$etp <- data$etp[mask]
+resellipsemedian
+
+saveRDS(list(data = data, bs = resbs, resellipsemean = resellipsemean, resellipsemedian = resellipsemedian, bsnames = bsnames), file = "plotstikz/ellipseparameters.RData")
 
 data <- data[mask, ]
 
-listellipse <- split(cbind(resellipse, data), f = seq(nrow(resellipse)))
+listellipse <- split(cbind(resellipsemean, data), f = seq(nrow(resellipsemean)))
 pdf("plotellipse_prettypicture.pdf")
 plot(NA, xlim = c(1.35, 1.52), ylim = c(0.6, 0.67))
 plotlims <- lapply(listellipse, FUN = function(x) draw_ellipse_general(meanx = x$betacontlim, meany = x$plaq3contlim, radx = x$dbetacontlim, rady = x$dplaq3contlim, phi = x$theta, nstd = x$devstd, rep = T, cex = 0.01, points = 5000))
