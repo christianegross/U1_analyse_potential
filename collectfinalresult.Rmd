@@ -1,0 +1,185 @@
+---
+title: "Get continuum limit Lagrangian Matching"
+author: "Christiane"
+date: "2024-11-22"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE)
+library("hadron")
+source("~/Documents/masterthesis/analyse_potential/myfunctions.R")
+source("~/Documents/masterthesis/analyse_potential/matchwithellipse.R")
+
+hamiltoniandata <- read.table("/home/gross/Documents/masterthesis/more_measurements/hamiltonian/interpolate_ham.csv", header = T)
+lagrangiandatacollection <- readRDS("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlim/plotstikz/ellipseparameters.RData")
+
+ldata <- lagrangiandatacollection$data
+
+resellipsemean <- lagrangiandatacollection$resellipsemean
+listellipsemean <- split(cbind(resellipsemean, ldata), f = seq(nrow(resellipsemean)))
+
+resellipsemedian <- lagrangiandatacollection$resellipsemedian
+listellipsemedian <- split(cbind(resellipsemedian, ldata), f = seq(nrow(resellipsemedian)))
+
+names(listellipsemedian[[1]])
+
+
+```
+
+```{r two}
+
+summarisedata <- function(ldata, errtype, xiinter, spread, listellipse=listellipsemean, meanormedian="mean", resellipse=resellipsemean, ...) {
+  stopifnot(meanormedian=="mean" || meanormedian=="median")
+  if(meanormedian=="mean") {
+    errbeta <- "dbetacontlim"
+    errplaq16 <- "dplaq16contlim"
+    errplaq3 <- "dplaq3contlim"
+  } else {
+    errbeta <- "q84beta"
+    errplaq16 <- "q84plaq16"
+    errplaq3 <- "q84plaq3"
+  }
+  mask <- ldata$errtype==errtype & ldata$xiinter==xiinter
+  
+  plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
+  modes <- c("xi0.18", "xi0.19", "xi0.20")
+  cols <- c("red", "blue", "darkgreen")
+  pchs <- c(21, 22, 23)
+  shortres <- data.frame(betamatch1.65=c(), dev1.65=c(), betamatch1.7=c(), dev1.7=c())
+  
+  for(index in seq_along(modes)) {
+    mode=modes[index]
+    # print(ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ])
+    dx <- array(c(ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta], 
+                  sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]^2)), 
+                dim=c(2, 2))
+    dy <- array(c(ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3], 
+                  sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)), 
+                dim=c(2, 2))
+    if(meanormedian=="mean") {
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$betacontlim, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$plaq3contlim, 
+                    dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], bg=cols[index], pch=pchs[index], ...)
+      plotlims <- lapply(listellipse[which(mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread)], 
+                         FUN = function(x) draw_ellipse_general(meanx = x$betacontlim, meany = x$plaq3contlim, 
+                                                                radx = x$dbetacontlim, rady = x$dplaq3contlim, 
+                                                                phi = x$theta, nstd = x$devstd, 
+                                                                rep = T, cex = 0.01, points = 5000, col=cols[index]))
+    } else {
+      mdy <- array(c(ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3, 
+                     sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3^2)), 
+                   dim=c(2, 2))
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$medianbeta, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$medianplaq3, 
+                    dx=dx, dy=dy, mdy=mdy, errsum.method = "quadrature", rep=T, col=cols[index], bg=cols[index], pch=pchs[index], ...)
+      # print(listellipse[which(mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread)])
+      # lapply(listellipse[which(mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread)], 
+      #        FUN = function(x) print(data.frame(meanx = x$medianbeta, meany = x$medianplaq3, 
+      #                                           radx = x$q16beta, rady = x$q84plaq3, 
+      #                                           phi = x$theta, nstd = x$devstd)))
+      plotlims <- lapply(listellipse[which(mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread)], 
+                         FUN = function(x) draw_ellipse_general(meanx = x$medianbeta, meany = x$medianplaq3, 
+                                                                radx = x$q16beta, rady = x$q84plaq3, 
+                                                                phi = x$theta, nstd = as.numeric(x$devstd), 
+                                                                rep = T, cex = 0.01, points = 5000, col=cols[index]))
+    }
+    
+    
+    dy <- array(c(ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16], 
+                  sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)), 
+                dim=c(2, 2))
+    if(meanormedian=="mean") {
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$betacontlim, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$plaq16contlim, 
+                    dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], pch=pchs[index], ...)
+    } else {
+      mdy <- array(c(ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16, 
+                     sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16^2)), 
+                   dim=c(2, 2))
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$medianbeta, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==spread, ]$medianplaq16, 
+                    dx=dx, dy=dy, mdy=mdy, errsum.method = "quadrature", rep=T, col=cols[index], pch=pchs[index], ...)
+    }
+    
+    shortres <- rbind(shortres, data.frame(betamatch1.7=tex.catwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$betaiso==1.7 & ldata$spread==spread, ]$betacontlim, 
+                                                                         dx=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$betaiso==1.7 & ldata$spread==spread, ]$dbetacontlim,
+                                                                         digits=2, with.dollar = F, with.cdot = F), 
+                                           dev1.7=as.numeric(resellipse[mask & ldata$mode==mode & ldata$etp==1 & ldata$betaiso==1.7 & ldata$spread==spread, ]$devstd),
+                                           betamatch1.65=tex.catwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$betaiso==1.65 & ldata$spread==spread, ]$betacontlim, 
+                                                                          dx=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$betaiso==1.65 & ldata$spread==spread, ]$dbetacontlim,
+                                                                          digits=2, with.dollar = F, with.cdot = F), 
+                                           dev1.65=as.numeric(resellipse[mask & ldata$mode==mode & ldata$etp==1 & ldata$betaiso==1.65 & ldata$spread==spread, ]$devstd)))
+  }
+  
+  plotwitherror(x=hamiltoniandata$lowerx, y=hamiltoniandata$lower, col="black", type="o", pch=24, bg="black", rep=T)
+  legend(x="bottomright", legend=c("H", modes), col=c("black", cols), pch=c(24, pchs), ncol=2, pt.bg=c("black", cols))
+  rownames(shortres) <- modes
+  shortres[, c("dev1.7", "dev1.65")] <- shortres[, c("dev1.7", "dev1.65")] / sqrt(2.28)
+  knitr::kable(shortres)
+}
+
+# hamresults: a, b, lowerx, upperx
+interpolatehamiltonian <- function(x, hamresults) {
+  rightsegment <- x > hamresults$lowerx & x < hamresults$upperx
+  return(hamresults$a[rightsegment] * x + hamresults$b[rightsegment])
+}
+```
+
+
+We first check if the mean is a reliable quantity by plotting the mean $\pm$ standard deviation against the median with the 16% and 84% quantiles.
+
+```{r}
+
+for(beta in c(1.65, 1.7)) {
+  plotwitherror(x=1:96, y=ldata$betacontlim[ldata$betaiso==beta], dy=ldata$dbetacontlim[ldata$betaiso==beta], col="black", pch=21, bg="black", 
+                ylim=range(ldata$betacontlim[ldata$betaiso==beta] + ldata$dbetacontlim[ldata$betaiso==beta], 
+                           ldata$betacontlim[ldata$betaiso==beta] - ldata$dbetacontlim[ldata$betaiso==beta], 
+                           ldata$medianbeta[ldata$betaiso==beta]), 
+                xlab="index", ylab="beta", xlim=c(1, 96), main=paste("beta", beta, "cont limit beta"))
+  plotwitherror(x=1:96+0.2, y=ldata$medianbeta[ldata$betaiso==beta], dy=ldata$q84beta[ldata$betaiso==beta]-ldata$medianbeta[ldata$betaiso==beta], mdy=ldata$medianbeta[ldata$betaiso==beta]-ldata$q16beta[ldata$betaiso==beta], col="red", pch=22, bg="red", rep=T)
+  abline(v=c(32, 64)+0.5)
+  legend(x="bottomleft", legend="AIC", bty = "n")
+  legend(x="bottom", legend="error", bty = "n")
+  legend(x="bottomright", legend="unweighted", bty = "n")
+  
+  plotwitherror(x=1:96, y=ldata$plaq3contlim[ldata$betaiso==beta], dy=ldata$dplaq3contlim[ldata$betaiso==beta], col="black", pch=21, bg="black", 
+                ylim=range(ldata$plaq3contlim[ldata$betaiso==beta] + ldata$dplaq3contlim[ldata$betaiso==beta], 
+                           ldata$plaq3contlim[ldata$betaiso==beta] - ldata$dplaq3contlim[ldata$betaiso==beta], 
+                           ldata$medianplaq3[ldata$betaiso==beta]), 
+                xlab="index", ylab="plaq3", xlim=c(1, 96), main=paste("beta", beta, "cont limit plaq3"))
+  plotwitherror(x=1:96+0.2, y=ldata$medianplaq3[ldata$betaiso==beta], dy=ldata$q84plaq3[ldata$betaiso==beta]-ldata$medianplaq3[ldata$betaiso==beta], mdy=ldata$medianplaq3[ldata$betaiso==beta]-ldata$q16plaq3[ldata$betaiso==beta], col="red", pch=22, bg="red", rep=T)
+  abline(v=c(32, 64)+0.5)
+  legend(x="bottomleft", legend="AIC", bty = "n")
+  legend(x="bottom", legend="error", bty = "n")
+  legend(x="bottomright", legend="unweighted", bty = "n")
+}
+```
+
+
+We see that the standard deviation is not reliable in some cases, so we take the unweighted average over all different continuum limit fits to be the final result.
+
+we use the xi that was determined from the single matching ensembles, and we do not consider the spread of the different fits of the continuum limit as an additional systematic error.
+
+We can display the results, matching beta and deviations from the Hamiltonian result for these choices.
+The data at L=3 are shown by filled symbols, the data at L=16 by empty symbols.
+
+
+```{r three}
+errtype="unweighted"
+
+summarisedata(ldata=ldata, errtype=errtype, xiinter=F, spread=F, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", main="mean")
+summarisedata(ldata=ldata, errtype=errtype, xiinter=F, spread=F, listellipse = listellipsemedian, resellipse=resellipsemedian, meanormedian="median", main="median")
+# ham <- sapply(X=c(1.3935, 1.426), FUN = function(x) interpolatehamiltonian(x, hamresults=hamiltoniandata))
+# lag <- ldata[ldata$xiinter==F & ldata$mode==mode & ldata$etp==1 & ldata$spread==F & ldata$errtype==errtype, ]$plaq3contlim
+# ham
+# lag
+# (ham-lag)/(ham)
+```
+
+The error of the matching $\beta$ is in the order of $1\%$, the deviation to the Hamiltonian curve is in the order of $3\%$. 
+The level of deviation for the median is calculated with the difference between median and the 84%-percent for the plaquette (upper value) and the difference to the 16%-quantile for beta (left value).
+The median beta is higher than the mean beta, this leads to an increase in the level of deviation.
+The level of deviation now includes the conversion factor from the 1D one-sigma interval to the 2D one-sigma interval, and is chosen such that $68%$ of points are within the ellipse with deviation one sigma.
