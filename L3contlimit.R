@@ -141,6 +141,7 @@ print(xis)
 resultslist <- readRDS(sprintf("%s/listresultsrenormalization%s.RData", as.character(opt$respath), endname))
 resultslist[["plaqsmall"]] <- array(NA, dim = c(opt$bootsamples, length(xis)))
 result$psmall <- rep(NA, nrow(result))
+result$dpsmall <- rep(NA, nrow(result))
 result$rzero <- rep(NA, nrow(result))
 result$drzero <- rep(NA, nrow(result))
 
