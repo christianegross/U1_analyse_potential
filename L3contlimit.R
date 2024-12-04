@@ -171,6 +171,7 @@ for (i in seq(1, length(xis))) {
             result$betasimple[i] <- opt[[betafix]]
             result$p[i] <- data$p[j]
             result$psmall[i] <- tmpplaqsmall$uwerr$value
+            result$dpsmall[i] <- tmpplaqsmall$uwerr$dvalue
             result$psimple[i] <- data$p[j]
             result$dp[i] <- data$dp[j]
             if (!opt$xiinter) result$xiphys[i] <- data$xicalc[j]
