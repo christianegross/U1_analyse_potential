@@ -7,7 +7,7 @@ output:
   html_document: default
 ---
 
-```{r setup}
+```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library("hadron")
 source("~/Documents/masterthesis/analyse_potential/myfunctions.R")
@@ -24,13 +24,22 @@ listellipsemean <- split(cbind(resellipsemean, ldata), f = seq(nrow(resellipseme
 resellipsemedian <- lagrangiandatacollection$resellipsemedian
 listellipsemedian <- split(cbind(resellipsemedian, ldata), f = seq(nrow(resellipsemedian)))
 
+resellipsemedianwithsd <- lagrangiandatacollection$resellipsemedianwithsd
+listellipsemedianwithsd <- split(cbind(resellipsemedianwithsd, ldata), f = seq(nrow(resellipsemedianwithsd)))
+
 resellipsemeanratio <- lagrangiandatacollection$resellipseratio
 listellipsemeanratio <- split(cbind(resellipsemeanratio, ldata), f = seq(nrow(resellipsemean)))
 
 resellipsemedianratio <- lagrangiandatacollection$resellipseratiomedian
 listellipsemedianratio <- split(cbind(resellipsemedianratio, ldata), f = seq(nrow(resellipsemedian)))
 
-names(listellipsemedian[[1]])
+resellipsemedianratiowithsd <- lagrangiandatacollection$resellipseratiomedianwithsd
+listellipsemedianratiowithsd <- split(cbind(resellipsemedianratiowithsd, ldata), f = seq(nrow(resellipsemedianwithsd)))
+
+# names(listellipsemedian[[1]])
+# 
+# resellipsemean[resellipsemean$mode=="xi0.18" & resellipsemean$errtype=="unweighted" & resellipsemean$etp==1 & resellipsemean$spread==T, ]
+# resellipsemean[resellipsemean$mode=="xi0.18wo0.19" & resellipsemean$errtype=="unweighted" & resellipsemean$etp==1 & resellipsemean$spread==T, ]
 
 
 ```
@@ -47,12 +56,13 @@ $0=pnorm(n)-pnorm(-n) - (1-\exp(-0.5*\text{devstd}^2))$
 
 From the probability we can find the confidence level/level of deviation with root-finding.
 
+##### summary
 
 ```{r summarydirect}
 fninterval <- function(x, devstd) (pnorm(x)-pnorm(-x) - (1-exp(-0.5*devstd^2)))
-summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, meanormedian="mean", resellipse=resellipsemean, plotellipse=T, ...) {
-  stopifnot(meanormedian=="mean" || meanormedian=="median")
-  if(meanormedian=="mean") {
+summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, meanormedian="mean", resellipse=resellipsemean, plotellipse=T, rep=F, ...) {
+  stopifnot(meanormedian=="mean" || meanormedian=="median" || meanormedian=="medianwithsd")
+  if(meanormedian=="mean" || meanormedian=="medianwithsd") {
     errbeta <- "dbetacontlim"
     errplaq16 <- "dplaq16contlim"
     errplaq3 <- "dplaq3contlim"
@@ -72,10 +82,10 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
   mask <- ldata$errtype==errtype & ldata$xiinter==xiinter
   maskresellipse <- resellipse$errtype==errtype & resellipse$xiinter==xiinter
   
-  plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
+  if(!rep) plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
   modes <- c("xi0.18", "xi0.19", "xi0.20", "xi0.18wo0.19")
   cols <- c("red", "blue", "darkgreen", "magenta")
-  pchs <- c(21, 22, 23)
+  pchs <- c(21, 22, 23, 24)
   shortres <- data.frame(betamatch1.65=c(), dev1.65=c(), rad1.65=c(), betamatch1.7=c(), dev1.7=c(), rad1.7=c())
   
   for(index in seq_along(modes)) {
@@ -84,11 +94,11 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
     dx <- array(NA, dim=c(2, 3))
     dx[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]
     dx[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]^2)
-    dx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]^2)
+    dx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errbeta]^2)
     dy <- array(NA, dim=c(2, 3))
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)
-    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)
+    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2)
     if(meanormedian=="mean") {
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq3contlim, 
@@ -105,15 +115,31 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
                             betamatchstat=dx[, 1], betamatchsys=dx[, 2], betamatchspread=dx[, 3],
                             P3=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq3contlim, 
                             P3stat=dy[, 1], P3sys=dy[, 2], P3spread=dy[, 3])
+    } else if(meanormedian=="medianwithsd") {
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq3, 
+                    dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], bg=cols[index], pch=pchs[index], ...)
+      if(plotellipse) {
+        plotlims <- lapply(listellipse[which(resellipse$errtype==errtype & resellipse$xiinter==xiinter & resellipse$mode==mode & resellipse$etp==1 & resellipse$spread==T)], 
+                           FUN = function(x) draw_ellipse_general(meanx = x$medianbeta, meany = x$medianplaq3, 
+                                                                  radx = x$dbetacontlim, rady = x$dplaq3contlim, 
+                                                                  phi = x$theta, nstd = x$devstd, 
+                                                                  rep = T, cex = 0.01, points = 5000, col=cols[index]))
+      }
+      
+      newline <- data.frame(beta=c(1.65, 1.7), mode=mode, betamatch=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, dev=NA, rad=NA, 
+                            betamatchstat=dx[, 1], betamatchsys=dx[, 2], betamatchspread=dx[, 3],
+                            P3=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq3, 
+                            P3stat=dy[, 1], P3sys=dy[, 2], P3spread=dy[, 3])
     } else {
       mdx <- array(NA, dim=c(2, 3))
       mdx[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta 
       mdx[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
-      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
+      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2)
       mdy <- array(NA, dim=c(2, 3))
       mdy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3 
       mdy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3^2)
-      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3^2)
+      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq3^2)
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq3, 
                     dx=dx, dy=dy, mdy=mdy, mdx=mdx, errsum.method = "quadrature", rep=T, col=cols[index], bg=cols[index], pch=pchs[index], ...)
@@ -135,10 +161,18 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
     dy <- array(NA, dim=c(2, 3))
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)
-    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)
+    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2)
     if(meanormedian=="mean") {
+      print(mode)
+      print(which(mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T))
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq16contlim, 
+                    dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], pch=pchs[index], ...)
+      newline$P16 <- ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq16contlim
+      newline[, c("P16stat", "P16sys", "P16spread")] <- dy
+    } else if(meanormedian=="medianwithsd") {
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq16, 
                     dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], pch=pchs[index], ...)
       newline$P16 <- ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq16contlim
       newline[, c("P16stat", "P16sys", "P16spread")] <- dy
@@ -146,11 +180,11 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
       mdx <- array(NA, dim=c(2, 3))
       mdx[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta 
       mdx[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
-      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
+      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2)
       mdy <- array(NA, dim=c(2, 3))
       mdy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16
       mdy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16^2)
-      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16^2)
+      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq16^2)
       
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq16, 
@@ -187,15 +221,16 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
   # shortres[, c("dev1.7", "dev1.65")] <- shortres[, c("dev1.7", "dev1.65")] / sqrt(2.28)
   knitr::kable(shortres)
   # print(dx)
-  return(longres)
+  return(list(longres=longres, shortres=shortres))
 }
 ```
 
+##### summaryratio
 
 ```{r summaryratio}
-summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsemean, meanormedian="mean", resellipse=resellipsemean, plotellipse=T, ...) {
-  stopifnot(meanormedian=="mean" || meanormedian=="median")
-  if(meanormedian=="mean") {
+summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsemean, meanormedian="mean", resellipse=resellipsemean, plotellipse=T, rep=F, ...) {
+  stopifnot(meanormedian=="mean" || meanormedian=="median" || meanormedian=="medianwithsd")
+  if(meanormedian=="mean" || meanormedian=="medianwithsd") {
     errbeta <- "dbetacontlim"
     errplaq16 <- "dplaq16contlim"
     errplaq3 <- "dplaq3ratiocontlim"
@@ -214,7 +249,7 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
   }
   mask <- ldata$errtype==errtype & ldata$xiinter==xiinter
   
-  plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
+  if(!rep) plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
   # plot(NA, xlab="beta", ylab="P", ylim=c(0, 2), xlim=c(0, 2), ...)
   modes <- c("xi0.18", "xi0.19", "xi0.20", "xi0.18wo0.19")
   cols <- c("red", "blue", "darkgreen", "magenta")
@@ -227,11 +262,11 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
     dx <- array(NA, dim=c(2, 3))
     dx[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]
     dx[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]^2)
-    dx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errbeta]^2)
+    dx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errbeta]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errbeta]^2)
     dy <- array(NA, dim=c(2, 3))
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)
-    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)
+    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2)
     if(meanormedian=="mean") {
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq3ratiocontlim, 
@@ -254,15 +289,37 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
                             betamatchstat=dx[, 1], betamatchsys=dx[, 2], betamatchspread=dx[, 3],
                             P3=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq3ratiocontlim, 
                             P3stat=dy[, 1], P3sys=dy[, 2], P3spread=dy[, 3])
+    } else if(meanormedian=="medianwithsd") {
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq3ratio, 
+                    dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], bg=cols[index], pch=pchs[index], ...)
+      
+      # print(which(resellipse$errtype==errtype & resellipse$xiinter==xiinter & resellipse$mode==mode & resellipse$etp==1 & resellipse$spread==T))
+      # lapply(listellipse[which(resellipse$errtype==errtype & resellipse$xiinter==xiinter & resellipse$mode==mode & resellipse$etp==1 & resellipse$spread==T)],
+      #        FUN = function(x) print(data.frame(meanx = x$medianbeta, meany = x$medianplaq3,
+      #                                           radx = x$q16beta, rady = x$q84plaq3,
+      #                                           phi = x$theta, nstd = as.numeric(x$devstd))))
+      if(plotellipse) {
+        plotlims <- lapply(listellipse[which(resellipse$errtype==errtype & resellipse$xiinter==xiinter & resellipse$mode==mode & resellipse$etp==1 & resellipse$spread==T)],  
+                           FUN = function(x) draw_ellipse_general(meanx = x$medianbeta, meany = x$medianplaq3ratio, 
+                                                                  radx = x$dbetacontlim, rady = x$dplaq3ratiocontlim, 
+                                                                  phi = x$theta, nstd = as.numeric(x$devstd), 
+                                                                  rep = T, cex = 0.01, points = 5000, col=cols[index]))
+      }
+      
+      newline <- data.frame(beta=c(1.65, 1.7), mode=mode, betamatch=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, dev=NA, rad=NA, 
+                            betamatchstat=dx[, 1], betamatchsys=dx[, 2], betamatchspread=dx[, 3],
+                            P3=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq3, 
+                            P3stat=dy[, 1], P3sys=dy[, 2], P3spread=dy[, 3])
     } else {
       mdx <- array(NA, dim=c(2, 3))
       mdx[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta 
       mdx[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
-      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
+      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2)
       mdy <- array(NA, dim=c(2, 3))
       mdy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3ratio 
       mdy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3^2)
-      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq3^2)
+      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq3^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq3^2)
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq3ratio, 
                     dx=dx, dy=dy, mdy=mdy, mdx=mdx, errsum.method = "quadrature", rep=T, col=cols[index], bg=cols[index], pch=pchs[index], ...)
@@ -284,22 +341,28 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
     dy <- array(NA, dim=c(2, 3))
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)
-    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)
+    dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2)
     if(meanormedian=="mean") {
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq16contlim, 
                     dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], pch=pchs[index], ...)
       newline$P16 <- ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq16contlim
       newline[, c("P16stat", "P16sys", "P16spread")] <- dy
+    } else if(meanormedian=="medianwithsd") {
+      plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
+                    y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq16, 
+                    dx=dx, dy=dy, errsum.method = "quadrature", rep=T, col=cols[index], pch=pchs[index], ...)
+      newline$P16 <- ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq16
+      newline[, c("P16stat", "P16sys", "P16spread")] <- dy
     } else {
       mdx <- array(NA, dim=c(2, 3))
       mdx[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta 
       mdx[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
-      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16beta^2)
+      mdx[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16beta^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16beta^2)
       mdy <- array(NA, dim=c(2, 3))
       mdy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16
       mdy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16^2)
-      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ]$q16plaq16^2)
+      mdy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$q16plaq16^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ]$q16plaq16^2)
       
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianbeta, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$medianplaq16, 
@@ -336,7 +399,7 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
   # shortres[, c("dev1.7", "dev1.65")] <- shortres[, c("dev1.7", "dev1.65")] / sqrt(2.28)
   knitr::kable(shortres)
   # print(dx)
-  return(longres)
+  return(list(longres=longres, shortres=shortres))
 }
 
 # hamresults: a, b, lowerx, upperx
@@ -346,38 +409,85 @@ interpolatehamiltonian <- function(x, hamresults) {
 }
 ```
 
+#####meanvssd
 
 We first check if the mean is a reliable quantity by plotting the mean $\pm$ standard deviation against the median with the 16% and 84% quantiles.
 
+We show the results of six different analysis groupings, each for spread T and F, error from potential included T and F =24 differnet limits.
+
+for each we show the mean of the original data with the standard deviation from the bootstrap samples, and the median and quantiles of the bootstrap samples.
+
+The points for the analysis groups r`c("xi0.18", "xi0.18wo0.19", "xi0.19", "xi0.20")` are filled, the other analysis groups are not filled.
+
 ```{r meanvsmedian}
 
+usedmodes <- c("xi0.18", "xi0.18wo0.19", "xi0.19", "xi0.20")
+
 for(beta in c(1.65, 1.7)) {
-  plotwitherror(x=seq_along(ldata$betacontlim[ldata$betaiso==beta]), y=ldata$betacontlim[ldata$betaiso==beta], dy=ldata$dbetacontlim[ldata$betaiso==beta], col="black", pch=21, bg="black", 
-                ylim=range(ldata$betacontlim[ldata$betaiso==beta] + ldata$dbetacontlim[ldata$betaiso==beta], 
-                           ldata$betacontlim[ldata$betaiso==beta] - ldata$dbetacontlim[ldata$betaiso==beta], 
-                           ldata$medianbeta[ldata$betaiso==beta]), 
-                xlab="index", ylab="beta", xlim=range(seq_along(ldata$betacontlim[ldata$betaiso==beta])), main=paste("beta", beta, "cont limit beta"))
-  plotwitherror(x=seq_along(ldata$betacontlim[ldata$betaiso==beta])+0.2, y=ldata$medianbeta[ldata$betaiso==beta], dy=ldata$q84beta[ldata$betaiso==beta], mdy=ldata$q16beta[ldata$betaiso==beta], col="red", pch=22, bg="red", rep=T)
-  abline(v=length(seq_along(ldata$betacontlim[ldata$betaiso==beta]))*c(1/3, 2/3)+0.5)
-  legend(x="bottomleft", legend="AIC", bty = "n")
-  legend(x="bottom", legend="error", bty = "n")
-  legend(x="bottomright", legend="unweighted", bty = "n")
+  mask <- ldata$betaiso==beta & ldata$errtype=="unweighted" & ldata$xiinter==T
+  plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$betacontlim[mask], dy=ldata$dbetacontlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
+                ylim=range(ldata$betacontlim[mask] + ldata$dbetacontlim[mask], 
+                           ldata$betacontlim[mask] - ldata$dbetacontlim[mask], 
+                           ldata$medianbeta[mask]), 
+                xlab="index", ylab="beta", main=paste("beta", beta, "cont limit beta"))
+  plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$bootstrapmeanbeta[mask], col="blue", pch=23, bg=ifelse(ldata$mode[mask] %in% usedmodes, "blue", NA), rep=T)
+  plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=ldata$medianbeta[mask], dy=ldata$q84beta[mask], mdy=ldata$q16beta[mask], col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
+  # abline(v=length(ldata$betacontlim[mask])*c(1/3, 2/3)+0.5)
+  # legend(x="bottomleft", legend="AIC", bty = "n")
+  # legend(x="bottom", legend="error", bty = "n")
+  # legend(x="bottomright", legend="unweighted", bty = "n")
+  legend("bottomright", legend=c("mean", "median", "mean bs"), col=c("black", "red", "blue"), pch=c(21, 22, 23), pt.bg=c("black", "red", "blue"))
   
-  plotwitherror(x=seq_along(ldata$betacontlim[ldata$betaiso==beta]), y=ldata$plaq3contlim[ldata$betaiso==beta], dy=ldata$dplaq3contlim[ldata$betaiso==beta], col="black", pch=21, bg="black", 
-                ylim=range(ldata$plaq3contlim[ldata$betaiso==beta] + ldata$dplaq3contlim[ldata$betaiso==beta], 
-                           ldata$plaq3contlim[ldata$betaiso==beta] - ldata$dplaq3contlim[ldata$betaiso==beta], 
-                           ldata$medianplaq3[ldata$betaiso==beta]), 
-                xlab="index", ylab="plaq3", xlim=range(seq_along(ldata$betacontlim[ldata$betaiso==beta])), main=paste("beta", beta, "cont limit plaq3"))
-  plotwitherror(x=seq_along(ldata$betacontlim[ldata$betaiso==beta])+0.2, y=ldata$medianplaq3[ldata$betaiso==beta], dy=ldata$q84plaq3[ldata$betaiso==beta], mdy=ldata$q16plaq3[ldata$betaiso==beta], col="red", pch=22, bg="red", rep=T)
-  abline(v=length(seq_along(ldata$betacontlim[ldata$betaiso==beta]))*c(1/3, 2/3)+0.5)
-  legend(x="bottomleft", legend="AIC", bty = "n")
-  legend(x="bottom", legend="error", bty = "n")
-  legend(x="bottomright", legend="unweighted", bty = "n")
+  plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$plaq3contlim[mask], dy=ldata$dplaq3contlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
+                ylim=range(ldata$plaq3contlim[mask] + ldata$dplaq3contlim[mask], 
+                           ldata$plaq3contlim[mask] - ldata$dplaq3contlim[mask], 
+                           ldata$medianplaq3[mask]), 
+                xlab="index", ylab="plaq3", main=paste("beta", beta, "cont limit plaq3"))
+  plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$bootstrapmeanplaq3[mask], col="blue", pch=23, bg=ifelse(ldata$mode[mask] %in% usedmodes, "blue", NA), rep=T)
+  plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=ldata$medianplaq3[mask], dy=ldata$q84plaq3[mask], mdy=ldata$q16plaq3[mask], col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
+  # abline(v=length(seq_along(ldata$betacontlim[mask]))*c(1/3, 2/3)+0.5)
+  # legend(x="bottomleft", legend="AIC", bty = "n")
+  # legend(x="bottom", legend="error", bty = "n")
+  # legend(x="bottomright", legend="unweighted", bty = "n")
+  legend("bottomright", legend=c("mean", "median", "mean bs"), col=c("black", "red", "blue"), pch=c(21, 22, 23), pt.bg=c("black", "red", "blue"))
+}
+
+for(beta in c(1.65, 1.7)) {
+  mask <- ldata$betaiso==beta & ldata$errtype=="unweighted" & ldata$xiinter==T
+  plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=rep(0, length(ldata$betacontlim[mask])), 
+                dy=ldata$dbetacontlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
+                ylim=range(ldata$dbetacontlim[mask], -ldata$dbetacontlim[mask], -ldata$q16beta[mask], ldata$q84beta[mask]), 
+                # xlim=length(ldata$betacontlim[mask])*c(2/3, 1),
+                xlab="index", ylab="beta", main=paste("beta", beta, "cont limit beta"))
+  plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=rep(0, length(ldata$betacontlim[mask])), 
+                dy=ldata$q84beta[mask], mdy=ldata$q16beta[mask], 
+                col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
+  # abline(v=length(seq_along(ldata$betacontlim[mask]))*c(1/3, 2/3)+0.5)
+  # legend(x="bottomleft", legend="AIC", bty = "n")
+  # legend(x="bottom", legend="error", bty = "n")
+  # legend(x="bottomright", legend="unweighted", bty = "n")
+  legend("bottomright", legend=c("mean", "median"), col=c("black", "red"), pch=c(21, 22), pt.bg=c("black", "red"))
+  
+  plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=rep(0, length(ldata$betacontlim[mask])), 
+                dy=ldata$dplaq3contlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
+                ylim=range(ldata$dplaq3contlim[mask], -ldata$dplaq3contlim[mask], -ldata$q16plaq3[mask], ldata$q84plaq3[mask]), 
+                # xlim=length(ldata$betacontlim[mask])*c(2/3, 1),
+                xlab="index", ylab="plaq3", main=paste("beta", beta, "cont limit plaq3"))
+  plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=rep(0, length(ldata$betacontlim[mask])), 
+                dy=ldata$q84plaq3[mask], mdy=ldata$q16plaq3[mask], 
+                col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
+  # abline(v=length(seq_along(ldata$betacontlim[mask]))*c(1/3, 2/3)+0.5)
+  # legend(x="bottomleft", legend="AIC", bty = "n")
+  # legend(x="bottom", legend="error", bty = "n")
+  # legend(x="bottomright", legend="unweighted", bty = "n")
+  legend("bottomright", legend=c("mean", "median"), col=c("black", "red"), pch=c(21, 22), pt.bg=c("black", "red"))
 }
 ```
 
 
 We see that the standard deviation is not reliable in some cases, so we take the unweighted average over all different continuum limit fits to be the final result.
+
+##### plotres
 
 we use the xi that was determined from the single matching ensembles, and we do not consider the spread of the different fits of the continuum limit as an additional systematic error.
 
@@ -387,35 +497,54 @@ The data at L=3 are shown by filled symbols, the data at L=16 by empty symbols.
 
 ```{r makesummaries}
 errtype="unweighted"
+xiinter <- F
 
-tablemean             <- summarisedata(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemean,        resellipse=resellipsemean,        meanormedian="mean", plotellipse=T, main="mean")
-tablemedian           <- summarisedata(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemedian,      resellipse=resellipsemedian,      meanormedian="median", plotellipse=T, main="median")
-tablemeanratio   <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemeanratio,   resellipse=resellipsemeanratio,   meanormedian="mean", plotellipse=T, main="mean ratio")
-tablemedianratio <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=T, main="median ratio")
-silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", plotellipse=F, main="mean")
-silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemedian, resellipse=resellipsemedian, meanormedian="median", plotellipse=F, main="median")
-silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, main="mean ratio")
-silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=T, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=F, main="median ratio")
+tablemean                   <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean,              resellipse=resellipsemean,        meanormedian="mean", plotellipse=T, main="mean")
+tablemedian                 <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedian,            resellipse=resellipsemedian,      meanormedian="median", plotellipse=T, main="median")
+tablemedianwithsd           <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianwithsd,      resellipse=resellipsemedianwithsd,      meanormedian="medianwithsd", plotellipse=T, main="median with sd")
+tablemeanratio   <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio,   resellipse=resellipsemeanratio,   meanormedian="mean", plotellipse=T, main="mean ratio")
+tablemedianratio <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=T, main="median ratio")
+tablemedianratiowithsd <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratiowithsd, resellipse=resellipsemedianratiowithsd, meanormedian="medianwithsd", plotellipse=T, main="median ratio with sd ")
+silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", plotellipse=F, main="mean")
+silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedian, resellipse=resellipsemedianwithsd, meanormedian="median", plotellipse=F, main="median")
+silent <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianwithsd,      resellipse=resellipsemedian,      meanormedian="medianwithsd", plotellipse=F, main="medianwithsd")
+silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, main="mean ratio")
+silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=F, main="median ratio")
+silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratiowithsd, resellipse=resellipsemedianratiowithsd, meanormedian="medianwithsd", plotellipse=F, main="median ratio with sd")
+
+
+silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", plotellipse=F, main="mean")
+silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, rep=T, cex=0.5)
+print(tablemean$longres)
+print(tablemedian$longres)
+print(tablemedianwithsd$longres)
+print(tablemeanratio$longres)
+print(tablemedianratio$longres)
+print(tablemedianratiowithsd$longres)
 ```
 
 
-```{r comparesummaries}
-tablemean$P3 - tablemeanratio$P3
-sqrt(tablemean$P3stat^2 + tablemeanratio$P3stat^2)
-plotwitherror(x=1:8, 
-y=tablemean$P3 - tablemeanratio$P3,
-dy=sqrt(tablemean$P3stat^2 + tablemeanratio$P3stat^2))
-abline(h=0)
-# plotwitherror(x=1:8, 
-# y=tablemedian$P3 - tablemedianratio$P3,
-# dy=sqrt(tablemedian$P3stat^2 + tablemedianratio$P3stat^2))
-# abline(h=0)
-tablemean
-plot(x=1:32, y=c(tablemean$P3spread^2+tablemean$P3sys^2 + tablemean$P3stat^2, 
-                 tablemedian$P3spreadq84^2+tablemedian$P3sysq84^2 + tablemedian$P3statq84^2, 
-                 tablemeanratio$P3spread^2+tablemeanratio$P3sys^2 + tablemeanratio$P3stat^2,
-                 tablemedianratio$P3spreadq84^2+tablemedianratio$P3sysq84^2 + tablemedianratio$P3statq84^2))
-```
+
+
+
+
+<!-- ```{r comparesummaries, include=F} -->
+<!-- tablemean$P3 - tablemeanratio$P3 -->
+<!-- sqrt(tablemean$P3stat^2 + tablemeanratio$P3stat^2) -->
+<!-- plotwitherror(x=1:8,  -->
+<!--               y=tablemean$P3 - tablemeanratio$P3, -->
+<!--               dy=sqrt(tablemean$P3stat^2 + tablemeanratio$P3stat^2)) -->
+<!-- abline(h=0) -->
+<!-- # plotwitherror(x=1:8,  -->
+<!-- # y=tablemedian$P3 - tablemedianratio$P3, -->
+<!-- # dy=sqrt(tablemedian$P3stat^2 + tablemedianratio$P3stat^2)) -->
+<!-- # abline(h=0) -->
+<!-- tablemean -->
+<!-- plot(x=1:32, y=c(tablemean$P3spread^2+tablemean$P3sys^2 + tablemean$P3stat^2,  -->
+<!--                  tablemedian$P3spreadq84^2+tablemedian$P3sysq84^2 + tablemedian$P3statq84^2,  -->
+<!--                  tablemeanratio$P3spread^2+tablemeanratio$P3sys^2 + tablemeanratio$P3stat^2, -->
+<!--                  tablemedianratio$P3spreadq84^2+tablemedianratio$P3sysq84^2 + tablemedianratio$P3statq84^2)) -->
+<!-- ``` -->
 
 The error of the matching $\beta$ is in the order of $1\%$, the deviation to the Hamiltonian curve is in the order of $3\%$. 
 The level of deviation for the median is calculated with the difference between median and the 84%-percent for the plaquette (upper value) and the difference to the 16%-quantile for beta (left value).
