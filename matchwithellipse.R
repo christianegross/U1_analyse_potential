@@ -52,11 +52,12 @@ tangent_general <- function(a, m, n, r, xc, yc, theta = pi / 4) {
 findrootellipse <- function(m, n, r, xc, yc, theta = pi / 4, tol = 1e-12, max = 1000) {
   myf <- function(x) {
     myt <- tangent_general(a = x, m = m, n = n, r = r, xc = xc, yc = yc, theta = theta)
-    return(myt$onellipse * 1e+6)
+    return(myt$onellipse)
   }
-  root <- cmna::secant(myf, 10, tol = tol, m = max)
+  root <- try(cmna::secant(myf, 3, tol = tol, m = max))
+  return(ifelse(inherits(root, "try-error"), NA, root))
   # root <- uniroot(myf, interval=c(0.01, 100), tol = tol, maxiter=max)
-  return(root)
+  # return(root$root)
 }
 
 ## draw ellipse with correlation coefficient estimated from bootstraps
@@ -176,8 +177,7 @@ getmatchingellipse <- function(data, bsdata, hamres, indices, verbose = F) {
   res <- data.frame(betaiso = c(), devstd = c(), root = c(), x0 = c(), y0 = c(), segment = c(), radx = c(), rady = c(), theta = c(), cor = c(), index = c())
 
   for (i in seq_along(indices$uprange)) {
-    if (verbose) print(data[i, ])
-
+    if (verbose) print(data[indices$resindex[i], ])
     resbs$beta[, indices$bsindex[i]][is.na(resbs$plaq3[, indices$bsindex[i]])] <- NA
     resbs$plaq3[, indices$bsindex[i]][is.na(resbs$beta[, indices$bsindex[i]])] <- NA
     ## calculate covariance matrix to set ellipse parameters
@@ -197,20 +197,22 @@ getmatchingellipse <- function(data, bsdata, hamres, indices, verbose = F) {
         xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
         theta = theta, tol = 1e-6
       )
-      dat <- tangent_general(
-        m = hamres$a[j], n = hamres$b[j],
-        r = xrad / yrad,
-        xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
-        a = root, theta = theta
-      )
-      if (dat$x0 > hamres$lowerx[j] && dat$x0 < hamres$upperx[j]) {
-        newline <- data.frame(
-          betaiso = data$betaiso[indices$resindex[i]], devstd = root / xrad, root = root,
-          x0 = dat$x0, y0 = dat$y0, segment = j, radx = dat$radx, rady = dat$rady, theta = theta, cor = cor, index = i
+      if (!is.na(root)) {
+        dat <- tangent_general(
+          m = hamres$a[j], n = hamres$b[j],
+          r = xrad / yrad,
+          xc = data$betacontlim[indices$resindex[i]], yc = data$plaq3contlim[indices$resindex[i]],
+          a = root, theta = theta
         )
-        if (verbose) print(i)
-        if (verbose) print(newline)
-        res <- rbind(res, newline)
+        if (dat$x0 > hamres$lowerx[j] && dat$x0 < hamres$upperx[j]) {
+          newline <- data.frame(
+            betaiso = data$betaiso[indices$resindex[i]], devstd = root / xrad, root = root,
+            x0 = dat$x0, y0 = dat$y0, segment = j, radx = dat$radx, rady = dat$rady, theta = theta, cor = cor, index = i
+          )
+          if (verbose) print(i)
+          if (verbose) print(newline)
+          res <- rbind(res, newline)
+        }
       }
     }
     # check correlation

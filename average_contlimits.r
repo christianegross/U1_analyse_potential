@@ -8,11 +8,11 @@ library(optparse)
 
 AICweight <- function(chi, npar, nmeas) exp(-0.5 * (chi + 1 / chi + 2 * npar - nmeas))
 
-removeunphysical <- function(cf, reldevmax = 10, removelimit = 50, verbose = T, fitname = "") {
+removeunphysical <- function(cf, reldevmax = 10, removelimit = 500, verbose = T, fitname = "") {
     reldev <- abs((cf$t[, 1] - cf$t0[1]) / cf$t0[1])
     weirdfitmask <- reldev > reldevmax
     # if (sum(weirdfitmask, na.rm = T) > removelimit) stop(paste("removing this many samples does not make sense, check your assumptions for fit", fitname))
-    if (sum(weirdfitmask, na.rm = T) > removelimit) message("removing this many samples does not make sense, check your assumptions for fit", fitname)
+    if (sum(weirdfitmask, na.rm = T) > removelimit) message("removing this many samples(",sum(weirdfitmask, na.rm = T),  ") does not make sense, check your assumptions for fit", fitname)
     if (verbose & sum(weirdfitmask, na.rm = T) > 1) {
         print(paste(sum(weirdfitmask, na.rm = T), "removed in", fitname))
         cf$bsamples[weirdfitmask, ] <- NA
@@ -42,7 +42,7 @@ option_list <- list(
         help = "path to resultfiles [default %default]"
     ),
     make_option(c("--reldevmax"),
-        type = "integer",
+        type = "numeric",
         default = 10000,
         help = "maximum relative deviation to mean cont limit result in bootstrap samples [default %default]"
     ),
@@ -67,7 +67,7 @@ opt <- args$options
 source(paste(opt$myfunctions, "myfunctions.R", sep = ""))
 nalim <- 30
 reldevmax <- opt$reldevmax
-removelimit <- 30
+removelimit <- 100
 
 if (opt$xiinter) stopifnot(!(opt$type == "plaqinter" || opt$type == "betainter" || opt$type == "p_stinter"))
 
@@ -115,7 +115,7 @@ uplim <- c()
 lowlim <- c()
 
 if (opt$mode == "all") {
-    degrees <- c(3, 1, 1, 2, 1, 1, 2, 1, 1, 1)
+    degrees <- c(3, 1, 1, 2, 1, 1, 2, 1, 1, 2)
     uplim <- c(10, 8, 8, 8, 9, 9, 9, 10, 10, 10)
     lowlim <- c(1, 5, 4, 3, 6, 5, 4, 7, 6, 5)
 } else if (opt$mode == "xi0.20") {
@@ -130,6 +130,14 @@ if (opt$mode == "all") {
     degrees <- c(1, 1, 2)
     uplim <- c(10, 10, 10)
     lowlim <- c(7, 6, 5)
+} else if (opt$mode == "xi0.18wo0.19") {
+    degrees <- c(1, 1, 2)
+    uplim <- c(9, 9, 9)
+    lowlim <- c(6, 5, 4)
+} else if (opt$mode == "xi0.25") {
+    degrees <- c(1, 1, 2)
+    uplim <- c(7, 7, 7)
+    lowlim <- c(4, 3, 2)
 } else {
     stop(paste("incorrect mode given, you gave", opt$mode))
 }
@@ -274,7 +282,6 @@ for (beta in c(1.65, 1.70)) {
 
 if (opt$verbose) print(restable)
 averagedrestable
-
 savename <- sprintf("%s/contlimittype%smode%s%s", opt$path, opt$type, opt$mode, ifelse(opt$xiinter, "xiinter", ""))
 
 write.table(restable,
@@ -336,5 +343,7 @@ for(name in c("etp1b1.65", "etp1b1.7", "etp0b1.65", "etp0b1.7")) {
 
 print("warnings:")
 print(warnings())
+if(length(problemnames) > 0) {
 print("problematic fits")
-print(problemnames)
+print(paste("problem", opt$type, opt$mode, "xiinter", opt$xiinter, problemnames))
+}
