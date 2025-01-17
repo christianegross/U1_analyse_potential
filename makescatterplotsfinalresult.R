@@ -39,6 +39,7 @@ averagedrestable$interpolated_beta <- averagedrestable$type == "plaqinter" | ave
 
 pdf(sprintf("rescombined.pdf"), title = "")
 modes <- c("all", "xi0.20", "xi0.19", "xi0.18", "xi0.18wo0.19", "xi0.25")
+modes <- c("xi0.19", "xi0.18", "xi0.18wo0.19")
 cols <- c("black", "red", "blue", "darkgreen", "firebrick", "green")
 pchs <- c(21, 22, 23, 24, 21, 22)
 
@@ -123,14 +124,14 @@ for (xiinter in c(T, F)) {
 warnings()
 
 
-resbs <- list(
-    beta = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3)),
-    plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 3))
-)
 # resbs <- list(
-#     beta = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)),
-#     plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 3 / 6))
+#     beta = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3)),
+#     plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 3))
 # )
+resbs <- list(
+    beta = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)),
+    plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 3 / 6))
+)
 data <- data.frame(
     betacontlim = c(), dbetacontlim = c(),
     plaq3contlim = c(), dplaq3contlim = c(),
@@ -141,13 +142,16 @@ data <- data.frame(
 
 # error ratio result has to be collected from the bootstrap samples first
 dplaq3ratio <- c()
+cov <- c()
+cor <- c()
+cor2 <- c()
 index <- 1
 bsnames <- c()
-for (err in c("AIC", "error", "unweighted")) {
-# for (err in c("unweighted")) {
+# for (err in c("AIC", "error", "unweighted")) {
+for (err in c("unweighted")) {
     for (mode in modes) {
-        for (xiinter in c(T, F)) {
-        # for (xiinter in c(F)) {
+        # for (xiinter in c(T, F)) {
+        for (xiinter in c(F)) {
             for (etp in c(1, 0)) {
                 data <- rbind(data, data.frame(
                     betacontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
@@ -158,7 +162,8 @@ for (err in c("AIC", "error", "unweighted")) {
                     dplaq16contlim = averagedrestable[, errtypes[[err]]$sd][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
                     plaq3ratiocontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp] * averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "ratio" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
                     dplaq3ratiocontlim = NA,
-                    betaiso = c(1.65, 1.7), mode = mode, xiinter = xiinter, spread = F, errtype = err, etp = etp
+                    betaiso = averagedrestable$beta[averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    mode = mode, xiinter = xiinter, spread = F, errtype = err, etp = etp
                 ))
                 data <- rbind(data, data.frame(
                     betacontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
@@ -169,7 +174,8 @@ for (err in c("AIC", "error", "unweighted")) {
                     dplaq16contlim = averagedrestable[, errtypes[[err]]$spread][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
                     plaq3ratiocontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "plaq" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp] * averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "ratio" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
                     dplaq3ratiocontlim = NA,
-                    betaiso = c(1.65, 1.7), mode = mode, xiinter = xiinter, spread = T, errtype = err, etp = etp
+                    betaiso = averagedrestable$beta[averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
+                    mode = mode, xiinter = xiinter, spread = T, errtype = err, etp = etp
                 ))
 
 
@@ -190,18 +196,59 @@ for (err in c("AIC", "error", "unweighted")) {
                 resbs$plaq16[, 4 * index - 1] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]]
                 resbs$plaq16[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
                 tmp2 <- try(readRDS(sprintf("%s/contlimittype%smode%s%saveraged.RData", "plotstikz", "ratio", mode, ifelse(xiinter, "xiinter", ""))))
-                resbs$plaq3ratio[, 4 * index - 3] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]]       * tmp2[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]]
-                resbs$plaq3ratio[, 4 * index - 2] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]        * tmp2[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]
+                resbs$plaq3ratio[, 4 * index - 3] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]] * tmp2[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bs]]
+                resbs$plaq3ratio[, 4 * index - 2] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]] * tmp2[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bs]]
                 resbs$plaq3ratio[, 4 * index - 1] <- tmp[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]] * tmp2[[paste0("etp", etp, "b1.65")]][[errtypes[[err]]$bsspread]]
-                resbs$plaq3ratio[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]  * tmp2[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
+                resbs$plaq3ratio[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]] * tmp2[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
                 bsnames <- append(bsnames, paste0("errmode", err, "mode", mode, "xiinter", xiinter, "etp", etp, "beta", rep(c(1.65, 1.7), 2), "spread", c(F, F, T, T)))
-                dplaq3ratio <- append(dplaq3ratio, apply(resbs$plaq3ratio[, 4*index+(-3:0)], MARGIN=2, FUN=sd, na.rm=T))
+                dplaq3ratio <- append(dplaq3ratio, apply(resbs$plaq3ratio[, 4 * index + (-3:0)], MARGIN = 2, FUN = sd, na.rm = T))
+                cor <- append(cor, diag(cor(resbs$plaq3[, 4 * index + (-3:0)], resbs$beta[, 4 * index + (-3:0)], use = "na.or.complete")))
+                cov <- append(cov, diag(cov(resbs$plaq3[, 4 * index + (-3:0)], resbs$beta[, 4 * index + (-3:0)], use = "na.or.complete")))
+                print(4 * index + (-3:0))
+                print(c(mode, etp))
+
+
+                afteravp <- readRDS(sprintf("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlim/plotstikz/contlimittypeplaqsmallmode%s%saveraged.RData", mode, ifelse(xiinter, "xiinter", "")))
+                afteravb <- readRDS(sprintf("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlim/plotstikz/contlimittypebetamode%s%saveraged.RData", mode, ifelse(xiinter, "xiinter", "")))
+                print(cor(
+                    x = afteravb[[paste0("etp", etp, "b", 1.65)]]$bsunweighted,
+                    y = afteravp[[paste0("etp", etp, "b", 1.65)]]$bsunweighted,
+                    use = "na.or.complete"
+                ))
+                print("-")
+                print(cor(resbs$plaq3[, 4 * index - 3], resbs$beta[, 4 * index - 3], use = "na.or.complete"))
+                print(cor(resbs$plaq3[, 4 * index - 2], resbs$beta[, 4 * index - 2], use = "na.or.complete"))
+                print(cor(resbs$plaq3[, 4 * index - 1], resbs$beta[, 4 * index - 1], use = "na.or.complete"))
+                print(cor(resbs$plaq3[, 4 * index - 0], resbs$beta[, 4 * index - 0], use = "na.or.complete"))
+                cor2 <- append(cor2, c(
+                cor(resbs$plaq3[, 4 * index - 3], resbs$beta[, 4 * index - 3], use = "na.or.complete"),
+                cor(resbs$plaq3[, 4 * index - 2], resbs$beta[, 4 * index - 2], use = "na.or.complete"),
+                cor(resbs$plaq3[, 4 * index - 1], resbs$beta[, 4 * index - 1], use = "na.or.complete"),
+                cor(resbs$plaq3[, 4 * index - 0], resbs$beta[, 4 * index - 0], use = "na.or.complete")))
+                print(ifelse(xiinter, "xiinter", ""))
+                print(diag(cor(resbs$plaq3[, 4 * index + (-3:0)], resbs$beta[, 4 * index + (-3:0)], use = "na.or.complete")))
+
+                print(which(is.na(resbs$plaq3[, 4 * index - 3])))
+                print(which(is.na(resbs$plaq3[, 4 * index - 2])))
+                print(which(is.na(resbs$plaq3[, 4 * index - 1])))
+                print(which(is.na(resbs$plaq3[, 4 * index - 0])))
+                print(which(apply(resbs$plaq3[, 4 * index + (-3:0)], 1, function(x) any(is.na(x)))))
+
+
                 index <- index + 1
             }
         }
     }
 }
 data$dplaq3ratiocontlim <- dplaq3ratio
+data$cov <- cov
+data$cor <- cor
+print(data$cor)
+print(cor2)
+print(onlydiagonalcorelements(resbs$plaq3, resbs$beta))
+print(data$cor==cor2)
+print(cor2==onlydiagonalcorelements(resbs$plaq3, resbs$beta))
+stop()
 indices <- data.frame(uprange = 45, lowrange = 35, bsindex = seq_along(data$betaiso), resindex = seq_along(data$betaiso))
 data
 # indices
@@ -233,7 +280,8 @@ data$bootstrapmeanplaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = mean, 
 data$medianplaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = median, na.rm = T)
 data$q16plaq3ratio <- data$medianplaq3ratio - apply(resbs$plaq3ratio, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
 data$q84plaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianplaq3ratio
-data$cor <- diag(cor(resbs$plaq3, resbs$beta, use = "na.or.complete"))
+# data$cor <- diag(cor(resbs$plaq3, resbs$beta, use = "na.or.complete"))
+# data$cov <- diag(cov(resbs$plaq3, resbs$beta, use = "na.or.complete"))
 # bsnames
 head(data)
 
@@ -253,8 +301,10 @@ resellipsemedian$etp <- data$etp[mask]
 resellipsemedian
 
 resellipsemedianwithsd <- getmatchingellipse(
-    data = data.frame(betacontlim = data$medianbeta, dbetacontlim = data$dbetacontlim, 
-    plaq3contlim = data$medianplaq3, dplaq3contlim = data$dplaq3contlim, betaiso = data$betaiso),
+    data = data.frame(
+        betacontlim = data$medianbeta, dbetacontlim = data$dbetacontlim,
+        plaq3contlim = data$medianplaq3, dplaq3contlim = data$dplaq3contlim, betaiso = data$betaiso
+    ),
     bsdata = resbs, hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
 )
 dim(resellipsemedianwithsd)
@@ -267,7 +317,7 @@ resellipsemedianwithsd
 
 resellipseratio <- getmatchingellipse(
     data = data.frame(betacontlim = data$betacontlim, dbetacontlim = data$dbetacontlim, plaq3contlim = data$plaq3ratiocontlim, dplaq3contlim = data$dplaq3ratiocontlim, betaiso = data$betaiso),
-    bsdata = list(beta=resbs$beta, plaq3=resbs$plaq3ratio), hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
+    bsdata = list(beta = resbs$beta, plaq3 = resbs$plaq3ratio), hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
 )
 dim(resellipseratio)
 resellipseratio$mode <- data$mode[mask]
@@ -279,7 +329,7 @@ resellipseratio
 
 resellipseratiomedian <- getmatchingellipse(
     data = data.frame(betacontlim = data$medianbeta, dbetacontlim = data$q16beta, plaq3contlim = data$medianplaq3ratio, dplaq3contlim = data$q84plaq3ratio, betaiso = data$betaiso),
-    bsdata = list(beta=resbs$beta, plaq3=resbs$plaq3ratio), hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
+    bsdata = list(beta = resbs$beta, plaq3 = resbs$plaq3ratio), hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
 )
 dim(resellipseratiomedian)
 resellipseratiomedian$mode <- data$mode[mask]
@@ -290,9 +340,11 @@ resellipseratiomedian$etp <- data$etp[mask]
 resellipseratiomedian
 
 resellipseratiomedianwithsd <- getmatchingellipse(
-    data = data.frame(betacontlim = data$medianbeta, dbetacontlim = data$dbetacontlim, 
-    plaq3contlim = data$medianplaq3ratio, dplaq3contlim = data$dplaq3ratiocontlim, betaiso = data$betaiso),
-    bsdata = list(beta=resbs$beta, plaq3=resbs$plaq3ratio), hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
+    data = data.frame(
+        betacontlim = data$medianbeta, dbetacontlim = data$dbetacontlim,
+        plaq3contlim = data$medianplaq3ratio, dplaq3contlim = data$dplaq3ratiocontlim, betaiso = data$betaiso
+    ),
+    bsdata = list(beta = resbs$beta, plaq3 = resbs$plaq3ratio), hamres = hamiltoniandata, indices = indices[mask, ], verbose = F
 )
 dim(resellipseratiomedianwithsd)
 resellipseratiomedianwithsd$mode <- data$mode[mask]
@@ -302,11 +354,15 @@ resellipseratiomedianwithsd$errtype <- data$errtype[mask]
 resellipseratiomedianwithsd$etp <- data$etp[mask]
 resellipseratiomedianwithsd
 
-saveRDS(list(data = data, bs = resbs, resellipsemean = resellipsemean, resellipseratio = resellipseratio, 
-resellipsemedian = resellipsemedian, resellipseratiomedian = resellipseratiomedian,  
-resellipsemedianwithsd = resellipsemedianwithsd, resellipseratiomedianwithsd = resellipseratiomedianwithsd, 
-bsnames = bsnames), 
-file = "plotstikz/ellipseparameters.RData")
+saveRDS(
+    list(
+        data = data, bs = resbs, resellipsemean = resellipsemean, resellipseratio = resellipseratio,
+        resellipsemedian = resellipsemedian, resellipseratiomedian = resellipseratiomedian,
+        resellipsemedianwithsd = resellipsemedianwithsd, resellipseratiomedianwithsd = resellipseratiomedianwithsd,
+        bsnames = bsnames
+    ),
+    file = "plotstikz/ellipseparameters.RData"
+)
 
 data <- data[mask, ]
 

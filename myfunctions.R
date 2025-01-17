@@ -1130,4 +1130,13 @@ deteffmassaic <- function(effmass, start = 1, mindistance = 2, verbose = FALSE) 
 
 }
 
+onlydiagonalcorelements <- function(xmat, ymat) {
+    stopifnot(dim(xmat)==dim(ymat))
+    res <- c()
+    for (i in seq(ncol(xmat))) {
+        res[i] <- cor(x=xmat[, i], y=ymat[, i], use = "na.or.complete")
+    }
+    return(res)
+}
+
 

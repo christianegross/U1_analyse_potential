@@ -143,6 +143,7 @@ if (opt$mode == "all") {
 }
 
 res <- list(list(opt = opt, degrees = degrees, uplim = uplim, lowlim = lowlim))
+ressinglebs <- list(list(opt = opt, degrees = degrees, uplim = uplim, lowlim = lowlim))
 
 restable <- data.frame(
     beta = c(), etp = c(), omit = c(), pot = c(), degree = c(), lowlim = c(), uplim = c(), contlim = c(), dcontlim = c(),
@@ -277,6 +278,7 @@ for (beta in c(1.65, 1.70)) {
             bserrorspread = bserror + (bserror - meanerror) * (sderrorspread / sderror -1),
             bsunweightedspread = bsunweighted + (bsunweighted - meanunweighted) * (sdunweightedspread / sdunweighted -1)
         )
+        ressinglebs[[paste0("etp", etp, "b", beta)]] <- bs
     }
 }
 
@@ -295,6 +297,10 @@ write.table(averagedrestable,
 saveRDS(
     res,
     sprintf("%saveraged.RData", savename)
+)
+saveRDS(
+    ressinglebs,
+    sprintf("%ssinglebootstrapsamples.RData", savename)
 )
 
 saveRDS(localnalist, sprintf("%s/nalistmode%s%s.RData", opt$path, opt$mode, ifelse(opt$xiinter, "xiinter", "")))
