@@ -142,9 +142,6 @@ data <- data.frame(
 
 # error ratio result has to be collected from the bootstrap samples first
 dplaq3ratio <- c()
-cov <- c()
-cor <- c()
-cor2 <- c()
 index <- 1
 bsnames <- c()
 # for (err in c("AIC", "error", "unweighted")) {
@@ -202,53 +199,12 @@ for (err in c("unweighted")) {
                 resbs$plaq3ratio[, 4 * index + 0] <- tmp[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]] * tmp2[[paste0("etp", etp, "b1.7")]][[errtypes[[err]]$bsspread]]
                 bsnames <- append(bsnames, paste0("errmode", err, "mode", mode, "xiinter", xiinter, "etp", etp, "beta", rep(c(1.65, 1.7), 2), "spread", c(F, F, T, T)))
                 dplaq3ratio <- append(dplaq3ratio, apply(resbs$plaq3ratio[, 4 * index + (-3:0)], MARGIN = 2, FUN = sd, na.rm = T))
-                cor <- append(cor, diag(cor(resbs$plaq3[, 4 * index + (-3:0)], resbs$beta[, 4 * index + (-3:0)], use = "na.or.complete")))
-                cov <- append(cov, diag(cov(resbs$plaq3[, 4 * index + (-3:0)], resbs$beta[, 4 * index + (-3:0)], use = "na.or.complete")))
-                print(4 * index + (-3:0))
-                print(c(mode, etp))
-
-
-                afteravp <- readRDS(sprintf("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlim/plotstikz/contlimittypeplaqsmallmode%s%saveraged.RData", mode, ifelse(xiinter, "xiinter", "")))
-                afteravb <- readRDS(sprintf("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlim/plotstikz/contlimittypebetamode%s%saveraged.RData", mode, ifelse(xiinter, "xiinter", "")))
-                print(cor(
-                    x = afteravb[[paste0("etp", etp, "b", 1.65)]]$bsunweighted,
-                    y = afteravp[[paste0("etp", etp, "b", 1.65)]]$bsunweighted,
-                    use = "na.or.complete"
-                ))
-                print("-")
-                print(cor(resbs$plaq3[, 4 * index - 3], resbs$beta[, 4 * index - 3], use = "na.or.complete"))
-                print(cor(resbs$plaq3[, 4 * index - 2], resbs$beta[, 4 * index - 2], use = "na.or.complete"))
-                print(cor(resbs$plaq3[, 4 * index - 1], resbs$beta[, 4 * index - 1], use = "na.or.complete"))
-                print(cor(resbs$plaq3[, 4 * index - 0], resbs$beta[, 4 * index - 0], use = "na.or.complete"))
-                cor2 <- append(cor2, c(
-                cor(resbs$plaq3[, 4 * index - 3], resbs$beta[, 4 * index - 3], use = "na.or.complete"),
-                cor(resbs$plaq3[, 4 * index - 2], resbs$beta[, 4 * index - 2], use = "na.or.complete"),
-                cor(resbs$plaq3[, 4 * index - 1], resbs$beta[, 4 * index - 1], use = "na.or.complete"),
-                cor(resbs$plaq3[, 4 * index - 0], resbs$beta[, 4 * index - 0], use = "na.or.complete")))
-                print(ifelse(xiinter, "xiinter", ""))
-                print(diag(cor(resbs$plaq3[, 4 * index + (-3:0)], resbs$beta[, 4 * index + (-3:0)], use = "na.or.complete")))
-
-                print(which(is.na(resbs$plaq3[, 4 * index - 3])))
-                print(which(is.na(resbs$plaq3[, 4 * index - 2])))
-                print(which(is.na(resbs$plaq3[, 4 * index - 1])))
-                print(which(is.na(resbs$plaq3[, 4 * index - 0])))
-                print(which(apply(resbs$plaq3[, 4 * index + (-3:0)], 1, function(x) any(is.na(x)))))
-
-
                 index <- index + 1
             }
         }
     }
 }
 data$dplaq3ratiocontlim <- dplaq3ratio
-data$cov <- cov
-data$cor <- cor
-print(data$cor)
-print(cor2)
-print(onlydiagonalcorelements(resbs$plaq3, resbs$beta))
-print(data$cor==cor2)
-print(cor2==onlydiagonalcorelements(resbs$plaq3, resbs$beta))
-stop()
 indices <- data.frame(uprange = 45, lowrange = 35, bsindex = seq_along(data$betaiso), resindex = seq_along(data$betaiso))
 data
 # indices
@@ -280,8 +236,7 @@ data$bootstrapmeanplaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = mean, 
 data$medianplaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = median, na.rm = T)
 data$q16plaq3ratio <- data$medianplaq3ratio - apply(resbs$plaq3ratio, MARGIN = 2, FUN = quantile, probs = 0.16, na.rm = T)
 data$q84plaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = quantile, probs = 0.84, na.rm = T) - data$medianplaq3ratio
-# data$cor <- diag(cor(resbs$plaq3, resbs$beta, use = "na.or.complete"))
-# data$cov <- diag(cov(resbs$plaq3, resbs$beta, use = "na.or.complete"))
+data$cor <- onlydiagonalcorelements(resbs$plaq3, resbs$beta)
 # bsnames
 head(data)
 
