@@ -14,7 +14,7 @@ source("~/Documents/masterthesis/analyse_potential/myfunctions.R")
 source("~/Documents/masterthesis/analyse_potential/matchwithellipse.R")
 
 hamiltoniandata <- read.table("/home/gross/Documents/masterthesis/more_measurements/hamiltonian/interpolate_ham.csv", header = T)
-lagrangiandatacollection <- readRDS("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlim/plotstikz/ellipseparameters.RData")
+lagrangiandatacollection <- readRDS("/home/gross/Documents/masterthesis/more_measurements/heatbath/contlimwo0.19/plotstikz/ellipseparameters.RData")
 
 ldata <- lagrangiandatacollection$data
 
@@ -84,9 +84,14 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
   
   if(!rep) plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
   modes <- c("xi0.18", "xi0.19", "xi0.20", "xi0.18wo0.19")
+modes <- c("xi0.20v2", "xi0.18v2")
   cols <- c("red", "blue", "darkgreen", "magenta")
   pchs <- c(21, 22, 23, 24)
   shortres <- data.frame(betamatch1.65=c(), dev1.65=c(), rad1.65=c(), betamatch1.7=c(), dev1.7=c(), rad1.7=c())
+  returnellipse <- list()
+  dxlist <- list()
+  dyL3list <- list()
+  dyL16list <- list()
   
   for(index in seq_along(modes)) {
     mode=modes[index]
@@ -99,6 +104,8 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)
     dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2)
+    dyL3list[[mode]] <- dy
+    dxlist[[mode]] <- dx
     if(meanormedian=="mean") {
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq3contlim, 
@@ -110,6 +117,7 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
                                                                   phi = x$theta, nstd = x$devstd, 
                                                                   rep = T, cex = 0.01, points = 5000, col=cols[index]))
       }
+      returnellipse <- append(returnellipse, listellipse[which(resellipse$errtype==errtype & resellipse$xiinter==xiinter & resellipse$mode==mode & resellipse$etp==1 & resellipse$spread==T)])
       
       newline <- data.frame(beta=c(1.65, 1.7), mode=mode, betamatch=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, dev=NA, rad=NA, 
                             betamatchstat=dx[, 1], betamatchsys=dx[, 2], betamatchspread=dx[, 3],
@@ -162,6 +170,7 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)
     dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2)
+    dyL16list[[mode]] <- dy
     if(meanormedian=="mean") {
       print(mode)
       print(which(mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T))
@@ -220,8 +229,7 @@ summarisedata <- function(ldata, errtype, xiinter, listellipse=listellipsemean, 
   rownames(shortres) <- modes
   # shortres[, c("dev1.7", "dev1.65")] <- shortres[, c("dev1.7", "dev1.65")] / sqrt(2.28)
   knitr::kable(shortres)
-  # print(dx)
-  return(list(longres=longres, shortres=shortres))
+  return(list(longres=longres, shortres=shortres, returnellipse=returnellipse, dyL16=dyL16list, dyL3=dyL3list, dx=dxlist))
 }
 ```
 
@@ -252,9 +260,14 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
   if(!rep) plot(NA, xlab="beta", ylab="P", ylim=c(0.60, 0.67), xlim=c(1.35, 1.49), ...)
   # plot(NA, xlab="beta", ylab="P", ylim=c(0, 2), xlim=c(0, 2), ...)
   modes <- c("xi0.18", "xi0.19", "xi0.20", "xi0.18wo0.19")
+  modes <- c("xi0.20v2", "xi0.18v2")
   cols <- c("red", "blue", "darkgreen", "magenta")
   pchs <- c(21, 22, 23)
   shortres <- data.frame(betamatch1.65=c(), dev1.65=c(), rad1.65=c(), betamatch1.7=c(), dev1.7=c(), rad1.7=c())
+  returnellipse <- list()
+  dxlist <- list()
+  dyL3list <- list()
+  dyL16list <- list()
   
   for(index in seq_along(modes)) {
     mode=modes[index]
@@ -267,6 +280,8 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq3]^2)
     dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq3]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq3]^2)
+    dyL3list[[mode]] <- dy
+    dxlist[[mode]] <- dx
     if(meanormedian=="mean") {
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq3ratiocontlim, 
@@ -284,6 +299,7 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
                                                                   phi = x$theta, nstd = as.numeric(x$devstd), 
                                                                   rep = T, cex = 0.01, points = 5000, col=cols[index]))
       }
+      returnellipse <- append(returnellipse, listellipse[which(resellipse$errtype==errtype & resellipse$xiinter==xiinter & resellipse$mode==mode & resellipse$etp==1 & resellipse$spread==T)])
       
       newline <- data.frame(beta=c(1.65, 1.7), mode=mode, betamatch=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, dev=NA, rad=NA, 
                             betamatchstat=dx[, 1], betamatchsys=dx[, 2], betamatchspread=dx[, 3],
@@ -342,6 +358,7 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
     dy[, 1] <- ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]
     dy[, 2] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==0 & ldata$spread==F, ][, errplaq16]^2)
     dy[, 3] <- sqrt(ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ][, errplaq16]^2 - ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==F, ][, errplaq16]^2)
+    dyL16list[[mode]] <- dy
     if(meanormedian=="mean") {
       plotwitherror(x=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$betacontlim, 
                     y=ldata[mask & ldata$mode==mode & ldata$etp==1 & ldata$spread==T, ]$plaq16contlim, 
@@ -399,7 +416,7 @@ summarisedataratio <- function(ldata, errtype, xiinter, listellipse=listellipsem
   # shortres[, c("dev1.7", "dev1.65")] <- shortres[, c("dev1.7", "dev1.65")] / sqrt(2.28)
   knitr::kable(shortres)
   # print(dx)
-  return(list(longres=longres, shortres=shortres))
+  return(list(longres=longres, shortres=shortres, returnellipse=returnellipse, dyL16=dyL16list, dyL3=dyL3list, dx=dxlist))
 }
 
 # hamresults: a, b, lowerx, upperx
@@ -408,6 +425,7 @@ interpolatehamiltonian <- function(x, hamresults) {
   return(hamresults$a[rightsegment] * x + hamresults$b[rightsegment])
 }
 ```
+
 
 #####meanvssd
 
@@ -422,14 +440,16 @@ The points for the analysis groups r`c("xi0.18", "xi0.18wo0.19", "xi0.19", "xi0.
 ```{r meanvsmedian}
 
 usedmodes <- c("xi0.18", "xi0.18wo0.19", "xi0.19", "xi0.20")
+usedmodes <- c("xi0.20v2", "xi0.18v2")
 
 for(beta in c(1.65, 1.7)) {
-  mask <- ldata$betaiso==beta & ldata$errtype=="unweighted" & ldata$xiinter==T
+  mask <- ldata$betaiso==beta & ldata$errtype=="unweighted" & ldata$xiinter==F
   plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$betacontlim[mask], dy=ldata$dbetacontlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
                 ylim=range(ldata$betacontlim[mask] + ldata$dbetacontlim[mask], 
                            ldata$betacontlim[mask] - ldata$dbetacontlim[mask], 
                            ldata$medianbeta[mask]), 
-                xlab="index", ylab="beta", main=paste("beta", beta, "cont limit beta"))
+                xlab="", xaxt="n", ylab="beta", main=paste("beta", beta, "cont limit beta"))
+  axis(side=1, at=1:6*4-3, labels=ldata$mode[mask][1:6*4-3], las=2)
   plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$bootstrapmeanbeta[mask], col="blue", pch=23, bg=ifelse(ldata$mode[mask] %in% usedmodes, "blue", NA), rep=T)
   plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=ldata$medianbeta[mask], dy=ldata$q84beta[mask], mdy=ldata$q16beta[mask], col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
   # abline(v=length(ldata$betacontlim[mask])*c(1/3, 2/3)+0.5)
@@ -442,7 +462,8 @@ for(beta in c(1.65, 1.7)) {
                 ylim=range(ldata$plaq3contlim[mask] + ldata$dplaq3contlim[mask], 
                            ldata$plaq3contlim[mask] - ldata$dplaq3contlim[mask], 
                            ldata$medianplaq3[mask]), 
-                xlab="index", ylab="plaq3", main=paste("beta", beta, "cont limit plaq3"))
+                xlab="", xaxt="n", ylab="plaq3", main=paste("beta", beta, "cont limit plaq3"))
+  axis(side=1, at=1:6*4-3, labels=ldata$mode[mask][1:6*4-3], las=2)
   plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=ldata$bootstrapmeanplaq3[mask], col="blue", pch=23, bg=ifelse(ldata$mode[mask] %in% usedmodes, "blue", NA), rep=T)
   plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=ldata$medianplaq3[mask], dy=ldata$q84plaq3[mask], mdy=ldata$q16plaq3[mask], col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
   # abline(v=length(seq_along(ldata$betacontlim[mask]))*c(1/3, 2/3)+0.5)
@@ -453,12 +474,13 @@ for(beta in c(1.65, 1.7)) {
 }
 
 for(beta in c(1.65, 1.7)) {
-  mask <- ldata$betaiso==beta & ldata$errtype=="unweighted" & ldata$xiinter==T
+  mask <- ldata$betaiso==beta & ldata$errtype=="unweighted" & ldata$xiinter==F
   plotwitherror(x=seq_along(ldata$betacontlim[mask]), y=rep(0, length(ldata$betacontlim[mask])), 
                 dy=ldata$dbetacontlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
                 ylim=range(ldata$dbetacontlim[mask], -ldata$dbetacontlim[mask], -ldata$q16beta[mask], ldata$q84beta[mask]), 
                 # xlim=length(ldata$betacontlim[mask])*c(2/3, 1),
-                xlab="index", ylab="beta", main=paste("beta", beta, "cont limit beta"))
+                xlab="", xaxt="n", ylab="beta", main=paste("beta", beta, "cont limit beta"))
+  axis(side=1, at=1:6*4-3, labels=ldata$mode[mask][1:6*4-3], las=2)
   plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=rep(0, length(ldata$betacontlim[mask])), 
                 dy=ldata$q84beta[mask], mdy=ldata$q16beta[mask], 
                 col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
@@ -472,7 +494,8 @@ for(beta in c(1.65, 1.7)) {
                 dy=ldata$dplaq3contlim[mask], col="black", pch=21, bg=ifelse(ldata$mode[mask] %in% usedmodes, "black", NA), 
                 ylim=range(ldata$dplaq3contlim[mask], -ldata$dplaq3contlim[mask], -ldata$q16plaq3[mask], ldata$q84plaq3[mask]), 
                 # xlim=length(ldata$betacontlim[mask])*c(2/3, 1),
-                xlab="index", ylab="plaq3", main=paste("beta", beta, "cont limit plaq3"))
+                xlab="", xaxt="n", ylab="plaq3", main=paste("beta", beta, "cont limit plaq3"))
+  axis(side=1, at=1:6*4-3, labels=ldata$mode[mask][1:6*4-3], las=2)
   plotwitherror(x=seq_along(ldata$betacontlim[mask])+0.2, y=rep(0, length(ldata$betacontlim[mask])), 
                 dy=ldata$q84plaq3[mask], mdy=ldata$q16plaq3[mask], 
                 col="red", pch=22, bg=ifelse(ldata$mode[mask] %in% usedmodes, "red", NA), rep=T)
@@ -500,27 +523,100 @@ errtype="unweighted"
 xiinter <- F
 
 tablemean                   <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean,              resellipse=resellipsemean,        meanormedian="mean", plotellipse=T, main="mean")
-tablemedian                 <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedian,            resellipse=resellipsemedian,      meanormedian="median", plotellipse=T, main="median")
-tablemedianwithsd           <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianwithsd,      resellipse=resellipsemedianwithsd,      meanormedian="medianwithsd", plotellipse=T, main="median with sd")
+# tablemedian                 <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedian,            resellipse=resellipsemedian,      meanormedian="median", plotellipse=T, main="median")
+# tablemedianwithsd           <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianwithsd,      resellipse=resellipsemedianwithsd,      meanormedian="medianwithsd", plotellipse=T, main="median with sd")
 tablemeanratio   <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio,   resellipse=resellipsemeanratio,   meanormedian="mean", plotellipse=T, main="mean ratio")
-tablemedianratio <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=T, main="median ratio")
-tablemedianratiowithsd <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratiowithsd, resellipse=resellipsemedianratiowithsd, meanormedian="medianwithsd", plotellipse=T, main="median ratio with sd ")
+# tablemedianratio <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=T, main="median ratio")
+# tablemedianratiowithsd <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratiowithsd, resellipse=resellipsemedianratiowithsd, meanormedian="medianwithsd", plotellipse=T, main="median ratio with sd ")
 silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", plotellipse=F, main="mean")
-silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedian, resellipse=resellipsemedianwithsd, meanormedian="median", plotellipse=F, main="median")
-silent <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianwithsd,      resellipse=resellipsemedian,      meanormedian="medianwithsd", plotellipse=F, main="medianwithsd")
-silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, main="mean ratio")
-silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=F, main="median ratio")
-silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratiowithsd, resellipse=resellipsemedianratiowithsd, meanormedian="medianwithsd", plotellipse=F, main="median ratio with sd")
+# silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedian, resellipse=resellipsemedianwithsd, meanormedian="median", plotellipse=F, main="median")
+# silent <- summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianwithsd,      resellipse=resellipsemedian,      meanormedian="medianwithsd", plotellipse=F, main="medianwithsd")
+# silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, main="mean ratio")
+# silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratio, resellipse=resellipsemedianratio, meanormedian="median", plotellipse=F, main="median ratio")
+# silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemedianratiowithsd, resellipse=resellipsemedianratiowithsd, meanormedian="medianwithsd", plotellipse=F, main="median ratio with sd")
 
 
-silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", plotellipse=F, main="mean")
-silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, rep=T, cex=0.5)
+# silent <-      summarisedata(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemean, resellipse=resellipsemean, meanormedian="mean", plotellipse=F, main="mean")
+# silent <- summarisedataratio(ldata=ldata, errtype=errtype, xiinter=xiinter, listellipse = listellipsemeanratio, resellipse=resellipsemeanratio, meanormedian="mean", plotellipse=F, rep=T, cex=0.5)
+
+  
+# print(tablemedian$longres)
+# print(tablemedianwithsd$longres)
+# print(tablemeanratio$longres)
+# print(tablemedianratio$longres)
+# print(tablemedianratiowithsd$longres)
+tablemean$longres$betatotal <- sqrt(tablemean$longres$betamatchstat^2 + tablemean$longres$betamatchsys^2 + tablemean$longres$betamatchspread^2)
+tablemean$longres$P3total <- sqrt(tablemean$longres$P3stat^2 + tablemean$longres$P3sys^2 + tablemean$longres$P3spread^2)
+tablemean$longres$P16total <- sqrt(tablemean$longres$P16stat^2 + tablemean$longres$P16sys^2 + tablemean$longres$P16spread^2)
+tablemeanratio$longres$betatotal <- sqrt(tablemeanratio$longres$betamatchstat^2 + tablemeanratio$longres$betamatchsys^2 + tablemeanratio$longres$betamatchspread^2)
+tablemeanratio$longres$P3total <- sqrt(tablemeanratio$longres$P3stat^2 + tablemeanratio$longres$P3sys^2 + tablemeanratio$longres$P3spread^2)
+tablemeanratio$longres$P16total <- sqrt(tablemeanratio$longres$P16stat^2 + tablemeanratio$longres$P16sys^2 + tablemeanratio$longres$P16spread^2)
 print(tablemean$longres)
-print(tablemedian$longres)
-print(tablemedianwithsd$longres)
+
+write.table(tablemean$longres, file="/home/gross/Documents/masterthesis/more_measurements/LQED-sim/lagrangian/reports_christiane/draft_paper/data/resellipseerrors.csv", col.names=T, row.names=F)
+# tablemean$returnellipse
+saveRDS(tablemean, file="/home/gross/Documents/masterthesis/more_measurements/LQED-sim/lagrangian/reports_christiane/draft_paper/data/resellipseerrors.RData")
+write.table(tablemeanratio$longres, file="/home/gross/Documents/masterthesis/more_measurements/LQED-sim/lagrangian/reports_christiane/draft_paper/data/resellipseerrorsratio.csv", col.names=T, row.names=F)
+# tablemeanratio$returnellipse
+saveRDS(tablemeanratio, file="/home/gross/Documents/masterthesis/more_measurements/LQED-sim/lagrangian/reports_christiane/draft_paper/data/resellipseerrorsratio.RData")
+```
+
+
+```{r makesummaries}
+tablemean$longres$betatotal <- sqrt(tablemean$longres$betamatchstat^2 + tablemean$longres$betamatchsys^2 + tablemean$longres$betamatchspread^2)
+tablemean$longres$P3total <- sqrt(tablemean$longres$P3stat^2 + tablemean$longres$P3sys^2 + tablemean$longres$P3spread^2)
+tablemean$longres$P16total <- sqrt(tablemean$longres$P16stat^2 + tablemean$longres$P16sys^2 + tablemean$longres$P16spread^2)
+tablemeanratio$longres$betatotal <- sqrt(tablemeanratio$longres$betamatchstat^2 + tablemeanratio$longres$betamatchsys^2 + tablemeanratio$longres$betamatchspread^2)
+tablemeanratio$longres$P3total <- sqrt(tablemeanratio$longres$P3stat^2 + tablemeanratio$longres$P3sys^2 + tablemeanratio$longres$P3spread^2)
+tablemeanratio$longres$P16total <- sqrt(tablemeanratio$longres$P16stat^2 + tablemeanratio$longres$P16sys^2 + tablemeanratio$longres$P16spread^2)
+print(tablemean$longres)
 print(tablemeanratio$longres)
-print(tablemedianratio$longres)
-print(tablemedianratiowithsd$longres)
+
+
+myresP16 <- c()
+for( i in seq_along(tablemean$longres$beta)){
+  myresP16[i] <- tex.catwitherror(x=tablemean$longres$P16[i], dx=tablemean$longres$P16total[i], digits=2, with.dollar=F, with.cdot=F)
+  if(nchar(myresP16[i]) < 9) myresP16[i] <- tex.catwitherror(x=tablemean$longres$P16[i], dx=tablemean$longres$P16total[i], digits=3, with.dollar=F, with.cdot=F)
+}
+myresP3 <- c()
+for( i in seq_along(tablemean$longres$beta)){
+  myresP3[i] <- tex.catwitherror(x=tablemean$longres$P3[i], dx=tablemean$longres$P3total[i], digits=2, with.dollar=F, with.cdot=F)
+  if(nchar(myresP3[i]) < 9) myresP3[i] <- tex.catwitherror(x=tablemean$longres$P3[i], dx=tablemean$longres$P3total[i], digits=3, with.dollar=F, with.cdot=F)
+}
+myresP3ratio=c()
+for( i in seq_along(tablemeanratio$longres$beta)){
+  myresP3ratio[i] <- tex.catwitherror(x=tablemeanratio$longres$P3[i], dx=tablemeanratio$longres$P3total[i], digits=2, with.dollar=F, with.cdot=F)
+  if(nchar(myresP3ratio[i]) < 9) myresP3ratio[i] <- tex.catwitherror(x=tablemeanratio$longres$P3[i], dx=tablemeanratio$longres$P3total[i], digits=3, with.dollar=F, with.cdot=F) 
+}
+myresbetamatch <- c()
+for( i in seq_along(tablemean$longres$beta)){
+  myresbetamatch[i] <- tex.catwitherror(x=tablemean$longres$betamatch[i], dx=tablemean$longres$betatotal[i], digits=2, with.dollar=F, with.cdot=F)
+  if(nchar(myresbetamatch[i]) < 9) myresbetamatch[i] <- tex.catwitherror(x=tablemean$longres$betamatch[i], dx=tablemean$longres$betatotal[i], digits=3, with.dollar=F, with.cdot=F)
+}
+myres <- data.frame(P16=myresP16, P3=myresP3, P3ratio=myresP3ratio, beta=myresbetamatch)
+myres
+mycols <- list(tablemean$longres$P16stat, tablemean$longres$P16sys, tablemean$longres$P16spread, 
+               tablemean$longres$P3stat, tablemean$longres$P3sys, tablemean$longres$P3spread, 
+               tablemeanratio$longres$P3stat, tablemeanratio$longres$P3sys, tablemeanratio$longres$P3spread, 
+               tablemean$longres$betamatchstat, tablemean$longres$betamatchsys, tablemean$longres$betamatchspread)
+mydigits <- c(rep(4, 9), rep(3, 3))
+myshortres <- array(NA, dim=c(4, 4*3))
+
+options(scipen=999)
+for(i in seq_along(mycols)) {
+  tmp <- round(mycols[[i]], digits=mydigits[i])
+  print(tmp)
+  myshortres[, i] <- substring(text=tmp, first=mydigits[i]+1, last=mydigits[i]+2)
+}
+options(scipen=0)
+
+myshorterres <- array(NA, dim=c(4, 4))
+for(i in 1:4) {
+  print(paste0("(", myshortres[, 3*i-2], ")(", myshortres[, 3*i-1], ")(", myshortres[, 3*i], ")"))
+  myshorterres[, i] <- paste0("(", myshortres[, 3*i-2], ")(", myshortres[, 3*i-1], ")(", myshortres[, 3*i], ")")
+}
+myshortres
+myshorterres
 ```
 
 
