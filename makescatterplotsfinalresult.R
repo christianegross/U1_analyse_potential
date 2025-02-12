@@ -5,6 +5,7 @@ source("~/Documents/masterthesis/analyse_potential/matchwithellipse.R")
 
 hamiltoniandata <- read.table("/home/gross/Documents/masterthesis/more_measurements/hamiltonian/interpolate_ham.csv", header = T)
 modes <- c("all", "xi0.20", "xi0.19", "xi0.18", "xi0.18wo0.19", "xi0.25")
+modes <- c("xi0.20v2", "xi0.18v2")
 types <- c("plaq", "beta", "plaqinter", "betainter", "plaqsmall", "ratio")
 
 averagedrestable <- data.frame(
@@ -35,11 +36,13 @@ averagedrestable$interpolated_xi <- averagedrestable$xiinter | averagedrestable$
 averagedrestable$interpolated_beta <- averagedrestable$type == "plaqinter" | averagedrestable$type == "betainter"
 # averagedrestable[averagedrestable$mode=="xi0.18" & averagedrestable$type=="beta", ]
 # averagedrestable[averagedrestable$mode=="xi0.18wo0.19" & averagedrestable$type=="beta", ]
+averagedrestable
 # stop()
 
 pdf(sprintf("rescombined.pdf"), title = "")
 modes <- c("all", "xi0.20", "xi0.19", "xi0.18", "xi0.18wo0.19", "xi0.25")
-modes <- c("xi0.19", "xi0.18", "xi0.18wo0.19")
+modes <- c("xi0.20v2", "xi0.18v2")
+# modes <- c("xi0.19", "xi0.18", "xi0.18wo0.19")
 cols <- c("black", "red", "blue", "darkgreen", "firebrick", "green")
 pchs <- c(21, 22, 23, 24, 21, 22)
 
@@ -129,8 +132,8 @@ warnings()
 #     plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 3))
 # )
 resbs <- list(
-    beta = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)),
-    plaq16 = array(NA, dim = c(500, length(modes) * 16 * 3 / 6)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 3 / 6))
+    beta = array(NA, dim = c(500, length(modes) * 16 * 1)), plaq3 = array(NA, dim = c(500, length(modes) * 16 * 1)),
+    plaq16 = array(NA, dim = c(500, length(modes) * 16 * 1)), plaq3ratio = array(NA, dim = c(500, length(modes) * 16 * 1))
 )
 data <- data.frame(
     betacontlim = c(), dbetacontlim = c(),
@@ -147,8 +150,8 @@ bsnames <- c()
 # for (err in c("AIC", "error", "unweighted")) {
 for (err in c("unweighted")) {
     for (mode in modes) {
-        # for (xiinter in c(T, F)) {
-        for (xiinter in c(F)) {
+        for (xiinter in c(T, F)) {
+        # for (xiinter in c(F)) {
             for (etp in c(1, 0)) {
                 data <- rbind(data, data.frame(
                     betacontlim = averagedrestable[, errtypes[[err]]$mean][averagedrestable$mode == mode & averagedrestable$type == "beta" & averagedrestable$xiinter == xiinter & averagedrestable$etp == etp],
@@ -206,7 +209,6 @@ for (err in c("unweighted")) {
 }
 data$dplaq3ratiocontlim <- dplaq3ratio
 indices <- data.frame(uprange = 45, lowrange = 35, bsindex = seq_along(data$betaiso), resindex = seq_along(data$betaiso))
-data
 # indices
 mask <- seq_along(data$betaiso)
 # mask <- 100:110
@@ -239,6 +241,8 @@ data$q84plaq3ratio <- apply(resbs$plaq3ratio, MARGIN = 2, FUN = quantile, probs 
 data$cor <- onlydiagonalcorelements(resbs$plaq3, resbs$beta)
 # bsnames
 head(data)
+# data
+# stop()
 
 ## repeat the ellipse parameters with median and quantiles and median and sd
 
