@@ -1,0 +1,45 @@
+##This lists the commands needed to install the librarys for generating and analyzing configurations
+
+sudo apt-get install git
+
+## su2 libary for generating configurations:
+git clone git@github.com:HISKP-LQCD/su2.git
+cd ${mycode}/su2
+git checkout su3
+cd ${mycode}
+export mycode=$(pwd)
+mkdir build_su2
+cd build_su2
+sudo apt-get install xtensor-dev
+sudo apt-get install libeigen3-dev
+sudo apt-get install libyaml-cpp-dev
+sudo apt-get install libboost-all-dev
+sudo apt install cmake
+cmake -B ${mycode}/build_su2 -S ${mycode}/su2/ -D CMAKE_INSTALL_PREFIX ${mycode}/build_su2
+make -j$(nproc) install
+make -j$(nproc)
+cd ${mycode}
+
+## R library hadron
+sudo apt-get install r-base-core
+sudo apt-get install libxml2-dev
+sudo apt-get install libfontconfig1-dev
+sudo apt-get install libharfbuzz-dev libfribidi-dev
+sudo apt-get install libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+sudo apt-get install libgsl-dev
+## start R consolo and install R packages now
+# R packages:
+# install.packages("curl")
+# install.packages("openssl")
+# install.packages("devtools")
+# install.packages("optparse")
+# install.packages("abind")
+# install.packages("dplyr")
+## exit R console
+## install hadron
+cd ${mycode}
+git clone git@github.com:HISKP-LQCD/hadron.git
+cd ${mycode}/hadron/
+git checkout generalize_uwerrcf
+bash install
+

@@ -4,7 +4,6 @@ source("~/Documents/masterthesis/analyse_potential/myfunctions.R")
 source("~/Documents/masterthesis/analyse_potential/matchwithellipse.R")
 
 hamiltoniandata <- read.table("/home/gross/Documents/masterthesis/more_measurements/hamiltonian/interpolate_ham.csv", header = T)
-modes <- c("all", "xi0.20", "xi0.19", "xi0.18", "xi0.18wo0.19", "xi0.25")
 modes <- c("xi0.20v2", "xi0.18v2")
 types <- c("plaq", "beta", "plaqinter", "betainter", "plaqsmall", "ratio")
 

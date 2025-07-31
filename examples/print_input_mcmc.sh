@@ -2,7 +2,7 @@
 
 
 ## read in data
-inputfile=paramsinput_contlimitL16.csv
+inputfile=paramsinput_contlimitL16short.csv
 #~ inputfile=paramsinput_contlimitL3.csv
 betas=($(tail -n +2 $inputfile | cut -d ',' -f1) )
 Nss=($(tail -n +2 $inputfile | cut -d ',' -f2) )
@@ -11,22 +11,21 @@ xis=($(tail -n +2 $inputfile | cut -d ',' -f4) )
 napes=($(tail -n +2 $inputfile | cut -d ',' -f5) )
 alphas=($(tail -n +2 $inputfile | cut -d ',' -f6) )
 cpus=($(tail -n +2 $inputfile | cut -d ',' -f7) )
-t1=($(tail -n +2 $inputfile | cut -d ',' -f9) )
-node=($(tail -n +2 $inputfile | cut -d ',' -f8) )
-betaone=($(tail -n +2 $inputfile | cut -d ',' -f10) )
-Ntone=($(tail -n +2 $inputfile | cut -d ',' -f11) )
-fraction=($(tail -n +2 $inputfile | cut -d ',' -f12) )
-skip=($(tail -n +2 $inputfile | cut -d ',' -f13) )
-nmeas=($(tail -n +2 $inputfile | cut -d ',' -f14) )
-nsave=($(tail -n +2 $inputfile | cut -d ',' -f15) )
-offset=($(tail -n +2 $inputfile | cut -d ',' -f16) )
-every=($(tail -n +2 $inputfile | cut -d ',' -f17) )
-bootl=($(tail -n +2 $inputfile | cut -d ',' -f18) )
+betaone=($(tail -n +2 $inputfile | cut -d ',' -f8) )
+fraction=($(tail -n +2 $inputfile | cut -d ',' -f9) )
+skip=($(tail -n +2 $inputfile | cut -d ',' -f10) )
+nmeas=($(tail -n +2 $inputfile | cut -d ',' -f11) )
+nsave=($(tail -n +2 $inputfile | cut -d ',' -f12) )
+offset=($(tail -n +2 $inputfile | cut -d ',' -f13) )
+every=($(tail -n +2 $inputfile | cut -d ',' -f14) )
+startheat=($(tail -n +2 $inputfile | cut -d ',' -f15) )
 
 len=${#Nts[@]}
 echo "$len"
 
-echo " " >> commandsmeas.txt
+pathtoanalysisscripts=$(readlink -f ..)
+
+echo " " >> commandsmeasmcmc.txt
 echo " " >> commandsRmcmc.txt
 for (( i=0; i<($len); i++))
 do
@@ -56,7 +55,7 @@ confdirfile=/hiskp4/gross/masterthesis/analyse/configs/confL${Nss[$i]}.T${Nts[$i
 inputfile=inputs/mcmcinputL${Nss[$i]}.T${Nts[$i]}.b$betafile.x$xifile
 inputfileqbig=/hiskp4/gross/masterthesis/analyse/inputs/mcmcinputL${Nss[$i]}.T${Nts[$i]}.b$betafile.x$xifile
 
-echo $confdirfile
+# echo $confdirfile
 
 beta=${betas[$i]}
 betas[$i]=$(echo "$beta"| awk '{printf "%f", $0}')
@@ -80,38 +79,42 @@ printf "  res_dir: $resdirfile\n  icounter: 0\n  n_meas: $nmeas\n  nstep: ${nsav
 printf "potential:\n    potentialplanar: ${potentialplanar}\n    potentialnonplanar: ${potentialnonplanar}\n    sizeWloops: ${fraction[$i]}\n" >> $inputfile
 printf "    n_apesmear: ${napes[$i]}\n    alpha: ${alphas[$i]}\n    append: true" >> $inputfile
 
-echo "sbatch --job-name=$jobname --cpus-per-task=${cpus[$i]} scriptyamlheatbath.sh $inputfileqbig $confdirfile" >> commandsmeasheatbath.txt
+echo "sbatch --job-name=$jobname --cpus-per-task=${cpus[$i]} scriptyamlheatbath.sh $inputfileqbig $confdirfile" >> commandsmeasmcmc.txt
 
 
 ## write commands for R analysis scripts
-## change folder for results (-1) and path to script (-2) accordingly
+if [ "${Nss[$i]}" -eq "3" ]; then
+echo "Rscript ${pathtoanalysisscripts}/L3singleplaquette.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --skip $skip --plotpath . --shapiro" >> commandsRmcmc.txt
+else
+
 ## compute effective masses, with and without drawing bootstrapsamples
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6 --drawbootstrap\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R    -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6 --drawbootstrap\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R    -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6\"" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6 --drawbootstrap" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R    --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6 --drawbootstrap" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R    --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --analyse --plotuwerr --uwerrs 6" >> commandsRmcmc.txt
 
 ## analyse potential, determine xi and r0, ...
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1\"" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1" >> commandsRmcmc.txt
            
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0 --errortotpot\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1 --errortotpot\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0 --errortotpot\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcnormx$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysissubtracted.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1 --errortotpot\"" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0 --errortotpot" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1 --errortotpot" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0 --errortotpot" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysissubtracted.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1 --errortotpot" >> commandsRmcmc.txt
           
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1\"" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1" >> commandsRmcmc.txt
            
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0 --errortotpot\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1 --errortotpot\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0 --errortotpot\"" >> commandsRmcmc.txt
-echo "sbatch --job-name=mcmcsidex$xifile.b$betafile doRonqbig.sh -1 results/mcmc/xi0.18 -2 /hiskp4/gross/masterthesis/analyse/code/U1_analyse_potential/analysisrotated.R -3 \"--respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1 --errortotpot\"" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 0 --errortotpot" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 0 --lowlimpot 0 --lowlim 1 --errortotpot" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 0 --errortotpot" >> commandsRmcmc.txt
+echo "Rscript ${pathtoanalysisscripts}/analysisrotated.R --myfunctions ${pathtoanalysisscripts} --respath $resdirfile -b ${betas[$i]} -r ${Nss[$i]} -t ${Nts[$i]} --xidiff --xi $xi --betaone ${betaone[$i]} --skip $skip --nsave ${nsave[$i]} --every ${every[$i]} --zerooffset ${offset[$i]} --bootl 1 --aic --scaletauint --dofit --plotuwerr --uwerrs 6 --omit 1 --lowlimpot 0 --lowlim 1 --errortotpot" >> commandsRmcmc.txt
 
 echo "sleep 1" >> commandsRmcmc.txt
+fi
 
 done
