@@ -681,7 +681,7 @@ getxisideways <- function(ydata, Nstmp = Ns, Nttmp = Nt, omit = opt$omit, lowlim
         for (j in seq(1, Nttmp / 2 - 1 - omit / xitmp)) {
             if (length(interpolation$upper[interpolation$lowerx == j]) > 0) {
             if (Vs < interpolation$upper[interpolation$lowerx == j]) {
-                index <- interpolation$lowerx == j
+                index <- which(interpolation$lowerx == j)
                 break
             }
             }
