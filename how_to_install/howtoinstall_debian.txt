@@ -1,4 +1,5 @@
-##This lists the commands needed to install the librarys for generating and analyzing configurations
+## This lists the commands needed to install the librarys for generating and analyzing configurations
+## Tested on a machine with Linux Mint Cinnamon 22.1 on 2025-07-30
 
 sudo apt-get install git
 
@@ -27,7 +28,7 @@ sudo apt-get install libfontconfig1-dev
 sudo apt-get install libharfbuzz-dev libfribidi-dev
 sudo apt-get install libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
 sudo apt-get install libgsl-dev
-## start R consolo and install R packages now
+## start R console and install R packages now
 # R packages:
 # install.packages("curl")
 # install.packages("openssl")
