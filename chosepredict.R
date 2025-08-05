@@ -78,7 +78,7 @@ if (opt$omit >=0) {
 data <- data[data$omit == opt$omit, ]
 }
 
-if (opt$crzero != -1.65) end <- sprintf("%sc%.2f", end, opt$crzero)
+if (opt$crzero != 1.65) end <- sprintf("%sc%.2f", end, opt$crzero)
 
 ## filter for AIC and scaled errors
 if (opt$aic) {
@@ -112,7 +112,7 @@ if (opt$xiconst) xiconststr <- "xiconst"
 print(opt$singlemulti)
 if (opt$singlemulti == "single") endname <- sprintf("%sbeta%fomit%d%sllxi%dllr0%dfl%.2f", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi, opt$lowlimpot, opt$fitlim)
 if (opt$singlemulti == "multi") endname <- sprintf("multi%sbeta%fomit%d%slowlim%d", type, opt$beta, opt$omit, xiconststr, opt$lowlimxi)
-if (opt$crzero != -1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
+if (opt$crzero != 1.65) endname <- sprintf("%sc%.2f", endname, opt$crzero)
 if (opt$aic) endname <- sprintf("%saic", endname)
 if (opt$scaletauint) endname <- sprintf("%sscaletauintetp%d", endname, opt$errortotpot)
 endnamewrite <- endname

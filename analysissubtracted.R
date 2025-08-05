@@ -108,7 +108,7 @@ option_list <- list(
 
     make_option(c("--nsave"), type = "integer", default = 0,
     help = "steps between saved configs [default %default]"),
-    make_option(c("--crzero"), type = "double", default = -1.65,
+    make_option(c("--crzero"), type = "double", default = 1.65,
     help = "c used for determining r_0 [default %default]"),
 
     make_option(c("--extra"), type = "character", default = "",
@@ -175,7 +175,7 @@ if (opt$smearing) endingdofit <- sprintf("Nt%dNs%dbeta%fxi%fnape%dalpha%fbs%domi
                     Nt, Ns, beta, xi, nape, alpha, opt$bootsamples, opt$omit, opt$lowlim, opt$lowlimpot)
 
 
-if(opt$crzero != -1.65) endingdofit <- sprintf("%sc%.2f", endingdofit, opt$crzero)
+if(opt$crzero != 1.65) endingdofit <- sprintf("%sc%.2f", endingdofit, opt$crzero)
 
 if(opt$aic){
         endinganalysis <- sprintf("%saic", endinganalysis)
@@ -737,8 +737,8 @@ for (c in list(opt$crzero)) {
 #     r2 <- -b / (2 * sigma) - sqrt((b / (2 * sigma))^2 - c / sigma)
 #     rzerolist <- rbind(rzerolist, data.frame(r1 = r1, r2 = r2))
 # }
-rzerolist <- apply(fit.resultscaled$t, 1, getrzero)
-rzero <- getrzero(fit.resultscaled$t0)
+rzerolist <- apply(fit.resultscaled$t, 1, getrzero, c=c)
+rzero <- getrzero(fit.resultscaled$t0, c=c)
 # print(rzero - mean(rzerolist))
 drzero <- sd(rzerolist)
 rzeroofc <- rbind(rzeroofc, data.frame(r0 = rzero, dr0 = drzero, c = c))

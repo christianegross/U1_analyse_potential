@@ -509,12 +509,12 @@ points.effectivemass <- function (x, ..., ref.value, col, col.fitline) {
   }
 }
 
-determinerzero <- function (fit.result, bootsamples, c = -1.65, xi = 1) {
+determinerzero <- function (fit.result, bootsamples, c = 1.65, xi = 1) {
     # Determine r0 as solution of equation -r^2 d / dr V(r) = c,
     # solve for each bootstrapsample, r0 = mean pm sd
     # V(r) = a + sigma * r + b * ln(r)
-    # -d/dr V(r) = -sigma -b / r
-    # c = -sigma * r^2 - b * r, use p-q-formula for p = b / sigma, q = c / sigma
+    # d/dr V(r) = sigma b / r
+    # c = sigma * r^2 + b * r, use p-q-formula for p = b / sigma, q = c / sigma
     # if a_t V is determined, c has to be rescaled so effectively a_s V is used
     # return mean, sd, bootstrapsamples
     c <- c * xi
@@ -523,7 +523,7 @@ determinerzero <- function (fit.result, bootsamples, c = -1.65, xi = 1) {
     #~     a <- fit.resultscaled$t[bs, 1]
         sigma <- fit.result$t[bs, 2]
         b <- fit.result$t[bs, 3]
-        r1 <- -b / (2 * sigma) + sqrt((b / (2 * sigma))^2 - c / sigma)
+        r1 <- -b / (2 * sigma) + sqrt((b / (2 * sigma))^2 + c / sigma)
         rzerolist[bs] <- r1
     }
     rzerolist <- na.omit(rzerolist)
@@ -534,10 +534,10 @@ determinerzero <- function (fit.result, bootsamples, c = -1.65, xi = 1) {
 
 # fitpars = const, linear, coulomb
 # get rzero from a single set of potential parameters
-getrzero <- function(fitpars, c = -1.65) {
+getrzero <- function(fitpars, c = 1.65) {
     b <- fitpars[3]
     sigma <- fitpars[2]
-    return(-b / (2 * sigma) + sqrt((b / (2 * sigma))^2 - c / sigma))
+    return(-b / (2 * sigma) + sqrt((b / (2 * sigma))^2 + c / sigma))
 }
 
 drawallticks <- function (all = FALSE, inward = FALSE) {
